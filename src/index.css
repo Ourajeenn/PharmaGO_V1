@@ -1,0 +1,160 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes loading {
+  0%, 100% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(400%);
+  }
+}
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 210 100% 98%;
+    --foreground: 215 25% 27%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 27%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 27%;
+
+    --primary: 210 100% 45%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 210 100% 40%;
+
+    --secondary: 142 76% 36%;
+    --secondary-foreground: 0 0% 100%;
+    --secondary-hover: 142 76% 32%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 25 95% 53%;
+    --accent-foreground: 0 0% 100%;
+    --accent-hover: 25 95% 48%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 40% 90%;
+    --input: 210 40% 90%;
+    --ring: 210 100% 45%;
+
+    --medical-blue: 210 100% 45%;
+    --health-green: 142 76% 36%;
+    --pharmacy-orange: 25 95% 53%;
+    --trust-blue: 215 84% 35%;
+    
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(210 40% 98%));
+    --shadow-card: 0 4px 20px hsl(var(--primary) / 0.1);
+    --shadow-hover: 0 8px 25px hsl(var(--primary) / 0.15);
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 215 28% 17%;
+    --foreground: 210 40% 98%;
+
+    --card: 215 28% 17%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 215 28% 17%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 100% 55%;
+    --primary-foreground: 215 28% 17%;
+    --primary-hover: 210 100% 50%;
+
+    --secondary: 142 76% 46%;
+    --secondary-foreground: 215 28% 17%;
+    --secondary-hover: 142 76% 42%;
+
+    --muted: 217 32% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 25 95% 63%;
+    --accent-foreground: 215 28% 17%;
+    --accent-hover: 25 95% 58%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 32% 17%;
+    --input: 217 32% 17%;
+    --ring: 212 27% 84%;
+
+    --medical-blue: 210 100% 55%;
+    --health-green: 142 76% 46%;
+    --pharmacy-orange: 25 95% 63%;
+    --trust-blue: 215 84% 45%;
+    
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+    --gradient-card: linear-gradient(145deg, hsl(217 32% 17%), hsl(217 32% 20%));
+    --shadow-card: 0 4px 20px hsl(0 0% 0% / 0.3);
+    --shadow-hover: 0 8px 25px hsl(0 0% 0% / 0.4);
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Cross-browser compatibility fixes */
+  /* input, textarea, select, button {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  } */
+
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Fix for flex gap in older browsers */
+  @supports not (gap: 1rem) {
+    .flex > * + *, .grid > * + * {
+      margin-left: 1rem;
+    }
+  }
+}
