@@ -41,6 +41,12 @@ export interface Patient {
     email?: string;
     address?: string;
     city?: string;
+    chronicDiseases?: string[];
+    allergies?: string[]; // Simplified list for profile
+    treatmentsSummary?: string[]; // Simplified list of current meds
+    insuranceType?: 'standard' | 'cmu' | 'insured' | 'premium';
+    vaccinations?: Vaccination[];
+    treatments?: { id: string; name: string; dosage: string; compliance: number }[];
     emergencyContacts: EmergencyContact[];
 
     // Métadonnées

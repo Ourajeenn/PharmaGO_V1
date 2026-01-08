@@ -1,31 +1,56 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
+import { supabase } from '@/integrations/supabase/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { EditablePatientProfile } from './EditablePatientProfile'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { OrderHistory } from '@/components/orders/OrderHistory'
-import { 
-  Package, 
-  Clock, 
-  MapPin, 
-  CreditCard, 
-  FileText, 
-  Bell,
-  User,
-  Shield,
-  Pill,
+import { PremiumDashboardLayout } from './PremiumDashboardLayout'
+import {
   ShoppingCart,
   MessageCircle,
-  Calendar
+  Calendar,
+  ChevronRight,
+  Plus,
+  Activity,
+  Heart,
+  Settings,
+  Package,
+  CreditCard,
+  FileText,
+  Pill,
+  Clock,
+  User,
+  MapPin,
+  Shield
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 export const PatientDashboard = () => {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
+
+  interface DashboardStats {
+    activeOrders: number
+    savings: number
+    pendingPrescriptions: number
+    unreadMessages: number
+  }
+
+  const [stats, setStats] = useState<DashboardStats>({
+    activeOrders: 0,
+    savings: 45000,
+    pendingPrescriptions: 0,
+    unreadMessages: 0
+  })
+
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+
+  // Mock data for UI preview
   const [orders] = useState([
     {
       id: 'CMD001',
@@ -35,29 +60,62 @@ export const PatientDashboard = () => {
       items: 3,
       estimatedTime: '25 min',
       driver: 'Kouassi Jean'
-    },
-    {
-      id: 'CMD002', 
-      status: 'livre',
-      total: 12000,
-      pharmacy: 'Pharmacie du Plateau',
-      items: 2,
-      deliveredAt: '2024-01-10'
     }
   ])
 
   const [insurance] = useState({
     number: 'ASS123456789',
     coverage: 85,
-    remaining: 250000,
-    provider: 'CNPS'
+    remaining: 250, // in thousands
+    total: 500,
+    provider: 'Gras Savoye'
   })
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchDashboardStats()
+    }
+  }, [user])
+
+  const fetchDashboardStats = async () => {
+    if (!user) return
+    try {
+      const supabaseClient = supabase as any
+
+      const { count: ordersCount } = await supabaseClient
+        .from('orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('patient_id', user.id)
+        .not('status', 'in', '("delivered","cancelled")')
+
+      const { count: prescriptionsCount } = await supabaseClient
+        .from('prescriptions')
+        .select('*', { count: 'exact', head: true })
+        .eq('patient_id', user.id)
+        .eq('status', 'pending')
+
+      const { count: messagesCount } = await supabaseClient
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('receiver_id', user.id)
+        .eq('is_read', false)
+
+      setStats({
+        activeOrders: ordersCount || 0,
+        savings: 45000,
+        pendingPrescriptions: prescriptionsCount || 0,
+        unreadMessages: messagesCount || 0
+      })
+    } catch (error) {
+      console.error('Error fetching patient stats:', error)
+    }
+  }
 
   const getStatusBadge = (status: string) => {
     const styles = {
-      en_cours: 'bg-blue-100 text-blue-800 border-blue-200',
-      livre: 'bg-green-100 text-green-800 border-green-200',
-      annule: 'bg-red-100 text-red-800 border-red-200'
+      en_cours: 'bg-blue-500/10 text-blue-600 border-blue-200/50',
+      livre: 'bg-green-500/10 text-green-600 border-green-200/50',
+      annule: 'bg-red-500/10 text-red-600 border-red-200/50'
     }
     const labels = {
       en_cours: 'En cours',
@@ -65,231 +123,300 @@ export const PatientDashboard = () => {
       annule: 'Annulée'
     }
     return (
-      <Badge className={styles[status as keyof typeof styles]}>
+      <Badge className={`${styles[status as keyof typeof styles]} border px-3 py-1 rounded-full text-xs font-semibold`}>
         {labels[status as keyof typeof labels]}
       </Badge>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-background to-green-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Tableau de Bord Patient</h1>
-            <p className="text-muted-foreground">Gérez vos commandes et ordonnances</p>
+    <PremiumDashboardLayout activeTab="home">
+      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        {/* Welcome Section */}
+        <div className="flex justify-between items-end">
+          <div className="space-y-1">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground/90">
+              Bonjour, <span className="text-primary font-extrabold">{profile?.name || 'Patient'}</span>
+            </h2>
+            <p className="text-muted-foreground flex items-center gap-2">
+              <Activity className="h-4 w-4 text-green-500" />
+              Votre santé est notre priorité aujourd'hui.
+            </p>
           </div>
-          <Button className="flex items-center gap-2">
-            <ShoppingCart className="h-4 w-4" />
+          <Button
+            className="rounded-xl px-6 py-6 bg-primary hover:bg-primary-hover shadow-lg shadow-primary/20 transition-all hover:scale-105"
+            onClick={() => navigate('/medicaments')}
+          >
+            <Plus className="h-5 w-5 mr-2" />
             Nouvelle Commande
           </Button>
         </div>
 
-        {/* Stats Cards */}
+        {/* Bento Grid Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Commandes Actives</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">1</div>
-              <p className="text-xs text-muted-foreground">En cours de livraison</p>
-            </CardContent>
-          </Card>
+          <div className="glass-card p-6 flex flex-col justify-between h-40">
+            <div className="flex justify-between items-start">
+              <div className="p-3 bg-blue-500/10 rounded-xl">
+                <Package className="h-6 w-6 text-blue-600" />
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Commandes Actives</p>
+              <h3 className="text-3xl font-bold">{stats.activeOrders}</h3>
+            </div>
+          </div>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Économies ce mois</CardTitle>
-              <CreditCard className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">45 000 F</div>
-              <p className="text-xs text-muted-foreground">Grâce à l'assurance</p>
-            </CardContent>
-          </Card>
+          <div className="glass-card p-6 flex flex-col justify-between h-40">
+            <div className="flex justify-between items-start">
+              <div className="p-3 bg-green-500/10 rounded-xl">
+                <CreditCard className="h-6 w-6 text-green-600" />
+              </div>
+              <span className="text-[10px] font-bold text-green-600 bg-green-100 px-2 py-1 rounded">+12%</span>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Économies (FCFA)</p>
+              <h3 className="text-3xl font-bold">{stats.savings.toLocaleString()} F</h3>
+            </div>
+          </div>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Ordonnances</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">3</div>
-              <p className="text-xs text-muted-foreground">En attente</p>
-            </CardContent>
-          </Card>
+          <div className="glass-card p-6 flex flex-col justify-between h-40 border-primary/20 bg-primary/5">
+            <div className="flex justify-between items-start">
+              <div className="p-3 bg-primary/10 rounded-xl">
+                <FileText className="h-6 w-6 text-primary" />
+              </div>
+              <ChevronRight className="h-4 w-4 text-primary/50" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-primary uppercase tracking-wider">Ordonnances</p>
+              <h3 className="text-3xl font-bold text-primary">{stats.pendingPrescriptions}</h3>
+            </div>
+          </div>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Messages</CardTitle>
-              <MessageCircle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">2</div>
-              <p className="text-xs text-muted-foreground">Non lus</p>
-            </CardContent>
-          </Card>
+          <div className="glass-card p-6 flex flex-col justify-between h-40">
+            <div className="flex justify-between items-start">
+              <div className="p-3 bg-purple-500/10 rounded-xl">
+                <MessageCircle className="h-6 w-6 text-purple-600" />
+              </div>
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-purple-500"></span>
+              </span>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Messages</p>
+              <h3 className="text-3xl font-bold">{stats.unreadMessages}</h3>
+            </div>
+          </div>
         </div>
 
-        <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="orders">Commandes</TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Historique
-            </TabsTrigger>
-            <TabsTrigger value="insurance">Assurance</TabsTrigger>
-            <TabsTrigger value="prescriptions">Ordonnances</TabsTrigger>
-            <TabsTrigger value="profile">Profil</TabsTrigger>
-          </TabsList>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Dashboard Content */}
+          <div className="lg:col-span-2 space-y-8">
+            <Tabs defaultValue="orders" className="w-full">
+              <TabsList className="bg-white/40 backdrop-blur-md p-1 rounded-2xl border border-white/40 mb-6 flex w-full max-w-sm">
+                <TabsTrigger value="orders" className="flex-1 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Suivi</TabsTrigger>
+                <TabsTrigger value="history" className="flex-1 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Historique</TabsTrigger>
+                <TabsTrigger value="prescriptions" className="flex-1 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Docs</TabsTrigger>
+              </TabsList>
 
-          <TabsContent value="orders" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Mes Commandes</CardTitle>
-                <CardDescription>Historique et suivi de vos commandes</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {orders.map((order) => (
-                  <div key={order.id} className="border rounded-lg p-4 space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-semibold">{order.id}</h4>
-                        <p className="text-sm text-muted-foreground">{order.pharmacy}</p>
+              <TabsContent value="orders" className="space-y-4 outline-none">
+                {orders.length > 0 ? orders.map((order) => (
+                  <div key={order.id} className="glass-card glow-border overflow-hidden">
+                    <div className="p-6">
+                      <div className="flex justify-between items-center mb-6">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                            <Pill className="h-6 w-6" />
+                          </div>
+                          <div>
+                            <h4 className="font-extrabold text-lg flex items-center gap-2">
+                              {order.id}
+                              {getStatusBadge(order.status)}
+                            </h4>
+                            <p className="text-sm text-muted-foreground">{order.pharmacy}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-black text-foreground/80">{order.total.toLocaleString()} FCFA</p>
+                          <p className="text-xs text-muted-foreground">Paiement : Mobile Money</p>
+                        </div>
                       </div>
-                      {getStatusBadge(order.status)}
-                    </div>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Pill className="h-4 w-4 text-blue-500" />
-                        {order.items} articles
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8 p-4 bg-white/30 rounded-2xl border border-white/20">
+                        <div className="space-y-1">
+                          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Articles</p>
+                          <p className="text-sm font-bold flex items-center gap-2"><Pill className="h-3 w-3" /> {order.items}</p>
+                        </div>
+                        <div className="space-y-1 border-l border-white/20 pl-6">
+                          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Estimation</p>
+                          <p className="text-sm font-bold flex items-center gap-2"><Clock className="h-3 w-3 text-orange-500" /> {order.estimatedTime}</p>
+                        </div>
+                        <div className="space-y-1 border-l border-white/20 pl-6">
+                          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Livreur</p>
+                          <p className="text-sm font-bold flex items-center gap-2"><User className="h-3 w-3 text-purple-500" /> {order.driver}</p>
+                        </div>
+                        <div className="space-y-1 border-l border-white/20 pl-6">
+                          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Destination</p>
+                          <p className="text-sm font-bold flex items-center gap-2 truncate"><MapPin className="h-3 w-3 text-red-500" /> Plateau, Abidjan</p>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="h-4 w-4 text-green-500" />
-                        {order.total.toLocaleString()} F
-                      </div>
-                      {order.estimatedTime && (
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-orange-500" />
-                          {order.estimatedTime}
+
+                      {order.status === 'en_cours' && (
+                        <div className="space-y-4 bg-primary/5 p-4 rounded-2xl border border-primary/10">
+                          <div className="flex justify-between items-center text-sm font-bold">
+                            <span className="text-primary flex items-center gap-2">
+                              <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                              Expédition en cours
+                            </span>
+                            <span className="text-primary">75%</span>
+                          </div>
+                          <Progress value={75} className="h-2 bg-blue-100" />
+                          <div className="flex gap-3 pt-2">
+                            <Button className="flex-1 rounded-xl glass-morphism hover:bg-white/60 border-white/40 text-foreground" variant="outline">
+                              <MapPin className="h-4 w-4 mr-2 text-red-500" /> Suivre sur la carte
+                            </Button>
+                            <Button className="flex-1 rounded-xl glass-morphism hover:bg-white/60 border-white/40 text-foreground" variant="outline">
+                              <MessageCircle className="h-4 w-4 mr-2 text-blue-500" /> Contacter
+                            </Button>
+                          </div>
                         </div>
                       )}
-                      {order.driver && (
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-purple-500" />
-                          {order.driver}
-                        </div>
-                      )}
-                    </div>
-
-                    {order.status === 'en_cours' && (
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Progression</span>
-                          <span>75%</span>
-                        </div>
-                        <Progress value={75} className="h-2" />
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline">
-                            <MapPin className="h-4 w-4 mr-1" />
-                            Suivre
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <MessageCircle className="h-4 w-4 mr-1" />
-                            Contacter
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="history" className="space-y-6">
-            <OrderHistory 
-              userId={user?.id || ''} 
-              userName={profile?.name || ''} 
-              userEmail={profile?.email || ''} 
-            />
-          </TabsContent>
-
-          <TabsContent value="insurance" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Ma Couverture Assurance</CardTitle>
-                <CardDescription>Informations sur votre assurance santé</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg">
-                      <Shield className="h-8 w-8 text-blue-500" />
-                      <div>
-                        <h3 className="font-semibold">{insurance.provider}</h3>
-                        <p className="text-sm text-muted-foreground">N° {insurance.number}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span>Taux de couverture</span>
-                        <span className="font-semibold">{insurance.coverage}%</span>
-                      </div>
-                      <Progress value={insurance.coverage} className="h-2" />
                     </div>
                   </div>
+                )) : (
+                  <div className="glass-card p-12 text-center">
+                    <ShoppingCart className="h-16 w-16 mx-auto text-muted-foreground mb-4 opacity-20" />
+                    <h3 className="text-xl font-bold mb-2">Aucune commande active</h3>
+                    <p className="text-muted-foreground mb-6">Prêt pour votre prochaine livraison de médicaments ?</p>
+                    <Button onClick={() => navigate('/medicaments')} className="rounded-xl">Boutique</Button>
+                  </div>
+                )}
+              </TabsContent>
 
-                  <div className="space-y-4">
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-semibold mb-2">Plafond restant</h4>
-                      <div className="text-2xl font-bold text-green-600">
-                        {insurance.remaining.toLocaleString()} F
-                      </div>
-                      <p className="text-sm text-muted-foreground">Sur 500 000 F annuel</p>
+              <TabsContent value="history" className="outline-none">
+                <OrderHistory
+                  userId={user?.id || ''}
+                  userName={profile?.name || ''}
+                  userEmail={user?.email || ''}
+                />
+              </TabsContent>
+
+              <TabsContent value="prescriptions" className="outline-none">
+                <Card className="glass-morphism border-white/20">
+                  <CardHeader>
+                    <CardTitle>Mes Ordonnances</CardTitle>
+                    <CardDescription>Gérez vos prescriptions médicales en toute sécurité</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-12 bg-white/20 rounded-2xl border border-dashed border-white/40">
+                      <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4 opacity-50" />
+                      <h3 className="text-lg font-bold">Aucune ordonnance reçue</h3>
+                      <p className="text-muted-foreground mb-6 text-sm">Uploadez ou recevez vos ordonnances de votre médecin</p>
+                      <Button variant="outline" className="rounded-xl border-white/60 glass-morphism">
+                        <Plus className="h-4 w-4 mr-2" /> Ajouter un document
+                      </Button>
                     </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
 
-                    <Button className="w-full">
-                      <FileText className="h-4 w-4 mr-2" />
-                      Demander un remboursement
-                    </Button>
+          {/* Sidebar Widgets */}
+          <div className="space-y-8">
+            {/* Insurance Card - Premium Style */}
+            <div className="relative group overflow-hidden rounded-[2rem] p-[1px]">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800" />
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20" />
+              <div className="relative p-6 glass-morphism border-0 h-full flex flex-col justify-between min-h-[220px]">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-0.5">
+                    <p className="text-[10px] text-white/60 uppercase font-black tracking-widest">Membre Privilège</p>
+                    <h4 className="text-lg font-bold text-white tracking-tight">{insurance.provider}</h4>
+                  </div>
+                  <Shield className="h-8 w-8 text-white/40" />
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-white/50 uppercase font-bold tracking-widest">N° de police</p>
+                    <p className="text-xl font-mono font-bold text-white tracking-widest">
+                      {insurance.number.substring(0, 3)} {insurance.number.substring(3, 7)} {insurance.number.substring(7)}
+                    </p>
+                  </div>
+
+                  <div className="pt-2">
+                    <div className="flex justify-between text-[10px] text-white/70 font-bold mb-1.5 uppercase">
+                      <span>Plafond restant</span>
+                      <span>{insurance.coverage}%</span>
+                    </div>
+                    <Progress value={insurance.coverage} className="h-2 bg-white/20" />
+                    <p className="text-xs text-white/80 mt-2 font-bold">
+                      {insurance.remaining} 000 / {insurance.total} 000 F
+                    </p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </div>
+            </div>
 
-          <TabsContent value="prescriptions" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Mes Ordonnances</CardTitle>
-                <CardDescription>Gérez vos prescriptions médicales</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Aucune ordonnance</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Uploadez ou recevez vos ordonnances de votre médecin
-                  </p>
-                  <Button>
-                    <FileText className="h-4 w-4 mr-2" />
-                    Ajouter une ordonnance
-                  </Button>
+            {/* Health Pulse Card */}
+            <div className="glass-card p-6 border-green-500/20">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center">
+                  <Heart className="h-5 w-5 text-green-600 animate-pulse" />
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                <h4 className="font-bold">Mon Bien-être</h4>
+              </div>
+              <div className="space-y-4">
+                <div className="p-3 bg-white/30 rounded-xl border border-white/20 hover:bg-white/50 transition-colors cursor-pointer group">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Calendar className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">Prochain rappel</span>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1 ml-7">Demain à 08:30 - Vitamines</p>
+                </div>
+              </div>
+              <Button className="w-full mt-6 rounded-xl glass-morphism border-white/40 hover:bg-white/60" variant="outline">
+                Gérer les rappels
+              </Button>
+            </div>
 
-          <TabsContent value="profile" className="space-y-6">
-            <EditablePatientProfile />
-          </TabsContent>
-        </Tabs>
+            {/* Profile Selection / Correction (as seen in diagnostic) */}
+            <div className="glass-card p-6 bg-orange-500/5 border-orange-500/20">
+              <h4 className="font-bold mb-2 flex items-center gap-2">
+                <Settings className="h-4 w-4 text-orange-600" />
+                Gestion du profil
+              </h4>
+              <p className="text-xs text-muted-foreground mb-4">Besoin de modifier votre statut ou corriger vos informations ?</p>
+              <Button
+                onClick={() => setIsSettingsOpen(true)}
+                variant="outline"
+                className="w-full rounded-xl border-orange-200 text-orange-700 hover:bg-orange-100"
+              >
+                Paramètres complets
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+
+      <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+        <DialogContent className="max-w-4xl glass-morphism border-white/20 max-h-[90vh] overflow-y-auto rounded-3xl p-0">
+          <div className="bg-gradient-to-br from-primary/10 to-purple-500/10 p-6 border-b border-white/20">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black tracking-tight">Paramètres du Profil</DialogTitle>
+              <CardDescription>Mettez à jour vos informations personnelles et de santé</CardDescription>
+            </DialogHeader>
+          </div>
+          <div className="p-6">
+            <EditablePatientProfile />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </PremiumDashboardLayout>
   )
 }

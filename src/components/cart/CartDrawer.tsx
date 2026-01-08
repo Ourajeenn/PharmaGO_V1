@@ -8,6 +8,8 @@ import { useCart } from '@/contexts/CartContext';
 import { useNavigate } from 'react-router-dom';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import PaymentModal from '@/components/payment/PaymentModal';
+import { useState } from 'react';
 
 interface CartDrawerProps {
   children?: React.ReactNode;
@@ -16,6 +18,7 @@ interface CartDrawerProps {
 export const CartDrawer: React.FC<CartDrawerProps> = ({ children }) => {
   const { items, updateQuantity, removeFromCart, getTotalPrice, getItemCount, groupByPharmacy } = useCart();
   const navigate = useNavigate();
+  const [isPaymentOpen, setIsPaymentOpen] = useState(false);
 
   const groupedItems = groupByPharmacy();
   const totalPrice = getTotalPrice();
@@ -23,7 +26,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ children }) => {
 
   const handleCheckout = () => {
     if (items.length > 0) {
-      navigate('/paiement');
+      setIsPaymentOpen(true);
     }
   };
 
@@ -41,7 +44,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ children }) => {
           </Button>
         )}
       </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-lg">
+      <SheetContent className="w-full sm:max-w-lg backdrop-blur-xl bg-background/80 border-l border-border/50 rounded-l-3xl shadow-2xl">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <ShoppingCart className="h-5 w-5" />
@@ -59,70 +62,84 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ children }) => {
           <div className="flex flex-col h-full">
             <ScrollArea className="flex-1 py-4">
               <div className="space-y-4">
-                {Object.entries(groupedItems).map(([pharmacyId, pharmacyItems]) => (
-                  <Card key={pharmacyId} className="border-l-4 border-l-primary">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        {pharmacyItems[0].pharmacy_name}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {pharmacyItems.map((item) => (
-                        <div key={`${item.medicine.id}-${pharmacyId}`} className="flex items-center gap-3">
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-sm truncate">{item.medicine.name}</h4>
-                            <p className="text-xs text-muted-foreground">
-                              {item.medicine.dosage} • {item.medicine.form}
-                            </p>
-                            <p className="text-sm font-medium text-primary">
-                              {item.price.toLocaleString()} FCFA
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => updateQuantity(item.medicine.id, item.quantity - 1)}
-                            >
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => updateQuantity(item.medicine.id, item.quantity + 1)}
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive hover:text-destructive"
-                              onClick={() => removeFromCart(item.medicine.id)}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
+                {Object.entries(groupedItems).map(([pharmacyId, pharmacyItems]) => {
+                  const pharmacySubtotal = pharmacyItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                  const deliveryFee = 1000; // Fixed fee for now, or dynamic based on calculation
+
+                  return (
+                    <Card key={pharmacyId} className="border-l-4 border-l-primary shadow-lg backdrop-blur-md bg-card/60 rounded-2xl border border-border/30 hover:shadow-xl transition-all duration-300">
+                      <CardHeader className="pb-3 bg-gradient-to-r from-primary/10 to-primary/5 backdrop-blur-sm rounded-t-2xl">
+                        <div className="flex justify-between items-center">
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-primary" />
+                            {pharmacyItems[0].pharmacy_name}
+                          </CardTitle>
+                          <Badge variant="outline" className="text-xs font-normal">
+                            Livraison: {deliveryFee.toLocaleString()} F
+                          </Badge>
                         </div>
-                      ))}
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardHeader>
+                      <CardContent className="space-y-3 pt-3">
+                        {pharmacyItems.map((item) => (
+                          <div key={`${item.medicine.id}-${pharmacyId}`} className="flex items-center gap-3">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-sm truncate">{item.medicine.name}</h4>
+                              <p className="text-xs text-muted-foreground">
+                                {item.medicine.dosage} • {item.medicine.form}
+                              </p>
+                              <p className="text-sm font-medium text-primary">
+                                {item.price.toLocaleString()} FCFA
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => updateQuantity(item.medicine.id, item.quantity - 1)}
+                              >
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              <span className="w-6 text-center text-sm font-medium">{item.quantity}</span>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => updateQuantity(item.medicine.id, item.quantity + 1)}
+                              >
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => removeFromCart(item.medicine.id)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                        <div className="pt-2 mt-2 border-t flex justify-between items-center text-sm">
+                          <span className="text-muted-foreground">Sous-total pharmacie:</span>
+                          <span className="font-semibold">{pharmacySubtotal.toLocaleString()} FCFA</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             </ScrollArea>
 
-            <div className="border-t pt-4 space-y-4">
+            <div className="border-t border-border/30 pt-4 space-y-4 backdrop-blur-sm bg-background/60 rounded-2xl p-4 -mx-4 -mb-4">
               <div className="flex justify-between items-center">
                 <span className="text-lg font-semibold">Total:</span>
                 <span className="text-lg font-bold text-primary">
                   {totalPrice.toLocaleString()} FCFA
                 </span>
               </div>
-              <Button 
-                className="w-full" 
+              <Button
+                className="w-full"
                 onClick={handleCheckout}
                 disabled={items.length === 0}
               >
@@ -136,6 +153,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ children }) => {
           </div>
         )}
       </SheetContent>
+
+      <PaymentModal
+        isOpen={isPaymentOpen}
+        onClose={() => setIsPaymentOpen(false)}
+        totalAmount={totalPrice + 1000} // Adding simulated delivery fee
+      />
     </Sheet>
   );
 };

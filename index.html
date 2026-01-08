@@ -61,24 +61,26 @@
 
 <body>
   <div id="root"></div>
+  <div id="debug-log"
+    style="position:fixed;bottom:0;left:0;right:0;max-height:200px;overflow:auto;background:rgba(0,0,0,0.8);color:red;font-family:monospace;z-index:9999;padding:10px;display:none;">
+  </div>
+  <script>
+    window.onerror = function (msg, url, line, col, error) {
+      const debugLog = document.getElementById('debug-log');
+      debugLog.style.display = 'block';
+      debugLog.innerHTML += '<div>' + msg + ' at ' + url + ':' + line + '</div>';
+      return false;
+    };
+    window.onunhandledrejection = function (event) {
+      const debugLog = document.getElementById('debug-log');
+      debugLog.style.display = 'block';
+      debugLog.innerHTML += '<div>Unhandled rejection: ' + event.reason + '</div>';
+    };
+  </script>
   <script type="module" src="/src/main.tsx"></script>
 
   <!-- Service Worker Registration - TEMPORARILY DISABLED -->
-  <!--
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then((registration) => {
-            console.log('SW registered:', registration);
-          })
-          .catch((error) => {
-            console.log('SW registration failed:', error);
-          });
-      });
-    }
-  </script>
-  -->
+
 </body>
 
 </html>

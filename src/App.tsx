@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
 import { ECarnetProvider } from "@/contexts/ECarnetContext";
+import { ReloadPrompt } from "@/components/ReloadPrompt";
 import { Chatbot } from "@/components/chatbot/Chatbot";
 import Index from "./pages/Index";
 import IndexV2 from "./pages/IndexV2";
@@ -26,6 +27,7 @@ import ParapharmacyPage from "./pages/ParapharmacyPage";
 import MedicinesPage from "./pages/MedicinesPage";
 import ContactPage from "./pages/ContactPage";
 import ConsultationPage from "./pages/ConsultationPage";
+import PrescriptionsPage from "./pages/PrescriptionsPage";
 import ConsultationFeaturePage from "./pages/ConsultationFeaturePage";
 import DoctorProfilePage from "./pages/DoctorProfilePage";
 import ECarnetDashboard from "./pages/ECarnetDashboard";
@@ -37,6 +39,8 @@ import GrowthCharts from "./components/ecarnet/GrowthCharts";
 import PatientProfile from "./components/ecarnet/PatientProfile";
 import BirthRecord from "./components/ecarnet/BirthRecord";
 import AlertsPanel from "./components/ecarnet/AlertsPanel";
+import DeliveryTracking from "./pages/DeliveryTracking";
+import PharmacistDashboard from "./pages/PharmacistDashboard";
 
 import Login from "./pages/Login";
 
@@ -54,13 +58,7 @@ const App = () => {
   useEffect(() => {
     // Initialize E-Carnet mock data
     initializeMockData();
-
-    // Simulate loading time or wait for resources
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 2000); // 2 seconds preloader on every refresh
-
-    return () => clearTimeout(timer);
+    setLoading(false);
   }, []);
 
   if (loading) {
@@ -73,6 +71,7 @@ const App = () => {
         <CartProvider>
           <TooltipProvider>
             <Toaster />
+            <ReloadPrompt />
             <Sonner />
             <BrowserRouter>
               <Routes>
@@ -89,14 +88,17 @@ const App = () => {
                 <Route path="/auth/doctor" element={<DoctorAuth />} />
                 <Route path="/auth/insurer" element={<InsurerAuth />} />
                 <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/connexion" element={<Login />} />
+                {/* <Route path="/login" element={<Login />} /> 
+                <Route path="/connexion" element={<Login />} /> Redundant, Auth handles this */}
                 <Route path="/pharmacies" element={<PharmaciesPage />} />
                 <Route path="/suivi" element={<TrackingPage />} />
+                <Route path="/livraison/suivi" element={<DeliveryTracking />} />
+                <Route path="/pharmacien/dashboard" element={<PharmacistDashboard />} />
                 <Route path="/paiement" element={<PaymentPage />} />
                 <Route path="/parapharmacie" element={<ParapharmacyPage />} />
                 <Route path="/medicaments" element={<MedicinesPage />} />
                 <Route path="/contact" element={<ContactPage />} />
+                <Route path="/ordonnances" element={<PrescriptionsPage />} />
                 <Route path="/consultation" element={<ConsultationPage />} />
                 <Route path="/consultation/:featureId" element={<ConsultationFeaturePage />} />
                 <Route path="/doctor/:doctorId" element={<DoctorProfilePage />} />

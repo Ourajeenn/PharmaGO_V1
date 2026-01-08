@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+﻿import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -26,6 +26,8 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { realPharmacies, communes as communesList, Pharmacy } from '@/data/pharmacyData';
 import { PharmacyService } from '@/services/PharmacyService';
+import { useGeolocation } from "@/hooks/useGeolocation";
+import { getDistance } from "geolib";
 
 // Using imported real pharmacy data from pharmacyData.ts
 // Initial data for SSR/Static, but we will use state
@@ -46,7 +48,14 @@ const PharmacyFinder = ({ onBackToHome }: PharmacyFinderProps) => {
   const [showOnlyOpen, setShowOnlyOpen] = useState(false);
   const [showOnlyDelivery, setShowOnlyDelivery] = useState(false);
   const [favorites, setFavorites] = useState<number[]>([]);
+  const location = useGeolocation();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+  useEffect(() => {
+    if (location.coordinates) {
+      setUserLocation(location.coordinates);
+    }
+  }, [location.loaded, location.coordinates]);
 
   // State for data from API
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>(realPharmacies); // Default to local data initially
@@ -69,21 +78,6 @@ const PharmacyFinder = ({ onBackToHome }: PharmacyFinderProps) => {
     loadData();
   }, []);
 
-  useEffect(() => {
-    // Simuler la géolocalisation
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
-        },
-        (error) => console.log("Géolocalisation désactivée")
-      );
-    }
-  }, []);
-
   const toggleFavorite = (id: number) => {
     setFavorites(prev =>
       prev.includes(id)
@@ -92,15 +86,42 @@ const PharmacyFinder = ({ onBackToHome }: PharmacyFinderProps) => {
     );
   };
 
-  const filteredPharmacies = pharmacies.filter(pharmacy => {
-    const matchesSearch = pharmacy.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      pharmacy.address.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCommune = selectedCommune === "Toutes" || pharmacy.commune === selectedCommune;
-    const matchesOpenStatus = !showOnlyOpen || pharmacy.isOpen;
-    const matchesDelivery = !showOnlyDelivery || pharmacy.hasDelivery;
+  // Optimize filtering with useMemo
+  const filteredPharmacies = useMemo(() => {
+    return pharmacies
+      .map(pharmacy => {
+        let distanceFormatted = pharmacy.distance;
+        let distVal = 0;
 
-    return matchesSearch && matchesCommune && matchesOpenStatus && matchesDelivery;
-  });
+        // Calculate distance if user location is available
+        if (userLocation) {
+          const dist = getDistance(
+            userLocation,
+            { latitude: pharmacy.coordinates.lat, longitude: pharmacy.coordinates.lng }
+          );
+          // Format distance: < 1km in m, else in km
+          distanceFormatted = dist < 1000 ? `${dist}m` : `${(dist / 1000).toFixed(1)}km`;
+          distVal = dist;
+        }
+
+        return { ...pharmacy, distance: distanceFormatted, realDistanceVal: distVal };
+      })
+      .filter(pharmacy => {
+        const matchesSearch = pharmacy.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          pharmacy.location.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesCommune = selectedCommune === "Toutes" || pharmacy.commune === selectedCommune;
+        const matchesOpen = !showOnlyOpen || pharmacy.isOpen;
+        const matchesDelivery = !showOnlyDelivery || pharmacy.hasDelivery;
+        return matchesSearch && matchesCommune && matchesOpen && matchesDelivery;
+      })
+      .sort((a, b) => {
+        // Sort by distance if user location is known, otherwise by name
+        if (userLocation) {
+          return a.realDistanceVal - b.realDistanceVal;
+        }
+        return a.name.localeCompare(b.name);
+      });
+  }, [pharmacies, searchTerm, selectedCommune, showOnlyOpen, showOnlyDelivery, userLocation]);
 
   const openPharmacies = pharmacies.filter(p => p.isOpen).length;
   const deliveryPharmacies = pharmacies.filter(p => p.hasDelivery).length;
@@ -285,6 +306,11 @@ const PharmacyFinder = ({ onBackToHome }: PharmacyFinderProps) => {
                             >
                               {pharmacy.isOpen ? "🟢 Ouverte" : "🔴 Fermée"}
                             </Badge>
+                            {pharmacy.isOnGuard && (
+                              <Badge className="bg-red-100 text-red-600 border-red-200 animate-pulse">
+                                🏥 De Garde
+                              </Badge>
+                            )}
                             {pharmacy.hasDelivery && (
                               <Badge className="bg-primary/10 text-primary border-primary/20">
                                 <Truck className="h-3 w-3 mr-1" />
@@ -324,7 +350,7 @@ const PharmacyFinder = ({ onBackToHome }: PharmacyFinderProps) => {
                           <MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                           <div className="text-sm">
                             <div>{pharmacy.address}</div>
-                            <div className="text-muted-foreground">{pharmacy.commune} • {pharmacy.distance}</div>
+                            <div className="text-muted-foreground">{pharmacy.commune} • {pharmacy.realDistance || pharmacy.distance}</div>
                           </div>
                         </div>
 
@@ -508,11 +534,11 @@ const PharmacyFinder = ({ onBackToHome }: PharmacyFinderProps) => {
                 </CardContent>
               </Card>
 
-              {/* 24/7 Pharmacies */}
+              {/* 24/7 & Guard Pharmacies */}
               <div>
-                <h3 className="text-xl font-semibold mb-4">Pharmacies ouvertes 24h/24</h3>
+                <h3 className="text-xl font-semibold mb-4">Pharmacies de Garde & 24h/24</h3>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {pharmacies.filter(p => p.hours === "24h/24").map(pharmacy => (
+                  {pharmacies.filter(p => p.isOnGuard || p.hours.includes("24h")).map(pharmacy => (
                     <Card
                       key={pharmacy.id}
                       className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-secondary/30 bg-gradient-to-br from-card to-secondary/5"
@@ -565,7 +591,7 @@ const PharmacyFinder = ({ onBackToHome }: PharmacyFinderProps) => {
                             <MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                             <div className="text-sm">
                               <div>{pharmacy.address}</div>
-                              <div className="text-muted-foreground">{pharmacy.commune} • {pharmacy.distance}</div>
+                              <div className="text-muted-foreground">{pharmacy.commune} • {pharmacy.realDistance || pharmacy.distance}</div>
                             </div>
                           </div>
 

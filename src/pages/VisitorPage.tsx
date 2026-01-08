@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShoppingCart, Eye, Search, MapPin } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Eye, Search, MapPin } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import NetworkBackground from "@/components/NetworkBackground";
@@ -14,7 +14,15 @@ const VisitorPage = () => {
       <NetworkBackground />
       <Header />
 
-      <main className="relative z-10 container mx-auto px-4 py-16">
+      <main className="relative z-10 container mx-auto px-4 py-8">
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/')}
+          className="flex items-center gap-2 mb-8 text-white hover:bg-white/10 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Retour à l'accueil
+        </Button>
         <div className="max-w-4xl mx-auto space-y-8">
           <div className="text-center space-y-4">
             <h1 className="text-4xl font-bold">Mode Visiteur</h1>

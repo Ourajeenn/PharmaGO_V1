@@ -1,48 +1,160 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useAuth } from '@/hooks/useAuth'
+import { supabase } from '@/integrations/supabase/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
-import { Save, Edit, X, Upload } from 'lucide-react'
+import { Save, Edit, X, Upload, Loader2 } from 'lucide-react'
 
 interface PatientProfileData {
   name: string
   email: string
   phone: string
-  dateOfBirth: string
-  address: string
-  insuranceId: string
-  cmuNumber: string
-  emergencyContact: string
-  bloodType: string
-  allergies: string
-  chronicConditions: string
+  dateOfBirth?: string
+  address?: string
+  insuranceId?: string
+  cmuNumber?: string
+  emergencyContact?: string
+  bloodType?: string
+  allergies?: string
+  chronicConditions?: string
 }
 
-export const EditablePatientProfile = () => {
+// Add props interface
+interface EditablePatientProfileProps {
+  userId?: string
+}
+
+export const EditablePatientProfile = ({ userId }: EditablePatientProfileProps = {}) => {
+  const { user: currentUser } = useAuth()
+  // Use provided userId or fallback to current authenticated user
+  const effectiveUserId = userId || currentUser?.id
+
   const [isEditing, setIsEditing] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+
   const [profileData, setProfileData] = useState<PatientProfileData>({
-    name: 'Jean Kouassi',
-    email: 'jean.kouassi@example.com',
-    phone: '+225 07 XX XX XX XX',
-    dateOfBirth: '1985-03-15',
-    address: 'Cocody, Angré 7ème Tranche, Abidjan',
-    insuranceId: 'CNPS123456789',
-    cmuNumber: 'CMU987654321',
-    emergencyContact: '+225 05 XX XX XX XX',
-    bloodType: 'O+',
-    allergies: 'Pénicilline, Arachides',
-    chronicConditions: 'Hypertension artérielle'
+    name: '',
+    email: '',
+    phone: '',
+    dateOfBirth: '',
+    address: '',
+    insuranceId: '',
+    cmuNumber: '',
+    emergencyContact: '',
+    bloodType: '',
+    allergies: '',
+    chronicConditions: ''
   })
 
-  const [editedData, setEditedData] = useState(profileData)
+  // Buffer for edits
+  const [editedData, setEditedData] = useState<PatientProfileData>(profileData)
 
-  const handleSave = () => {
-    setProfileData(editedData)
-    setIsEditing(false)
-    toast.success('Profil mis à jour avec succès')
+  useEffect(() => {
+    if (effectiveUserId) {
+      fetchPatientData()
+    }
+  }, [effectiveUserId])
+
+  const fetchPatientData = async () => {
+    if (!effectiveUserId) return
+
+    try {
+      setLoading(true)
+
+      // 1. Get base profile
+      const { data: userProfile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', effectiveUserId)
+        .single()
+
+      if (profileError) throw profileError
+
+      // 2. Get patient specific data
+      const { data: patientData, error: patientError } = await supabase
+        .from('patients')
+        .select('*')
+        .eq('user_id', effectiveUserId)
+        .single()
+
+      // It's possible patient table entry doesn't exist yet if created via old flow
+      // so we don't throw immediately, just log
+      if (patientError && patientError.code !== 'PGRST116') {
+        console.error('Error fetching patient details:', patientError)
+      }
+
+      const mergedData: PatientProfileData = {
+        name: userProfile?.name || '',
+        email: userProfile?.email || '', // Email might not be in profile, maybe fetch from auth? Admin can't see auth email easily. For now use profile email if exists.
+        phone: userProfile?.phone || '',
+        dateOfBirth: patientData?.date_of_birth || '',
+        address: patientData?.address || '',
+        insuranceId: patientData?.insurance_id || '',
+        cmuNumber: patientData?.cmu_number || '',
+        emergencyContact: patientData?.emergency_contact || '',
+        bloodType: patientData?.blood_type || '',
+        allergies: patientData?.allergies || '',
+        chronicConditions: patientData?.medical_history || '' // Mapping 'medical_history' to 'chronicConditions' for now
+      }
+
+      setProfileData(mergedData)
+      setEditedData(mergedData)
+
+    } catch (error) {
+      console.error('Error loading profile:', error)
+      toast.error("Erreur lors du chargement du profil")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSave = async () => {
+    try {
+      setSaving(true)
+
+      // 1. Update user_profiles
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .update({
+          name: editedData.name,
+          phone: editedData.phone
+        })
+        .eq('id', effectiveUserId)
+
+      if (profileError) throw profileError
+
+      // 2. Upsert patients table
+      const { error: patientError } = await supabase
+        .from('patients')
+        .upsert({
+          user_id: effectiveUserId,
+          address: editedData.address,
+          insurance_id: editedData.insuranceId,
+          cmu_number: editedData.cmuNumber,
+          emergency_contact: editedData.emergencyContact,
+          blood_type: editedData.bloodType,
+          allergies: editedData.allergies,
+          medical_history: editedData.chronicConditions, // Mapping back
+          // date_of_birth: editedData.dateOfBirth // DB might expect Date type or string
+        })
+
+      if (patientError) throw patientError
+
+      setProfileData(editedData)
+      setIsEditing(false)
+      toast.success('Profil mis à jour avec succès')
+
+    } catch (error) {
+      console.error('Error saving profile:', error)
+      toast.error("Erreur lors de la sauvegarde")
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleCancel = () => {
@@ -52,6 +164,10 @@ export const EditablePatientProfile = () => {
 
   const handleChange = (field: keyof PatientProfileData, value: string) => {
     setEditedData(prev => ({ ...prev, [field]: value }))
+  }
+
+  if (loading) {
+    return <div className="p-8 text-center">Chargement du profil...</div>
   }
 
   return (
@@ -69,11 +185,11 @@ export const EditablePatientProfile = () => {
             </Button>
           ) : (
             <div className="flex gap-2">
-              <Button onClick={handleSave} size="sm">
-                <Save className="h-4 w-4 mr-2" />
+              <Button onClick={handleSave} size="sm" disabled={saving}>
+                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Enregistrer
               </Button>
-              <Button onClick={handleCancel} size="sm" variant="outline">
+              <Button onClick={handleCancel} size="sm" variant="outline" disabled={saving}>
                 <X className="h-4 w-4 mr-2" />
                 Annuler
               </Button>
@@ -82,23 +198,24 @@ export const EditablePatientProfile = () => {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Photo de profil */}
+        {/* Photo de profil (Placeholder) */}
         <div className="flex items-center gap-4 p-4 bg-secondary/10 rounded-lg">
           <div className="h-20 w-20 bg-primary/20 rounded-full flex items-center justify-center text-3xl">
             👤
           </div>
-          {isEditing && (
+          {/* Feature not implemented yet */}
+          {/* {isEditing && (
             <Button variant="outline" size="sm">
               <Upload className="h-4 w-4 mr-2" />
               Changer la photo
             </Button>
-          )}
+          )} */}
         </div>
 
         {/* Informations personnelles */}
         <div className="space-y-4">
           <h3 className="font-semibold text-lg border-b pb-2">Informations Personnelles</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nom complet</Label>
@@ -109,22 +226,18 @@ export const EditablePatientProfile = () => {
                   onChange={(e) => handleChange('name', e.target.value)}
                 />
               ) : (
-                <p className="p-2 bg-secondary/5 rounded">{profileData.name}</p>
+                <p className="p-2 bg-secondary/5 rounded">{profileData.name || 'Non renseigné'}</p>
               )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              {isEditing ? (
-                <Input
-                  id="email"
-                  type="email"
-                  value={editedData.email}
-                  onChange={(e) => handleChange('email', e.target.value)}
-                />
-              ) : (
-                <p className="p-2 bg-secondary/5 rounded">{profileData.email}</p>
-              )}
+              <Input
+                id="email"
+                value={editedData.email}
+                disabled={true} // Email cannot be changed here
+                className="bg-muted"
+              />
             </div>
 
             <div className="space-y-2">
@@ -136,23 +249,7 @@ export const EditablePatientProfile = () => {
                   onChange={(e) => handleChange('phone', e.target.value)}
                 />
               ) : (
-                <p className="p-2 bg-secondary/5 rounded">{profileData.phone}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="dateOfBirth">Date de naissance</Label>
-              {isEditing ? (
-                <Input
-                  id="dateOfBirth"
-                  type="date"
-                  value={editedData.dateOfBirth}
-                  onChange={(e) => handleChange('dateOfBirth', e.target.value)}
-                />
-              ) : (
-                <p className="p-2 bg-secondary/5 rounded">
-                  {new Date(profileData.dateOfBirth).toLocaleDateString('fr-FR')}
-                </p>
+                <p className="p-2 bg-secondary/5 rounded">{profileData.phone || 'Non renseigné'}</p>
               )}
             </div>
 
@@ -165,7 +262,7 @@ export const EditablePatientProfile = () => {
                   onChange={(e) => handleChange('address', e.target.value)}
                 />
               ) : (
-                <p className="p-2 bg-secondary/5 rounded">{profileData.address}</p>
+                <p className="p-2 bg-secondary/5 rounded">{profileData.address || 'Non renseigné'}</p>
               )}
             </div>
 
@@ -178,7 +275,7 @@ export const EditablePatientProfile = () => {
                   onChange={(e) => handleChange('emergencyContact', e.target.value)}
                 />
               ) : (
-                <p className="p-2 bg-secondary/5 rounded">{profileData.emergencyContact}</p>
+                <p className="p-2 bg-secondary/5 rounded">{profileData.emergencyContact || 'Non renseigné'}</p>
               )}
             </div>
           </div>
@@ -187,7 +284,7 @@ export const EditablePatientProfile = () => {
         {/* Informations de santé */}
         <div className="space-y-4">
           <h3 className="font-semibold text-lg border-b pb-2">Informations de Santé</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="bloodType">Groupe sanguin</Label>
@@ -196,9 +293,10 @@ export const EditablePatientProfile = () => {
                   id="bloodType"
                   value={editedData.bloodType}
                   onChange={(e) => handleChange('bloodType', e.target.value)}
+                  placeholder="Ex: O+"
                 />
               ) : (
-                <p className="p-2 bg-secondary/5 rounded">{profileData.bloodType}</p>
+                <p className="p-2 bg-secondary/5 rounded">{profileData.bloodType || 'Non renseigné'}</p>
               )}
             </div>
 
@@ -211,7 +309,7 @@ export const EditablePatientProfile = () => {
                   onChange={(e) => handleChange('insuranceId', e.target.value)}
                 />
               ) : (
-                <p className="p-2 bg-secondary/5 rounded">{profileData.insuranceId}</p>
+                <p className="p-2 bg-secondary/5 rounded">{profileData.insuranceId || 'Non renseigné'}</p>
               )}
             </div>
 
@@ -224,7 +322,7 @@ export const EditablePatientProfile = () => {
                   onChange={(e) => handleChange('cmuNumber', e.target.value)}
                 />
               ) : (
-                <p className="p-2 bg-secondary/5 rounded">{profileData.cmuNumber}</p>
+                <p className="p-2 bg-secondary/5 rounded">{profileData.cmuNumber || 'Non renseigné'}</p>
               )}
             </div>
 
@@ -238,12 +336,12 @@ export const EditablePatientProfile = () => {
                   placeholder="Listez vos allergies connues..."
                 />
               ) : (
-                <p className="p-2 bg-secondary/5 rounded min-h-[60px]">{profileData.allergies}</p>
+                <p className="p-2 bg-secondary/5 rounded min-h-[60px]">{profileData.allergies || 'Aucune allergie signalée'}</p>
               )}
             </div>
 
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="chronicConditions">Conditions chroniques</Label>
+              <Label htmlFor="chronicConditions">Conditions chroniques (Antécédents)</Label>
               {isEditing ? (
                 <Textarea
                   id="chronicConditions"
@@ -252,7 +350,7 @@ export const EditablePatientProfile = () => {
                   placeholder="Listez vos conditions chroniques..."
                 />
               ) : (
-                <p className="p-2 bg-secondary/5 rounded min-h-[60px]">{profileData.chronicConditions}</p>
+                <p className="p-2 bg-secondary/5 rounded min-h-[60px]">{profileData.chronicConditions || 'Aucun antécédent signalé'}</p>
               )}
             </div>
           </div>

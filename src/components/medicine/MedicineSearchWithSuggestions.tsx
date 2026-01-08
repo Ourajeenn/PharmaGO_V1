@@ -6,9 +6,11 @@ import { Card } from "@/components/ui/card";
 interface MedicineSearchProps {
   onSearch: (term: string) => void;
   onSelect?: (medicine: string) => void;
+  className?: string;
+  placeholder?: string;
 }
 
-const MedicineSearchWithSuggestions = ({ onSearch, onSelect }: MedicineSearchProps) => {
+const MedicineSearchWithSuggestions = ({ onSearch, onSelect, className, placeholder }: MedicineSearchProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -17,7 +19,7 @@ const MedicineSearchWithSuggestions = ({ onSearch, onSelect }: MedicineSearchPro
   // Mock medicines database - in production, this would come from API
   const medicines = [
     "Doliprane 1000mg",
-    "Doliprane 500mg", 
+    "Doliprane 500mg",
     "Spasfon",
     "Amoxicilline 500mg",
     "Amoxicilline 1g",
@@ -75,11 +77,11 @@ const MedicineSearchWithSuggestions = ({ onSearch, onSelect }: MedicineSearchPro
   };
 
   return (
-    <div ref={wrapperRef} className="relative w-full">
+    <div ref={wrapperRef} className={`relative w-full ${className || ''}`}>
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Rechercher un médicament..."
+          placeholder={placeholder || "Rechercher un médicament..."}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}

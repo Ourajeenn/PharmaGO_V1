@@ -22,6 +22,9 @@ interface Medicine {
   dosage?: string
   sideEffects?: string[]
   manufacturer?: string
+  ammNumber?: string
+  countryOfOrigin?: string
+  genericName?: string
 }
 
 interface MedicineDetailDialogProps {
@@ -152,18 +155,35 @@ export const MedicineDetailDialog = ({ medicine, open, onOpenChange }: MedicineD
               </div>
             )}
 
-            {/* Manufacturer */}
-            {medicine.manufacturer && (
-              <div className="text-sm text-muted-foreground">
-                <span className="font-medium">Fabricant:</span> {medicine.manufacturer}
+            {/* Manufacturer & Origin */}
+            {(medicine.manufacturer || medicine.countryOfOrigin || medicine.ammNumber) && (
+              <div className="space-y-2 text-sm text-muted-foreground bg-secondary/20 p-4 rounded-lg border border-secondary/30">
+                {medicine.ammNumber && (
+                  <div className="flex justify-between border-b border-secondary/30 pb-2 mb-2">
+                    <span className="font-medium text-foreground">N° AMM:</span>
+                    <span className="font-mono">{medicine.ammNumber}</span>
+                  </div>
+                )}
+                {medicine.manufacturer && (
+                  <div className="flex justify-between">
+                    <span className="font-medium text-foreground">Fabricant:</span>
+                    <span>{medicine.manufacturer}</span>
+                  </div>
+                )}
+                {medicine.countryOfOrigin && (
+                  <div className="flex justify-between mt-1">
+                    <span className="font-medium text-foreground">Pays d'origine:</span>
+                    <span>{medicine.countryOfOrigin}</span>
+                  </div>
+                )}
               </div>
             )}
 
             <Separator />
 
             {/* Add to Cart Button */}
-            <Button 
-              className="w-full" 
+            <Button
+              className="w-full"
               size="lg"
               disabled={!medicine.inStock}
               onClick={handleAddToCart}

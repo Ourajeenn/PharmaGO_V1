@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, Eye, EyeOff, User, Heart, Shield } from 'lucide-react'
+import { Loader2, Eye, EyeOff, User, Heart, Shield, ArrowLeft } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
 interface PatientAuthFormProps {
@@ -92,8 +92,8 @@ export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
         email: email.trim().toLowerCase(),
         phone: phone.trim(),
         role: 'patient' as const,
-        insuranceNumber: insuranceNumber.trim() || undefined,
-        cmuNumber: cmuNumber.trim() || undefined,
+        insurance_id: insuranceNumber.trim() || undefined,
+        cmu_number: cmuNumber.trim() || undefined,
       }
 
       const { error } = await signUp(email.trim().toLowerCase(), password, userData)
@@ -139,11 +139,12 @@ export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-background to-green-50 flex items-center justify-center p-4">
       <div className="w-full max-w-6xl">
         <Button
-          variant="outline"
+          variant="ghost"
           onClick={() => window.history.back()}
-          className="mb-4 relative z-10"
+          className="mb-6 flex items-center gap-2 hover:bg-primary/10 transition-colors"
         >
-          ← Retour
+          <ArrowLeft className="h-4 w-4" />
+          Retour
         </Button>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">

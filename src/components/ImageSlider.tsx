@@ -94,21 +94,21 @@ const ImageSlider = () => {
       <ScrollReveal animation="zoom-in" delay={0.2}>
         <div className="relative max-w-4xl mx-auto">
           {/* Main Slider Card */}
-          <Card className="relative overflow-hidden h-80 md:h-96">
-            <div className={`absolute inset-0 bg-gradient-to-br ${currentSlideData.gradient} opacity-90`} />
+          <Card className="relative overflow-hidden min-h-[450px] md:h-[500px] flex items-center transition-all duration-500">
+            <div className={`absolute inset-0 bg-gradient-to-br ${currentSlideData.gradient} opacity-95`} />
 
             {/* Background Pattern */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-10 right-10 w-32 h-32 rounded-full bg-white/20 animate-pulse"></div>
-              <div className="absolute bottom-10 left-10 w-24 h-24 rounded-full bg-white/10 animate-pulse delay-1000"></div>
-              <div className="absolute top-1/2 left-1/2 w-40 h-40 rounded-full bg-white/5 animate-pulse delay-500"></div>
+            <div className="absolute inset-0 opacity-15">
+              <div className="absolute top-10 right-10 w-48 h-48 rounded-full bg-white/20 animate-pulse blur-2xl"></div>
+              <div className="absolute bottom-10 left-10 w-32 h-32 rounded-full bg-white/10 animate-pulse delay-1000 blur-xl"></div>
+              <div className="absolute top-1/2 left-1/2 w-64 h-64 rounded-full bg-white/5 animate-pulse delay-500 blur-3xl"></div>
             </div>
 
             {/* Content */}
-            <div className="relative z-10 h-full flex items-center">
-              <div className="container mx-auto px-8">
-                <div className="grid md:grid-cols-2 gap-8 items-center">
-                  <div className="text-white space-y-6">
+            <div className="relative z-10 w-full py-12">
+              <div className="container mx-auto px-6 md:px-12">
+                <div className="grid md:grid-cols-2 gap-12 items-center">
+                  <div className="text-white space-y-8">
                     <div className="space-y-3">
                       <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30">
                         {currentSlideData.badge}
@@ -124,19 +124,24 @@ const ImageSlider = () => {
                       </p>
                     </div>
 
-                    <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-                      <p className="text-white font-semibold text-lg mx-[19px]">
-                        🎉 {currentSlideData.offer}
+                    <div className="bg-white/15 backdrop-blur-md rounded-xl p-4 border border-white/20 shadow-inner max-w-fit">
+                      <p className="text-white font-bold text-lg flex items-center gap-2">
+                        <span className="text-2xl">🎉</span> {currentSlideData.offer}
                       </p>
                     </div>
 
-                    <div className="flex flex-wrap gap-3">
-                      <Button size="default" className="bg-white text-gray-900 hover:bg-white/90 shadow-lg">
+                    <div className="flex flex-wrap gap-4 pt-2">
+                      <Button size="lg" className="bg-white text-gray-900 hover:bg-white/90 shadow-xl font-bold transition-all duration-300 hover:scale-105 px-8">
                         {currentSlideData.cta}
                       </Button>
-                      <Button variant="outline" size="sm" className="border-white/30 text-white hover:bg-white/10 hover:text-white" onClick={() => toggleFavorite(currentSlideData.id)}>
-                        <Heart className={`h-4 w-4 mr-2 ${favorites.includes(currentSlideData.id) ? 'fill-current' : ''}`} />
-                        {favorites.includes(currentSlideData.id) ? 'Sauvegardé' : 'Sauvegarder'}
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        className="bg-black/20 border-white/40 text-white hover:bg-white hover:text-gray-900 hover:border-white shadow-lg font-bold transition-all duration-300 hover:scale-105 px-8 flex items-center gap-2"
+                        onClick={() => toggleFavorite(currentSlideData.id)}
+                      >
+                        <Heart className={`h-5 w-5 ${favorites.includes(currentSlideData.id) ? 'fill-red-500 text-red-500' : ''} transition-colors duration-300`} />
+                        <span>{favorites.includes(currentSlideData.id) ? 'Sauvegardé' : 'Sauvegarder'}</span>
                       </Button>
                     </div>
                   </div>

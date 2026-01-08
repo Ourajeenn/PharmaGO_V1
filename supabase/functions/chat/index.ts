@@ -1,10 +1,21 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
+// @ts-nocheck
+import { serve } from "std/http/server";
+import { createClient } from "supabase";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+interface ChatRequest {
+  message: string;
+  conversationId?: string;
+}
+
+interface Message {
+  role: "system" | "user" | "assistant";
+  content: string;
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -12,7 +23,14 @@ serve(async (req) => {
   }
 
   try {
-    const { message, conversationId } = await req.json();
+    const { message, conversationId }: ChatRequest = await req.json();
+
+    if (!message) {
+      return new Response(
+        JSON.stringify({ error: "Le message est requis." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
     if (!OPENAI_API_KEY) {
@@ -54,7 +72,7 @@ serve(async (req) => {
     if (historyError) throw historyError;
 
     // Build messages for AI
-    const messages = history.map((msg: any) => ({
+    const messages: Message[] = history.map((msg: any) => ({
       role: msg.role,
       content: msg.content,
     }));
@@ -92,7 +110,7 @@ Réponds de manière claire, concise et professionnelle en français. Propose to
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
@@ -101,25 +119,25 @@ Réponds de manière claire, concise et professionnelle en français. Propose to
     });
 
     if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error("AI gateway error:", response.status, errorData);
+
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "Limite de requêtes atteinte, veuillez réessayer plus tard." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Paiement requis pour continuer." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
+
       throw new Error("Erreur du service IA");
     }
 
     const data = await response.json();
-    const aiMessage = data.choices[0].message.content;
+    const aiMessage = data.choices?.[0]?.message?.content;
+
+    if (!aiMessage) {
+      throw new Error("L'IA a renvoyé une réponse vide.");
+    }
 
     // Save AI response
     await supabase.from("chat_messages").insert({

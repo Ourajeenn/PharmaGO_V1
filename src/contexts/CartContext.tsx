@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Medicine } from '@/lib/supabase';
+import { mvpStocks } from '@/data/mvpMockData';
+import { toast } from "sonner";
 
 export interface CartItem {
   medicine: Medicine;
@@ -47,6 +49,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [items]);
 
   const addToCart = (newItem: CartItem) => {
+    // Stock Check Logic (Epic 2 - MED-02 / ORDER-01)
+    const stockEntry = mvpStocks.find(s => s.pharmacyId === newItem.pharmacy_id && s.medicineId === newItem.medicine.id);
+    const maxStock = stockEntry ? stockEntry.quantity : 99; // Default to 99 if not found in mock
+
+    const currentQtyInCart = items.find(
+      item => item.medicine.id === newItem.medicine.id && item.pharmacy_id === newItem.pharmacy_id
+    )?.quantity || 0;
+
+    if (currentQtyInCart + newItem.quantity > maxStock) {
+      toast.error(`Stock insuffisant. Seulement ${maxStock} disponible(s).`);
+      return;
+    }
+
     setItems(prevItems => {
       const existingItem = prevItems.find(
         item => item.medicine.id === newItem.medicine.id && item.pharmacy_id === newItem.pharmacy_id
@@ -60,6 +75,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
       }
 
+      toast.success("Produit ajouté au panier");
       return [...prevItems, newItem];
     });
   };

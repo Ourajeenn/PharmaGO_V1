@@ -86,6 +86,16 @@ export interface Medicine {
   requires_prescription: boolean
   category?: string
   manufacturer?: string
+  // AIRP-specific fields
+  amm_number?: string
+  amm_acquisition_date?: string
+  amm_expiration_date?: string
+  dci?: string // Dénomination Commune Internationale
+  country_of_origin?: string
+  rcp_url?: string // Résumé des Caractéristiques du Produit
+  notice_url?: string
+  product_type?: 'medication' | 'phytomedicine' | 'supplement'
+  airp_source?: boolean
   created_at: string
   updated_at: string
 }

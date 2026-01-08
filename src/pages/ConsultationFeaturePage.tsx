@@ -125,14 +125,26 @@ const ConsultationFeaturePage = () => {
 
             <main className="flex-1 py-12">
                 <div className="container mx-auto px-4">
-                    <Button
-                        variant="ghost"
-                        className="mb-8"
-                        onClick={() => navigate('/consultation')}
-                    >
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        Retour aux consultations
-                    </Button>
+                    <div className="flex items-center gap-4 mb-8">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate('/')}
+                            className="flex items-center gap-2 hover:bg-primary/10"
+                        >
+                            <ArrowLeft className="h-4 w-4" />
+                            Retour à l'accueil
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate('/consultation')}
+                            className="flex items-center gap-2"
+                        >
+                            <ArrowLeft className="h-4 w-4" />
+                            Retour aux consultations
+                        </Button>
+                    </div>
 
                     <div className="max-w-4xl mx-auto">
                         <div className="text-center mb-12">

@@ -9,8 +9,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, Eye, EyeOff, Shield, CreditCard, FileCheck, TrendingUp } from 'lucide-react'
+import { Loader2, Eye, EyeOff, Shield, CreditCard, FileCheck, TrendingUp, ArrowLeft, Zap } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { useNavigate } from 'react-router-dom'
 
 const signInSchema = z.object({
   email: z.string().email('Email invalide'),
@@ -38,6 +39,7 @@ interface InsurerAuthFormProps {
 }
 
 export const InsurerAuthForm = ({ onSuccess }: InsurerAuthFormProps) => {
+  const navigate = useNavigate()
   const [isSignUp, setIsSignUp] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -107,11 +109,9 @@ export const InsurerAuthForm = ({ onSuccess }: InsurerAuthFormProps) => {
 
       if (error) {
         console.error('Insurer signup error:', error)
-
         if (error.message.includes('already registered')) {
           throw new Error('Cet email est déjà utilisé. Veuillez vous connecter.')
         }
-
         throw new Error(error.message || 'Erreur lors de la création du compte')
       }
 
@@ -122,12 +122,12 @@ export const InsurerAuthForm = ({ onSuccess }: InsurerAuthFormProps) => {
 
       signUpForm.reset()
       setIsSignUp(false)
-    } catch (error: unknown) {
+    } catch (error: any) {
       const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue';
       console.error('Insurer registration error:', error)
       toast({
         title: '❌ Erreur d\'inscription',
-        description: error.message || 'Une erreur est survenue',
+        description: errorMessage || 'Une erreur est survenue',
         variant: 'destructive'
       })
     } finally {
@@ -136,440 +136,235 @@ export const InsurerAuthForm = ({ onSuccess }: InsurerAuthFormProps) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-background to-indigo-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-6xl">
+    <div className="min-h-screen mesh-gradient flex items-center justify-center p-6 relative overflow-hidden bg-slate-50">
+      <div className="w-full max-w-2xl relative z-10 animate-in zoom-in-95 duration-700">
         <Button
-          variant="outline"
-          onClick={() => window.history.back()}
-          className="mb-4"
+          variant="ghost"
+          onClick={() => navigate('/profile-selection')}
+          className="mb-8 flex items-center gap-2 hover:bg-white/40 transition-all rounded-xl px-4 font-bold border border-transparent hover:border-white/40 text-muted-foreground hover:text-foreground"
         >
-          ← Retour
+          <ArrowLeft className="h-4 w-4" />
+          <span className="text-xs uppercase tracking-widest">Retour au sélecteur</span>
         </Button>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-          {/* Section informative */}
-          <div className="space-y-6">
-            <div className="text-center lg:text-left">
-              <h1 className="text-4xl font-bold text-primary mb-4">
-                Espace Assureur
-              </h1>
-              <p className="text-xl text-muted-foreground mb-6">
-                Intégrez votre système d'assurance à PharmaGo
+
+        <div className="glass-card p-1 shadow-2xl rounded-[2.5rem] overflow-hidden">
+          <div className="bg-white/40 backdrop-blur-xl p-8 lg:p-10 rounded-[2.2rem] border border-white/40">
+            <div className="space-y-2 text-center mb-10">
+              <div className="mx-auto w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center mb-4 border border-purple-500/20">
+                <Shield className="h-8 w-8 text-purple-600" />
+              </div>
+              <h2 className="text-4xl font-black tracking-tighter text-foreground uppercase leading-[0.9]">
+                Espace <span className="text-purple-600 tracking-normal italic">Assureur</span>
+              </h2>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">
+                {isSignUp ? 'Partenariat & Accréditation' : 'Interface Financière Sécurisée'}
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-white p-4 rounded-lg shadow-sm border text-center">
-                <Shield className="h-8 w-8 text-blue-500 mx-auto mb-2" />
-                <h3 className="font-semibold text-sm">Couverture</h3>
-                <p className="text-xs text-muted-foreground">Validation automatique</p>
-              </div>
-              <div className="bg-white p-4 rounded-lg shadow-sm border text-center">
-                <CreditCard className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                <h3 className="font-semibold text-sm">Remboursements</h3>
-                <p className="text-xs text-muted-foreground">Traitement rapide</p>
-              </div>
-              <div className="bg-white p-4 rounded-lg shadow-sm border text-center">
-                <FileCheck className="h-8 w-8 text-purple-500 mx-auto mb-2" />
-                <h3 className="font-semibold text-sm">Pré-autorisation</h3>
-                <p className="text-xs text-muted-foreground">API intégrée</p>
-              </div>
-              <div className="bg-white p-4 rounded-lg shadow-sm border text-center">
-                <TrendingUp className="h-8 w-8 text-orange-500 mx-auto mb-2" />
-                <h3 className="font-semibold text-sm">Analytiques</h3>
-                <p className="text-xs text-muted-foreground">Rapports détaillés</p>
-              </div>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-sm border">
-              <h3 className="font-semibold mb-3">Avantages Partenaire :</h3>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <Badge variant="secondary" className="w-2 h-2 p-0 rounded-full bg-blue-500"></Badge>
-                  Intégration API complète
-                </li>
-                <li className="flex items-center gap-2">
-                  <Badge variant="secondary" className="w-2 h-2 p-0 rounded-full bg-green-500"></Badge>
-                  Réduction des fraudes médicales
-                </li>
-                <li className="flex items-center gap-2">
-                  <Badge variant="secondary" className="w-2 h-2 p-0 rounded-full bg-purple-500"></Badge>
-                  Traçabilité des prescriptions
-                </li>
-                <li className="flex items-center gap-2">
-                  <Badge variant="secondary" className="w-2 h-2 p-0 rounded-full bg-orange-500"></Badge>
-                  Dashboard de contrôle avancé
-                </li>
-              </ul>
-            </div>
-
-            <div className="bg-purple-50 p-4 rounded-lg border-l-4 border-purple-500">
-              <p className="text-sm text-purple-700">
-                <strong>Accréditation requise :</strong> Licence d'assurance, Autorisation CIMA,
-                États financiers audités, Garanties bancaires
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
-                <Shield className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium">Déjà + de 25 assureurs partenaires</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Formulaire */}
-          <Card className="w-full relative z-10">
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold text-center flex items-center justify-center gap-2">
-                <Shield className="h-6 w-6 text-primary" />
-                {isSignUp ? 'Partenariat Assureur' : 'Connexion Assureur'}
-              </CardTitle>
-              <CardDescription className="text-center">
-                {isSignUp
-                  ? 'Intégrez votre compagnie d\'assurance à notre réseau'
-                  : 'Accédez à votre plateforme de gestion'
-                }
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {isSignUp ? (
-                insuranceProfileType === null ? (
-                  // Profile type selection
-                  <div className="space-y-6">
-                    <div className="text-center space-y-2">
-                      <h3 className="text-lg font-semibold">Choisissez votre type de profil</h3>
-                      <p className="text-sm text-muted-foreground">Sélectionniez le type d'assurance que vous proposez</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Assurance Maladie Card */}
-                      <button
-                        onClick={() => setInsuranceProfileType('maladie')}
-                        className="group p-6 border-2 border-border rounded-lg hover:border-primary hover:bg-primary/5 transition-all text-left"
-                      >
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 group-hover:bg-blue-500 group-hover:text-white transition-colors">
-                            <Shield className="h-6 w-6 text-blue-600 group-hover:text-white" />
-                          </div>
-                          <h4 className="font-semibold text-lg">Assurance Maladie</h4>
-                          <p className="text-sm text-muted-foreground">
-                            Pour les compagnies d'assurance maladie classique avec couverture médicale standard
-                          </p>
-                          <ul className="text-xs space-y-1 text-muted-foreground">
-                            <li>✓ Remboursements médicaux</li>
-                            <li>✓ Couverture hospitalisation</li>
-                            <li>✓ Médicaments prescrits</li>
-                          </ul>
-                        </div>
-                      </button>
-
-                      {/* CMU Card */}
-                      <button
-                        onClick={() => setInsuranceProfileType('cmu')}
-                        className="group p-6 border-2 border-border rounded-lg hover:border-green-500 hover:bg-green-50 transition-all text-left"
-                      >
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-green-100 group-hover:bg-green-500 group-hover:text-white transition-colors">
-                            <CreditCard className="h-6 w-6 text-green-600 group-hover:text-white" />
-                          </div>
-                          <h4 className="font-semibold text-lg">Assurance CMU</h4>
-                          <p className="text-sm text-muted-foreground">
-                            Pour la Couverture Maladie Universelle destinée aux populations à faible revenu
-                          </p>
-                          <ul className="text-xs space-y-1 text-muted-foreground">
-                            <li>✓ Accès gratuit aux soins</li>
-                            <li>✓ Couverture 100%</li>
-                            <li>✓ Tiers-payant intégral</li>
-                          </ul>
-                        </div>
-                      </button>
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      onClick={() => setIsSignUp(false)}
-                      className="w-full"
-                    >
-                      Retour à la connexion
-                    </Button>
+            {isSignUp ? (
+              insuranceProfileType === null ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 animate-in slide-in-from-bottom-4 duration-500">
+                  <button
+                    onClick={() => setInsuranceProfileType('maladie')}
+                    className="glass-card p-6 bg-white/20 hover:bg-white/60 transition-all text-left group border-white/40"
+                  >
+                    <Shield className="h-10 w-10 text-primary mb-4 transition-transform group-hover:scale-110" />
+                    <h4 className="text-lg font-black uppercase tracking-tighter mb-2">Assurance Maladie</h4>
+                    <p className="text-xs text-muted-foreground font-medium leading-relaxed">Compagnies classiques, mutuelles et prévoyances professionnelles.</p>
+                  </button>
+                  <button
+                    onClick={() => setInsuranceProfileType('cmu')}
+                    className="glass-card p-6 bg-white/20 hover:bg-white/60 transition-all text-left group border-white/40"
+                  >
+                    <CreditCard className="h-10 w-10 text-green-600 mb-4 transition-transform group-hover:scale-110" />
+                    <h4 className="text-lg font-black uppercase tracking-tighter mb-2">Fonds CMU</h4>
+                    <p className="text-xs text-muted-foreground font-medium leading-relaxed">Couverture Maladie Universelle et programmes d'aide sociale d'État.</p>
+                  </button>
+                  <div className="sm:col-span-2 pt-6">
+                    <Button variant="ghost" onClick={() => setIsSignUp(false)} className="w-full text-[10px] font-black uppercase tracking-[0.2em]">Retour vers Authentification</Button>
                   </div>
-                ) : (
-                  <Form {...signUpForm}>
-                    <form onSubmit={signUpForm.handleSubmit(onSignUp)} className="space-y-4">
-                      {/* Back to profile type selection */}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setInsuranceProfileType(null)}
-                        className="mb-2"
-                      >
-                        ← Changer le type de profil
-                      </Button>
+                </div>
+              ) : (
+                <Form {...signUpForm}>
+                  <form onSubmit={signUpForm.handleSubmit(onSignUp)} className="space-y-5">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setInsuranceProfileType(null)}
+                      className="mb-2 text-[10px] font-black uppercase tracking-widest text-primary"
+                    >
+                      ← Changer le type de profil
+                    </Button>
 
-                      <div className="bg-{insuranceProfileType === 'cmu' ? 'green' : 'blue'}-50 p-3 rounded-lg border border-{insuranceProfileType === 'cmu' ? 'green' : 'blue'}-200">
-                        <p className="text-sm font-medium text-center">
-                          {insuranceProfileType === 'cmu' ? '🟢 Profil CMU Universelle' : '🔵 Profil Assurance Maladie'}
-                        </p>
-                      </div>
-
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       <FormField
                         control={signUpForm.control}
                         name="companyName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Nom de la compagnie *</FormLabel>
+                            <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Compagnie *</FormLabel>
                             <FormControl>
-                              <Input placeholder="NSIA Assurances Vie" {...field} />
+                              <Input placeholder="NSIA Assurances Vie" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-
                       <FormField
                         control={signUpForm.control}
                         name="representativeName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Nom du représentant *</FormLabel>
+                            <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Représentant *</FormLabel>
                             <FormControl>
-                              <Input placeholder="M. Jean Kouassi" {...field} />
+                              <Input placeholder="M. Jean Kouassi" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
+                    </div>
 
-                      <FormField
-                        control={signUpForm.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email corporatif *</FormLabel>
-                            <FormControl>
-                              <Input type="email" placeholder="partenariat@nsia.ci" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <FormField
-                          control={signUpForm.control}
-                          name="phone"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Téléphone *</FormLabel>
-                              <FormControl>
-                                <Input placeholder="+225 XX XX XX XX" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={signUpForm.control}
-                          name="licenseNumber"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>N° Licence CIMA *</FormLabel>
-                              <FormControl>
-                                <Input placeholder="CIMA2024XXXX" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <FormField
-                          control={signUpForm.control}
-                          name="registrationNumber"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>N° Enregistrement *</FormLabel>
-                              <FormControl>
-                                <Input placeholder="RC2024XXXXXXXX" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={signUpForm.control}
-                          name="insuranceType"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Type d'assurance *</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Sélectionnez le type" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="sante">Assurance Santé</SelectItem>
-                                  <SelectItem value="maladie">Assurance Maladie</SelectItem>
-                                  <SelectItem value="cmu">CMU Universelle</SelectItem>
-                                  <SelectItem value="vie">Assurance Vie</SelectItem>
-                                  <SelectItem value="mixte">Assurance Mixte</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <FormField
-                        control={signUpForm.control}
-                        name="address"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Adresse siège social *</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Adresse complète du siège" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={signUpForm.control}
-                        name="password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Mot de passe *</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <Input
-                                  type={showPassword ? 'text' : 'password'}
-                                  placeholder="••••••••"
-                                  {...field}
-                                />
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                                  onClick={() => setShowPassword(!showPassword)}
-                                >
-                                  {showPassword ? (
-                                    <EyeOff className="h-4 w-4" />
-                                  ) : (
-                                    <Eye className="h-4 w-4" />
-                                  )}
-                                </Button>
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={signUpForm.control}
-                        name="confirmPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Confirmer le mot de passe *</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="password"
-                                placeholder="••••••••"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <Button type="submit" className="w-full" disabled={loading}>
-                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Demander l'accréditation
-                      </Button>
-                    </form>
-                  </Form>
-                )
-              ) : (
-                <Form {...signInForm}>
-                  <form onSubmit={signInForm.handleSubmit(onSignIn)} className="space-y-4">
                     <FormField
-                      control={signInForm.control}
+                      control={signUpForm.control}
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email corporatif *</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="partenariat@assurance.ci" {...field} />
+                            <Input type="email" placeholder="partenariat@assurance.ci" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
 
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                      <FormField
+                        control={signUpForm.control}
+                        name="phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Tel *</FormLabel>
+                            <FormControl>
+                              <Input placeholder="+225..." {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={signUpForm.control}
+                        name="licenseNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">CIMA *</FormLabel>
+                            <FormControl>
+                              <Input placeholder="CIMA..." {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={signUpForm.control}
+                        name="insuranceType"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Type *</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold">
+                                  <SelectValue placeholder="Cat." />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent className="glass-morphism">
+                                <SelectItem value="sante">Santé</SelectItem>
+                                <SelectItem value="cmu">CMU</SelectItem>
+                                <SelectItem value="mixte">Mixte</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
                     <FormField
-                      control={signInForm.control}
+                      control={signUpForm.control}
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Mot de passe</FormLabel>
+                          <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Mot de passe *</FormLabel>
                           <FormControl>
-                            <div className="relative">
-                              <Input
-                                type={showPassword ? 'text' : 'password'}
-                                placeholder="••••••••"
-                                {...field}
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                                onClick={() => setShowPassword(!showPassword)}
-                              >
-                                {showPassword ? (
-                                  <EyeOff className="h-4 w-4" />
-                                ) : (
-                                  <Eye className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </div>
+                            <Input type="password" placeholder="••••••••" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
 
-                    <Button type="submit" className="w-full" disabled={loading}>
-                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Accéder au dashboard
+                    <Button type="submit" className="w-full h-14 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-black uppercase tracking-widest shadow-xl shadow-purple-500/20 transition-all hover:scale-[1.01]" disabled={loading}>
+                      {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Zap className="mr-2 h-5 w-5" />}
+                      Accréditer la Compagnie
                     </Button>
                   </form>
                 </Form>
-              )}
+              )
+            ) : (
+              <Form {...signInForm}>
+                <form onSubmit={signInForm.handleSubmit(onSignIn)} className="space-y-6">
+                  <FormField
+                    control={signInForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="partenariat@assurance.ci" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              <div className="text-center">
-                <Button
-                  variant="link"
-                  onClick={() => setIsSignUp(!isSignUp)}
-                  className="text-sm"
-                >
-                  {isSignUp
-                    ? 'Déjà partenaire ? Se connecter'
-                    : 'Nouvelle compagnie ? S\'inscrire'
-                  }
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                  <FormField
+                    control={signInForm.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="flex items-center justify-between ml-1">
+                          <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Mot de passe</FormLabel>
+                          <button type="button" className="text-[10px] font-black uppercase tracking-widest text-purple-600 hover:underline transition-all">
+                            Oublié ?
+                          </button>
+                        </div>
+                        <FormControl>
+                          <Input type="password" placeholder="••••••••" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button type="submit" className="w-full h-14 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-black uppercase tracking-widest shadow-xl shadow-purple-500/20 transition-all hover:scale-[1.01]" disabled={loading}>
+                    {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Zap className="mr-2 h-5 w-5" />}
+                    Valider l'Accès
+                  </Button>
+                </form>
+              </Form>
+            )}
+
+            <div className="mt-8 text-center pt-6 border-t border-white/20">
+              <button
+                type="button"
+                className="text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-purple-600 transition-colors"
+                onClick={() => setIsSignUp(!isSignUp)}
+              >
+                {isSignUp ? 'Déjà partenaire ? Se connecter' : 'Compagnie non inscrite ? S\'enregistrer'}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

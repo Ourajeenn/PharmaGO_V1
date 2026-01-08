@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { User, Save, Plus, Trash2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Patient, Gender, BloodGroup } from '@/types/ecarnet';
+import { auditService } from "@/services/AuditService";
 
 const PatientProfile = () => {
     const navigate = useNavigate();
@@ -29,6 +30,9 @@ const PatientProfile = () => {
         emergencyContactName: '',
         emergencyContactPhone: '',
         emergencyContactRelationship: '',
+        chronicDiseases: '',
+        allergies: '',
+        treatmentsSummary: '',
     });
 
     useEffect(() => {
@@ -46,6 +50,9 @@ const PatientProfile = () => {
                 emergencyContactName: currentPatient.emergencyContacts[0]?.name || '',
                 emergencyContactPhone: currentPatient.emergencyContacts[0]?.phone || '',
                 emergencyContactRelationship: currentPatient.emergencyContacts[0]?.relationship || '',
+                chronicDiseases: currentPatient.chronicDiseases?.join(', ') || '',
+                allergies: currentPatient.allergies?.join(', ') || '',
+                treatmentsSummary: currentPatient.treatmentsSummary?.join(', ') || '',
             });
         }
     }, [currentPatient]);
@@ -63,6 +70,9 @@ const PatientProfile = () => {
             email: formData.email,
             address: formData.address,
             city: formData.city,
+            chronicDiseases: formData.chronicDiseases ? formData.chronicDiseases.split(',').map(s => s.trim()).filter(s => s) : [],
+            allergies: formData.allergies ? formData.allergies.split(',').map(s => s.trim()).filter(s => s) : [],
+            treatmentsSummary: formData.treatmentsSummary ? formData.treatmentsSummary.split(',').map(s => s.trim()).filter(s => s) : [],
             emergencyContacts: formData.emergencyContactName ? [{
                 id: 'contact_1',
                 name: formData.emergencyContactName,
@@ -74,9 +84,15 @@ const PatientProfile = () => {
 
         if (currentPatient) {
             updatePatient(currentPatient.id, patientData);
+            auditService.log('PROFILE_UPDATE', currentPatient.id, {
+                changes: Object.keys(patientData)
+            });
             toast.success('Profil mis à jour');
         } else {
             const newPatient = addPatient(patientData);
+            auditService.log('PROFILE_UPDATE', newPatient.id, {
+                action: 'CREATE_PROFILE'
+            });
             setCurrentPatient(newPatient);
             toast.success('Patient créé avec succès');
             navigate('/ecarnet');
@@ -223,6 +239,35 @@ const PatientProfile = () => {
                                     </div>
                                 </div>
 
+                                {/* Medical Info */}
+                                <div className="space-y-4">
+                                    <h3 className="font-semibold text-lg">Informations Médicales</h3>
+                                    <div>
+                                        <Label>Maladies Chroniques (séparées par des virgules)</Label>
+                                        <Input
+                                            value={formData.chronicDiseases}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, chronicDiseases: e.target.value }))}
+                                            placeholder="Ex: Diabète, Hypertension, Asthme"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label>Allergies Connues (séparées par des virgules)</Label>
+                                        <Input
+                                            value={formData.allergies}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, allergies: e.target.value }))}
+                                            placeholder="Ex: Arachides, Pénicilline"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label>Traitements en cours (séparés par des virgules)</Label>
+                                        <Input
+                                            value={formData.treatmentsSummary}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, treatmentsSummary: e.target.value }))}
+                                            placeholder="Ex: Doliprane 1000mg, Amoxicilline"
+                                        />
+                                    </div>
+                                </div>
+
                                 {/* Emergency Contact */}
                                 <div className="space-y-4">
                                     <h3 className="font-semibold text-lg">Contact d'urgence</h3>
@@ -267,10 +312,10 @@ const PatientProfile = () => {
                         </CardContent>
                     </Card>
                 </div>
-            </main>
+            </main >
 
             <Footer />
-        </div>
+        </div >
     );
 };
 

@@ -10,7 +10,7 @@ const PharmaciesPage = () => {
   return (
     <>
       <SEO {...pagesSEO.pharmacies} />
-      <PharmacyFinder handleBackToHome={() => navigate('/')} />
+      <PharmacyFinder onBackToHome={() => navigate('/')} />
     </>
   );
 };

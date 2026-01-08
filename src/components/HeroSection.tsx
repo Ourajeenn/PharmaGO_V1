@@ -2,10 +2,21 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Clock, Truck, ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { MapPin, Clock, Truck, ChevronLeft, ChevronRight, Star, Search, Rocket } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import ScrollReveal from "@/components/ScrollReveal";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
+
 // Using the uploaded pharmacy image
+import { useNavigate } from "react-router-dom";
+
 const heroImage = "/pharmacy-hero.jpg";
+
 const latestProducts = [{
   id: 1,
   name: "Doliprane 1000mg",
@@ -34,6 +45,7 @@ const latestProducts = [{
   inStock: false,
   isNew: false
 }];
+
 interface HeroSectionProps {
   badgeText?: string;
   titlePrefix?: string;
@@ -47,6 +59,7 @@ const HeroSection = ({
   titleHighlight = "livrée chez vous",
   subtitle = "Commandez vos médicaments, consultez un médecin, trouvez une pharmacie."
 }: HeroSectionProps) => {
+  const navigate = useNavigate();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [glowColor, setGlowColor] = useState<'orange' | 'blue' | 'green'>('orange');
 
@@ -89,48 +102,88 @@ const HeroSection = ({
         {/* Left Content */}
         <div className="space-y-8">
           <ScrollReveal animation="fade-up" delay={0.1}>
-            <div className="space-y-4">
-              <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 mx-[154px]">
-                {badgeText}
-              </Badge>
+            <div className="space-y-6">
+              {/* Search Form moved to the top */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const input = (e.currentTarget.elements.namedItem('search') as HTMLInputElement).value;
+                  if (input) {
+                    const query = input.toLowerCase().trim();
+                    if (query.includes("pharmacie")) {
+                      navigate(`/pharmacies?q=${encodeURIComponent(input)}`);
+                    } else if (query.includes("consultation") || query.includes("docteur") || query.includes("médecin") || query.includes("medecin")) {
+                      navigate("/consultation");
+                    } else if (query.includes("suivi") || query.includes("commande")) {
+                      navigate("/livraison/suivi");
+                    } else if (query.includes("carnet") || query.includes("e-carnet")) {
+                      navigate("/ecarnet");
+                    } else {
+                      navigate(`/medicaments?q=${encodeURIComponent(input)}`);
+                    }
+                  }
+                }}
+                className="relative max-w-lg w-full"
+              >
+                <div className="relative flex items-center">
+                  <Search className="absolute left-4 h-5 w-5 text-muted-foreground z-10" />
+                  <Input
+                    name="search"
+                    placeholder="Rechercher un médicament, une pharmacie..."
+                    className="pl-12 pr-4 h-12 text-base shadow-lg border border-white/20 focus:border-primary rounded-full bg-white/40 backdrop-blur-md"
+                  />
+                </div>
+              </form>
+
               <h1 className="text-4xl md:text-6xl font-bold leading-tight">
                 {titlePrefix}
                 <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent block">
                   {titleHighlight}
                 </span>
               </h1>
-              <p className="text-xl text-muted-foreground leading-relaxed">
-                {subtitle}
-              </p>
-            </div>
-          </ScrollReveal>
 
-          <ScrollReveal animation="fade-up" delay={0.3}>
-            <div className="flex flex-wrap gap-4">
-              <Button size="lg" className="text-lg px-8 py-6 hover:shadow-lg transition-all duration-300" onClick={() => window.location.href = '/pharmacies'}>
-                <MapPin className="h-5 w-5 mr-2" />
-                Trouver une pharmacie
-              </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-6" onClick={() => window.location.href = '/suivi'}>
-                <Truck className="h-5 w-5 mr-2" />
-                Suivre ma commande
-              </Button>
+              <div className="space-y-4">
+                <p className="text-xl text-muted-foreground leading-relaxed">
+                  {subtitle}
+                </p>
+
+                {/* Shrunk buttons moved below subtitle */}
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate('/pharmacies')}
+                    className="glass-morphism hover:bg-white/40 text-foreground rounded-full px-5 py-2 h-auto text-sm hover:shadow-md transition-all flex items-center gap-2"
+                  >
+                    <MapPin className="h-4 w-4 text-primary" />
+                    Trouver une pharmacie
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate('/livraison/suivi')}
+                    className="glass-morphism hover:bg-white/40 text-foreground rounded-full px-5 py-2 h-auto text-sm hover:shadow-md transition-all flex items-center gap-2"
+                  >
+                    <Truck className="h-4 w-4 text-secondary" />
+                    Suivre ma commande
+                  </Button>
+                </div>
+              </div>
             </div>
           </ScrollReveal>
 
           <ScrollReveal animation="fade-up" delay={0.5}>
             <div className="grid grid-cols-3 gap-6 pt-8">
-              <div className="text-center">
+              <div className="text-center p-4 rounded-2xl border border-primary/20 bg-primary/5 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300">
                 <div className="text-3xl font-bold text-primary">24h</div>
-                <div className="text-sm text-muted-foreground">Service continu</div>
+                <div className="text-sm text-muted-foreground font-medium">Service continu</div>
               </div>
-              <div className="text-center">
+              <div className="text-center p-4 rounded-2xl border border-secondary/20 bg-secondary/5 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300">
                 <div className="text-3xl font-bold text-secondary">30min</div>
-                <div className="text-sm text-muted-foreground">Livraison rapide</div>
+                <div className="text-sm text-muted-foreground font-medium">Livraison rapide</div>
               </div>
-              <div className="text-center">
+              <div className="text-center p-4 rounded-2xl border border-accent/20 bg-accent/5 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300">
                 <div className="text-3xl font-bold text-accent">150+</div>
-                <div className="text-sm text-muted-foreground">Pharmacies</div>
+                <div className="text-sm text-muted-foreground font-medium">Pharmacies</div>
               </div>
             </div>
           </ScrollReveal>
@@ -138,19 +191,75 @@ const HeroSection = ({
 
         {/* Right Content - Carousel */}
         <div className="space-y-8">
-          <div className="relative h-80 rounded-2xl overflow-hidden animate-[float_3s_ease-in-out_infinite]" style={{
-            backgroundImage: `url(${heroImage})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            boxShadow: getGlowStyle(),
-            transition: 'box-shadow 1.5s ease-in-out'
-          }}>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent mx-0 px-0 py-0 my-0" />
-            <div className="absolute bottom-6 left-6 text-white">
-              <h3 className="text-2xl font-bold mb-2">Livraison Express</h3>
-              <p className="text-white/90">Médicaments certifiés • Livreurs agréés</p>
-            </div>
-          </div>
+          <Carousel
+            plugins={[
+              Autoplay({
+                delay: 5000,
+              }),
+            ]}
+            className="w-full relative h-80 rounded-2xl overflow-hidden"
+          >
+            <CarouselContent>
+              {[
+                {
+                  image: "/hero-carousel/pharmacist-service.jpg",
+                  title: "Service Pharmacie de Qualité",
+                  subtitle: "Conseils d'experts et écoute personnalisée",
+                  glow: "rgba(20, 184, 166, 0.8)", // teal
+                  bgStyle: { backgroundSize: 'cover' }
+                },
+                {
+                  image: "/hero-carousel/consultation.png",
+                  title: "Consultation en Ligne",
+                  subtitle: "Parlez à un pharmacien certifié en direct",
+                  glow: "rgba(59, 130, 246, 0.8)" // blue
+                },
+                {
+                  image: "/hero-carousel/delivery.png",
+                  title: "Suivi en Temps Réel",
+                  subtitle: "Sachez exactement où est votre commande",
+                  glow: "rgba(34, 197, 94, 0.8)" // green
+                },
+                {
+                  image: "/hero-carousel/app.png",
+                  title: "Gestion Santé",
+                  subtitle: "Votre santé à portée de main",
+                  glow: "rgba(168, 85, 247, 0.8)" // purple
+                }
+              ].map((slide, index) => (
+                <CarouselItem key={index} className="p-1">
+                  {/* Outer container for the border effect */}
+                  <div className="relative h-80 w-full rounded-2xl overflow-hidden group p-[2px]">
+
+                    {/* Rotating LED Border - Using a larger spinning element behind */}
+                    <div
+                      className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] animate-[spin_4s_linear_infinite]"
+                      style={{
+                        background: `conic-gradient(transparent, transparent, transparent, ${slide.glow})`
+                      }}
+                    />
+
+                    {/* Inner content container - z-index higher to sit on top of the spinner */}
+                    <div className="relative h-full w-full bg-background rounded-[14px] overflow-hidden">
+                      <div className="relative h-full w-full" style={{
+                        backgroundImage: `url(${slide.image})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        ...((slide as any).bgStyle || {})
+                      }}>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                        <div className="absolute bottom-6 left-6 text-white p-4">
+                          <h3 className="text-3xl font-bold mb-2 drop-shadow-md">{slide.title}</h3>
+                          <p className="text-white/90 text-lg drop-shadow-sm">{slide.subtitle}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+          </Carousel>
 
           {/* Latest Products Carousel */}
           <div className="space-y-4">
@@ -166,7 +275,7 @@ const HeroSection = ({
               </div>
             </div>
 
-            <Card className="p-6 bg-gradient-to-r from-card to-card/80 border-primary/20 hover:shadow-lg transition-all duration-300">
+            <Card className="p-6 bg-white/40 backdrop-blur-md border border-white/30 shadow-xl hover:shadow-2xl transition-all duration-300">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center">
                   <span className="text-2xl">💊</span>
@@ -203,7 +312,7 @@ const HeroSection = ({
           </div>
         </div>
       </div>
-    </div>
-  </section>;
+    </div >
+  </section >;
 };
 export default HeroSection;

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { supabase, UserProfile } from '@/lib/supabase'
 
@@ -7,183 +7,162 @@ export const useAuth = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [session, setSession] = useState<Session | null>(null)
+  const [lastError, setLastError] = useState<string | null>(null)
 
-  useEffect(() => {
-    // 1) Listen for auth changes FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        setTimeout(() => {
-          fetchProfile(session.user!.id)
-        }, 0)
-      } else {
-        setProfile(null)
-        setLoading(false)
-      }
-    })
+  // Track if we are already fetching to avoid redundant calls
+  const isFetchingRef = useRef(false)
 
-    // 2) Then check existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        fetchProfile(session.user.id)
-      } else {
-        setLoading(false)
-      }
-    })
+  const fetchProfile = useCallback(async (userId: string, authUser?: User | null) => {
+    if (isFetchingRef.current) return;
 
-    return () => subscription.unsubscribe()
-  }, [])
-
-  const fetchProfile = async (userId: string) => {
     try {
-      // Récupérer le profil utilisateur
-      const { data: profileData, error: profileError } = await supabase
+      isFetchingRef.current = true
+      setLoading(true)
+      setLastError(null)
+
+      // 1. Récupérer le profil utilisateur depuis public.user_profiles
+      let { data: profileData, error: profileError } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', userId)
-        .single()
+        .maybeSingle()
 
-      if (profileError) throw profileError
+      if (profileError) {
+        console.error('Error in user_profiles query:', profileError)
+        throw profileError
+      }
 
-      // Vérifier le rôle dans user_roles (sécurisé)
-      const { data: roleData, error: roleError } = await supabase
+      // 2. Gestion si le profil n'existe pas encore (ex: lag du trigger)
+      if (!profileData && authUser) {
+        const metadata = authUser.user_metadata
+        console.warn(`Profil non trouvé immédiatement pour ${userId}. Rôle attendu: ${metadata?.role}.`)
+
+        // On attend un court instant et on réessaye une fois (retry logic simple)
+        await new Promise(resolve => setTimeout(resolve, 1500))
+
+        const { data: retryData } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle()
+
+        if (retryData) {
+          profileData = retryData
+        } else {
+          // Soft repair si meta présent
+          if (metadata?.role) {
+            console.log("Tentative de synchronisation manuelle du profil...")
+            const { data: syncedProfile } = await supabase
+              .from('user_profiles')
+              .upsert({
+                id: userId,
+                name: metadata.name || 'Utilisateur',
+                role: metadata.role as any,
+                email: authUser.email || '',
+                phone: metadata.phone || '',
+                verified: false
+              })
+              .select()
+              .single()
+
+            if (syncedProfile) profileData = syncedProfile
+          }
+        }
+      }
+
+      if (!profileData) {
+        console.error('Profil introuvable pour', userId)
+        setProfile(null)
+        return
+      }
+
+      // 3. Vérifier le rôle effectif
+      const { data: roleData } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
         .maybeSingle()
 
-      if (roleError) {
-        console.error('Error fetching role:', roleError)
-      }
-
-      // Utiliser le rôle de user_roles si disponible, sinon celui de user_profiles
-      const finalProfile = {
+      const finalProfile: UserProfile = {
         ...profileData,
-        role: roleData?.role || profileData.role
+        role: (roleData?.role || profileData.role) as any
       }
 
       setProfile(finalProfile)
-    } catch (error) {
-      console.error('Error fetching profile:', error)
+      console.log('Profil actif chargé:', finalProfile.role)
+    } catch (error: any) {
+      console.error('Auth Profile Error:', error)
+      setLastError(error.message || 'Erreur lors du chargement du profil')
+      setProfile(null)
     } finally {
       setLoading(false)
+      isFetchingRef.current = false
     }
-  }
+  }, []) // Empty dependencies = stable function
 
-  const signUp = async (email: string, password: string, userData: {
-    name: string
-    role: string
-    phone?: string
-    insurance_id?: string
-    cmu_number?: string
-    license_number?: string
-    company_name?: string
-    specialization?: string
-    clinic_name?: string
-    clinic_address?: string
-    vehicle_type?: string
-    license_plate?: string
-    experience_years?: number
-  }) => {
-    const redirectUrl = `${window.location.origin}/dashboard`
+  useEffect(() => {
+    // Session initiale
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      const currentUser = session?.user ?? null
+      setUser(currentUser)
+      if (currentUser) fetchProfile(currentUser.id, currentUser)
+      else setLoading(false)
+    })
 
-    // Préparer les métadonnées utilisateur avec TOUS les champs
-    const userMetadata = {
-      name: userData.name,
-      role: userData.role,
-      phone: userData.phone || '',
-      email: email
+    // Écoute des changements d'état
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const currentUser = session?.user ?? null
+      setSession(session)
+
+      // Update user state ONLY if it actually changed (prevents loop)
+      setUser(prev => {
+        if (prev?.id === currentUser?.id) return prev
+        return currentUser
+      })
+
+      if (currentUser) {
+        fetchProfile(currentUser.id, currentUser)
+      } else {
+        setProfile(null)
+        if (event === 'SIGNED_OUT') {
+          setLoading(false)
+        }
+      }
+    })
+
+    return () => {
+      subscription.unsubscribe()
     }
+  }, [fetchProfile]) // fetchProfile is now stable, so this effect runs only once
 
+  const signUp = useCallback(async (email: string, password: string, userData: any) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: redirectUrl,
-        data: userMetadata
-      }
-    })
-
-    // Create role-specific profile if signup is successful
-    if (data.user && !error) {
-      try {
-        // Create the specific role table entry
-        switch (userData.role) {
-          case 'patient':
-            const patientData: any = {
-              user_id: data.user.id
-            }
-            if (userData.insurance_id) patientData.insurance_id = userData.insurance_id
-            if (userData.cmu_number) patientData.cmu_number = userData.cmu_number
-
-            const { error: patientError } = await supabase.from('patients').insert(patientData)
-            if (patientError) {
-              console.error('Error creating patient profile:', patientError)
-              throw patientError
-            }
-            break
-          case 'pharmacy':
-            const { error: pharmacyError } = await supabase.from('pharmacies').insert({
-              user_id: data.user.id,
-              name: userData.name,
-              address: userData.clinic_address || '',
-              license_number: userData.license_number
-            })
-            if (pharmacyError) throw pharmacyError
-            break
-          case 'driver':
-            const { error: driverError } = await supabase.from('drivers').insert({
-              user_id: data.user.id,
-              vehicle_type: userData.vehicle_type,
-              license_plate: userData.license_plate,
-              experience_years: userData.experience_years
-            })
-            if (driverError) throw driverError
-            break
-          case 'doctor':
-            const { error: doctorError } = await supabase.from('doctors').insert({
-              user_id: data.user.id,
-              license_number: userData.license_number || '',
-              specialization: userData.specialization,
-              clinic_name: userData.clinic_name,
-              clinic_address: userData.clinic_address
-            })
-            if (doctorError) throw doctorError
-            break
-          case 'insurer':
-            const { error: insurerError } = await supabase.from('insurers').insert({
-              user_id: data.user.id,
-              company_name: userData.company_name || '',
-              license_number: userData.license_number || ''
-            })
-            if (insurerError) throw insurerError
-            break
+        emailRedirectTo: `${window.location.origin}/dashboard`,
+        data: {
+          ...userData,
+          email
         }
-      } catch (profileError: any) {
-        console.error('Error creating role profile:', profileError)
-        // Return the error so it can be displayed to the user
-        return { data, error: { message: `Compte créé mais erreur lors de la configuration du profil: ${profileError.message}` } as any }
       }
-    }
-
-    return { data, error }
-  }
-
-  const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
     })
     return { data, error }
-  }
+  }, [])
 
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    return { error }
-  }
+  const signIn = useCallback(async (email: string, password: string) => {
+    return await supabase.auth.signInWithPassword({ email, password })
+  }, [])
+
+  const signOut = useCallback(async () => {
+    setLoading(true)
+    const res = await supabase.auth.signOut()
+    setProfile(null)
+    setUser(null)
+    setLoading(false)
+    return res
+  }, [])
 
   return {
     user,
@@ -192,6 +171,8 @@ export const useAuth = () => {
     loading,
     signUp,
     signIn,
-    signOut
+    signOut,
+    fetchProfile,
+    lastError
   }
 }

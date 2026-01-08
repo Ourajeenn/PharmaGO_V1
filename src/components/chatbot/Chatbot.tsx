@@ -4,12 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { 
-  MessageCircle, 
-  Send, 
-  Bot, 
-  User, 
-  X, 
+import {
+  MessageCircle,
+  Send,
+  Bot,
+  User,
+  X,
   Minimize2,
   Maximize2
 } from 'lucide-react';
@@ -69,9 +69,9 @@ export const Chatbot: React.FC = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke('chat', {
-        body: { 
+        body: {
           message: content,
-          conversationId 
+          conversationId
         }
       });
 
@@ -114,9 +114,8 @@ export const Chatbot: React.FC = () => {
   }
 
   return (
-    <Card className={`fixed bottom-6 right-6 w-80 shadow-xl z-50 transition-all duration-300 ${
-      isMinimized ? 'h-14' : 'h-96'
-    }`}>
+    <Card className={`fixed bottom-6 right-6 w-80 shadow-xl z-50 transition-all duration-300 ${isMinimized ? 'h-14' : 'h-96'
+      }`}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm flex items-center gap-2">
@@ -149,6 +148,21 @@ export const Chatbot: React.FC = () => {
         <CardContent className="flex flex-col h-80">
           <ScrollArea className="flex-1 pr-2">
             <div className="space-y-3">
+              {messages.length === 1 && (
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  {["📦 Suivre ma commande", "🏥 Pharmacie de garde", "📄 Envoyer ordonnance", "💊 Conseil médicament"].map((chip) => (
+                    <Button
+                      key={chip}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs h-auto py-2 whitespace-normal text-left justify-start"
+                      onClick={() => sendMessage(chip)}
+                    >
+                      {chip}
+                    </Button>
+                  ))}
+                </div>
+              )}
               {messages.map((message) => (
                 <div key={message.id} className="space-y-2">
                   <div
@@ -161,11 +175,10 @@ export const Chatbot: React.FC = () => {
                         </div>
                       )}
                       <div
-                        className={`px-3 py-2 rounded-lg text-sm ${
-                          message.type === 'user'
+                        className={`px-3 py-2 rounded-lg text-sm ${message.type === 'user'
                             ? 'bg-primary text-primary-foreground'
-                     : 'bg-muted'
-                        }`}
+                            : 'bg-muted'
+                          }`}
                       >
                         {message.content}
                       </div>

@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, Eye, EyeOff, Bike, Clock, MapPin, CreditCard } from 'lucide-react'
+import { Loader2, Eye, EyeOff, Bike, Clock, MapPin, CreditCard, ArrowLeft } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
 const signInSchema = z.object({
@@ -23,8 +23,9 @@ const signUpSchema = z.object({
   confirmPassword: z.string(),
   phone: z.string().min(8, 'Numéro de téléphone requis'),
   cniNumber: z.string().min(8, 'Numéro CNI/Passeport requis'),
-  driverLicense: z.string().min(5, 'Numéro permis de conduire requis'),
   vehicleType: z.string().min(2, 'Type de véhicule requis'),
+  licensePlate: z.string().min(2, 'Immatriculation requise'),
+  driverLicense: z.string().min(5, 'Numéro de permis requis'),
   experience: z.string().optional()
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Les mots de passe ne correspondent pas',
@@ -59,8 +60,9 @@ export const DriverAuthForm = ({ onSuccess }: DriverAuthFormProps) => {
       confirmPassword: '',
       phone: '',
       cniNumber: '',
-      driverLicense: '',
       vehicleType: '',
+      licensePlate: '',
+      driverLicense: '',
       experience: ''
     }
   })
@@ -96,7 +98,8 @@ export const DriverAuthForm = ({ onSuccess }: DriverAuthFormProps) => {
         role: 'driver',
         phone: values.phone.trim(),
         vehicle_type: values.vehicleType.trim(),
-        license_plate: values.driverLicense.trim(),
+        license_plate: values.licensePlate.trim(),
+        driver_license: values.driverLicense.trim(), // Stored in metadata
         experience_years: values.experience ? parseInt(values.experience) : undefined
       }
 
@@ -119,12 +122,12 @@ export const DriverAuthForm = ({ onSuccess }: DriverAuthFormProps) => {
 
       signUpForm.reset()
       setIsSignUp(false)
-    } catch (error: unknown) {
+    } catch (error: any) {
       const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue';
       console.error('Driver registration error:', error)
       toast({
         title: '❌ Erreur d\'inscription',
-        description: error.message || 'Une erreur est survenue',
+        description: errorMessage || 'Une erreur est survenue',
         variant: 'destructive'
       })
     } finally {
@@ -136,11 +139,12 @@ export const DriverAuthForm = ({ onSuccess }: DriverAuthFormProps) => {
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-background to-red-50 flex items-center justify-center p-4">
       <div className="w-full max-w-6xl">
         <Button
-          variant="outline"
+          variant="ghost"
           onClick={() => window.history.back()}
-          className="mb-4"
+          className="mb-6 flex items-center gap-2 hover:bg-primary/10 transition-colors"
         >
-          ← Retour
+          <ArrowLeft className="h-4 w-4" />
+          Retour
         </Button>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           {/* Section informative */}

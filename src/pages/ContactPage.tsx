@@ -4,11 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { MapPin, Phone, Mail, MessageCircle, Clock, Send } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { MapPin, Phone, Mail, MessageCircle, Clock, Send, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 const ContactPage = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -29,8 +31,17 @@ const ContactPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="py-16">
+      <main className="py-12">
         <div className="container mx-auto px-4">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 mb-8 hover:bg-primary/10 transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Retour à l'accueil
+          </Button>
+
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">Contactez-nous</h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -52,7 +63,7 @@ const ContactPage = () => {
                       <p className="text-sm text-muted-foreground mb-3">
                         Contactez-nous directement via WhatsApp pour une réponse rapide
                       </p>
-                      <Button 
+                      <Button
                         onClick={openWhatsApp}
                         className="w-full bg-green-500 hover:bg-green-600"
                       >
@@ -75,7 +86,7 @@ const ContactPage = () => {
                       <p className="text-sm text-muted-foreground mb-2">
                         Ligne d'urgence 24h/24
                       </p>
-                      <a 
+                      <a
                         href="tel:+2250102030405"
                         className="text-lg font-semibold text-primary hover:underline"
                       >
@@ -97,7 +108,7 @@ const ContactPage = () => {
                       <p className="text-sm text-muted-foreground mb-2">
                         Support client
                       </p>
-                      <a 
+                      <a
                         href="mailto:contact@pharmago.ci"
                         className="text-lg font-semibold text-secondary hover:underline"
                       >
@@ -156,23 +167,23 @@ const ContactPage = () => {
                         <label className="block text-sm font-medium mb-2">
                           Nom complet *
                         </label>
-                        <Input 
+                        <Input
                           required
                           placeholder="Votre nom"
                           value={formData.name}
-                          onChange={(e) => setFormData({...formData, name: e.target.value})}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         />
                       </div>
                       <div>
                         <label className="block text-sm font-medium mb-2">
                           Email *
                         </label>
-                        <Input 
+                        <Input
                           required
                           type="email"
                           placeholder="votre@email.com"
                           value={formData.email}
-                          onChange={(e) => setFormData({...formData, email: e.target.value})}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         />
                       </div>
                     </div>
@@ -181,11 +192,11 @@ const ContactPage = () => {
                       <label className="block text-sm font-medium mb-2">
                         Téléphone
                       </label>
-                      <Input 
+                      <Input
                         type="tel"
                         placeholder="+225 XX XX XX XX XX"
                         value={formData.phone}
-                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       />
                     </div>
 
@@ -193,12 +204,12 @@ const ContactPage = () => {
                       <label className="block text-sm font-medium mb-2">
                         Message *
                       </label>
-                      <Textarea 
+                      <Textarea
                         required
                         placeholder="Votre message..."
                         rows={8}
                         value={formData.message}
-                        onChange={(e) => setFormData({...formData, message: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                       />
                     </div>
 

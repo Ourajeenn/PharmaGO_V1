@@ -4,6 +4,12 @@
 
 **Project**: PharmaGo Express - Pharmacy Delivery Platform
 
+## 📚 Documentation
+
+Detailed guides for data extraction and project specifics can be found in the [docs](./docs/) folder:
+- [AIRP Medication Extraction](./docs/README_AIRP_EXTRACTION.md)
+- [AIRP Pharmacy Extraction](./docs/README_AIRP_PHARMACIES.md)
+
 ## Edit Locally
 
 **Use Your IDE**

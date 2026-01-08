@@ -17,6 +17,10 @@ export interface Pharmacy {
     services: string[];
     estimatedDelivery: string;
     deliveryFee: number;
+    legalName?: string;
+    coordinates?: { lat: number; lng: number };
+    isOnGuard?: boolean;
+    realDistance?: string;
 }
 
 // Real pharmacies data from Abidjan, organized by commune
@@ -26,14 +30,17 @@ export const realPharmacies: Pharmacy[] = [
     {
         id: 101,
         name: "Pharmacie des Finances",
+        legalName: "SARL Pharmacie des Finances",
         address: "Immeuble SITARAIL, Cité Financière",
         commune: "Plateau",
+        coordinates: { lat: 5.324, lng: -4.018 },
         phone: "+225 27 20 30 39 50",
         hours: "08h00 - 19h30",
         distance: "0.5 km",
         rating: 4.5,
         reviews: 120,
         isOpen: true,
+        isOnGuard: false,
         hasDelivery: true,
         acceptsCard: true,
         isPartner: true,
@@ -45,14 +52,17 @@ export const realPharmacies: Pharmacy[] = [
     {
         id: 102,
         name: "Pharmacie Aniaman",
+        legalName: "Pharmacie Aniaman SA",
         address: "Avenue Joseph Anoma",
         commune: "Plateau",
+        coordinates: { lat: 5.322, lng: -4.015 },
         phone: "+225 27 20 21 00 00",
         hours: "08h00 - 19h00",
         distance: "0.7 km",
         rating: 4.4,
         reviews: 85,
         isOpen: true,
+        isOnGuard: false,
         hasDelivery: true,
         acceptsCard: true,
         isPartner: false,
@@ -64,14 +74,17 @@ export const realPharmacies: Pharmacy[] = [
     {
         id: 103,
         name: "Pharmacie du Plateau",
+        legalName: "Pharmacie du Plateau SARL",
         address: "Centre des affaires",
         commune: "Plateau",
+        coordinates: { lat: 5.326, lng: -4.020 },
         phone: "+225 27 20 21 16 64",
         hours: "07h30 - 20h00",
         distance: "0.2 km",
         rating: 4.7,
         reviews: 210,
         isOpen: true,
+        isOnGuard: false,
         hasDelivery: true,
         acceptsCard: true,
         isPartner: true,
@@ -83,14 +96,17 @@ export const realPharmacies: Pharmacy[] = [
     {
         id: 104,
         name: "Pharmacie Pyramide",
+        legalName: "Pharmacie de la Pyramide",
         address: "Immeuble Pyramide",
         commune: "Plateau",
+        coordinates: { lat: 5.325, lng: -4.019 },
         phone: "+225 27 20 21 34 56",
         hours: "08h00 - 18h30",
         distance: "0.4 km",
         rating: 4.3,
         reviews: 98,
         isOpen: true,
+        isOnGuard: false,
         hasDelivery: false,
         acceptsCard: true,
         isPartner: false,
@@ -104,14 +120,17 @@ export const realPharmacies: Pharmacy[] = [
     {
         id: 201,
         name: "Pharmacie de Cocody",
+        legalName: "Pharmacie de Cocody",
         address: "Près du Cash, face pâtisserie Abidjanaise",
         commune: "Cocody",
+        coordinates: { lat: 5.356, lng: -4.004 },
         phone: "+225 27 22 44 24 95",
         hours: "24h/24",
         distance: "3.5 km",
         rating: 4.8,
         reviews: 350,
         isOpen: true,
+        isOnGuard: true,
         hasDelivery: true,
         acceptsCard: true,
         isPartner: true,

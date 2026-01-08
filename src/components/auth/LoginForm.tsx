@@ -10,12 +10,12 @@ import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/hooks/useAuth'
 import { TwoFactorAuth } from './TwoFactorAuth'
 import { ForgotPasswordForm } from './ForgotPasswordForm'
-import { 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  Shield, 
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Shield,
   AlertCircle,
   ArrowLeft,
   Smartphone
@@ -48,19 +48,19 @@ export const LoginForm = () => {
     try {
       // Validation des données
       const validatedData = loginSchema.parse({ email, password })
-      
+
       const { data, error } = await signIn(validatedData.email, validatedData.password)
-      
+
       if (error) {
         throw new Error(error.message)
       }
 
       if (data?.user) {
         setTempUserId(data.user.id)
-        
+
         // Simuler la vérification si l'utilisateur a activé 2FA
         const has2FA = Math.random() > 0.7 // 30% chance d'avoir 2FA activé
-        
+
         if (has2FA) {
           setStep('2fa')
           toast({
@@ -93,7 +93,7 @@ export const LoginForm = () => {
     try {
       // Simulation de vérification 2FA
       await new Promise(resolve => setTimeout(resolve, 1000))
-      
+
       if (twoFACode.length === 6) {
         toast({
           title: "Connexion réussie",
@@ -136,13 +136,13 @@ export const LoginForm = () => {
               Activez l'authentification à deux facteurs pour une sécurité renforcée
             </p>
           </div>
-          
-          <TwoFactorAuth 
+
+          <TwoFactorAuth
             userId={tempUserId}
             onComplete={complete2FASetup}
             onBack={skip2FASetup}
           />
-          
+
           <div className="text-center">
             <Button variant="link" onClick={skip2FASetup}>
               Ignorer pour le moment
@@ -207,8 +207,8 @@ export const LoginForm = () => {
               </AlertDescription>
             </Alert>
 
-            <Button 
-              className="w-full" 
+            <Button
+              className="w-full"
               onClick={verify2FA}
               disabled={loading || twoFACode.length !== 6}
             >
@@ -229,8 +229,17 @@ export const LoginForm = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Connexion</CardTitle>
+        <CardHeader className="text-center relative">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/')}
+            className="absolute left-4 top-4 hover:bg-primary/10"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Accueil
+          </Button>
+          <CardTitle className="text-2xl font-bold mt-4">Connexion</CardTitle>
           <CardDescription>
             Connectez-vous à votre compte PharmaGo
           </CardDescription>
@@ -290,8 +299,8 @@ export const LoginForm = () => {
             </div>
 
             <div className="flex items-center justify-between">
-              <Button 
-                variant="link" 
+              <Button
+                variant="link"
                 className="px-0 text-sm"
                 onClick={() => setStep('forgot-password')}
                 type="button"

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Star, MapPin, Phone, Mail, Calendar, Clock, CheckCircle } from "lucide-react";
+import { ArrowLeft, Star, MapPin, Phone, Mail, Calendar, Clock, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const DoctorProfilePage = () => {
@@ -16,6 +16,14 @@ const DoctorProfilePage = () => {
 
             <main className="container mx-auto px-4 py-8">
                 <div className="max-w-4xl mx-auto">
+                    <Button
+                        variant="ghost"
+                        onClick={() => navigate('/')}
+                        className="flex items-center gap-2 mb-6 hover:bg-primary/10 transition-colors"
+                    >
+                        <ArrowLeft className="h-4 w-4" />
+                        Retour à l'accueil
+                    </Button>
                     <Card className="mb-8">
                         <CardContent className="p-6">
                             <div className="flex flex-col md:flex-row gap-6 items-start">

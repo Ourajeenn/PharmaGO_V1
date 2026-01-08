@@ -1,16 +1,16 @@
--- FIX CRITICAL: Remove public access to chat when user_id is NULL
--- This prevents exposing sensitive medical questions to anyone
+-- CORRECTION CRITIQUE : Suppression de l'accès public au chat lorsque user_id est NULL.
+-- Cela empêche l'exposition de questions médicales sensibles à quiconque.
 
--- Drop existing policies on chat_conversations
+-- Supprimer les politiques existantes sur les conversations de chat
 DROP POLICY IF EXISTS "Users can create conversations" ON public.chat_conversations;
 DROP POLICY IF EXISTS "Users can update their own conversations" ON public.chat_conversations;
 DROP POLICY IF EXISTS "Users can view their own conversations" ON public.chat_conversations;
 
--- Drop existing policies on chat_messages
+-- Supprimer les politiques existantes sur les messages de chat
 DROP POLICY IF EXISTS "Users can create messages in their conversations" ON public.chat_messages;
 DROP POLICY IF EXISTS "Users can view messages in their conversations" ON public.chat_messages;
 
--- Create new secure policies for chat_conversations
+-- Créer de nouvelles politiques sécurisées pour chat_conversations
 CREATE POLICY "Authenticated users can create conversations"
   ON public.chat_conversations FOR INSERT
   TO authenticated
@@ -26,7 +26,7 @@ CREATE POLICY "Users can view their own conversations"
   TO authenticated
   USING (auth.uid() = user_id);
 
--- Create new secure policies for chat_messages
+-- Créer de nouvelles politiques sécurisées pour chat_messages
 CREATE POLICY "Authenticated users can create messages"
   ON public.chat_messages FOR INSERT
   TO authenticated

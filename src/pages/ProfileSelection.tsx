@@ -1,164 +1,106 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, User, Building2, Truck, Stethoscope, Shield, Globe } from 'lucide-react';
-
-interface ProfileOption {
-  id: string;
-  title: string;
-  subtitle: string;
-  description: string;
-  icon: React.ReactNode;
-  route: string;
-  color: string;
-}
+import { ArrowLeft, Zap, ShieldCheck, Globe } from 'lucide-react';
+import { profiles } from '@/config/profiles';
 
 const ProfileSelection = () => {
   const navigate = useNavigate();
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
-  const profiles: ProfileOption[] = [
-    {
-      id: 'patient',
-      title: 'Patient',
-      subtitle: 'Tableau de Bord Patient',
-      description: 'Gérez vos commandes et prescriptions',
-      icon: <User className="h-8 w-8" />,
-      route: '/auth/patient',
-      color: 'from-blue-500 to-blue-600'
-    },
-    {
-      id: 'pharmacy',
-      title: 'Pharmacie',
-      subtitle: 'Pharmacie du Centre',
-      description: 'Gestion des commandes et du stock',
-      icon: <Building2 className="h-8 w-8" />,
-      route: '/auth/pharmacy',
-      color: 'from-green-500 to-green-600'
-    },
-    {
-      id: 'driver',
-      title: 'Livreur',
-      subtitle: 'Interface Livreur',
-      description: 'Gestion des livraisons et tournées',
-      icon: <Truck className="h-8 w-8" />,
-      route: '/auth/driver',
-      color: 'from-orange-500 to-orange-600'
-    },
-    {
-      id: 'doctor',
-      title: 'Médecin',
-      subtitle: 'Tableau Médecin',
-      description: 'Gestion des patients et prescriptions',
-      icon: <Stethoscope className="h-8 w-8" />,
-      route: '/auth/doctor',
-      color: 'from-purple-500 to-purple-600'
-    },
-    {
-      id: 'insurer',
-      title: 'Assurance Maladie',
-      subtitle: 'Interface Assurance',
-      description: 'Gestion des remboursements et CMU',
-      icon: <Shield className="h-8 w-8" />,
-      route: '/auth/insurer',
-      color: 'from-red-500 to-red-600'
-    },
-    {
-      id: 'visitor',
-      title: 'Visiteur',
-      subtitle: 'Mode Visiteur',
-      description: 'Parcourir le catalogue sans compte',
-      icon: <Globe className="h-8 w-8" />,
-      route: '/',
-      color: 'from-teal-500 to-teal-600'
-    }
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
-      {/* Header avec bouton retour */}
-      <div className="container mx-auto px-4 pt-8">
-        <div className="flex items-center justify-between mb-12">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/')}
-            className="flex items-center gap-2 hover:bg-primary/10 transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Retour à l'accueil
-          </Button>
-          
-          <div className="text-center">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              PharmaGo
-            </h1>
-            <p className="text-sm text-muted-foreground">Express Delivery</p>
+    <div className="min-h-screen mesh-gradient relative overflow-hidden flex flex-col items-center justify-center p-6 lg:p-12 selection:bg-primary selection:text-white">
+      {/* HUD Navigation */}
+      <div className="absolute top-0 left-0 w-full p-8 flex justify-between items-center z-50">
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/')}
+          className="flex items-center gap-2 text-muted-foreground hover:text-foreground hover:bg-white/40 transition-all rounded-xl px-4 font-bold border border-transparent hover:border-white/40"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span className="text-xs uppercase tracking-widest">Retour</span>
+        </Button>
+        <div className="flex items-center gap-2 pointer-events-none">
+          <div className="w-8 h-8 bg-white/40 border border-white/60 rounded-xl flex items-center justify-center shadow-lg">
+            <span className="text-primary font-black text-sm">P</span>
           </div>
-          
-          <div className="w-32"></div> {/* Spacer pour centrer le titre */}
+          <span className="text-sm font-black uppercase tracking-widest text-foreground/80">Protocol v2.4</span>
         </div>
+      </div>
 
-        {/* Titre et description */}
-        <div className="text-center mb-16">
-          <h2 className="text-5xl font-bold text-foreground mb-6">
-            Choisissez votre profil
+      <div className="max-w-7xl w-full space-y-16 relative z-10 animate-in fade-in duration-1000">
+        {/* Title Section */}
+        <div className="text-center space-y-4">
+          <h2 className="text-5xl lg:text-7xl font-black tracking-tighter uppercase text-foreground/90 leading-[0.9]">
+            Choisissez Votre <span className="text-primary tracking-normal italic">Identité</span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Sélectionnez le type de compte qui correspond à votre activité
+          <p className="text-sm font-black uppercase tracking-[0.3em] text-muted-foreground/60 max-w-2xl mx-auto">
+            Sécurisez votre accès à l'écosystème PharmaGo
           </p>
         </div>
 
-        {/* Grille des profils */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto pb-16">
+        {/* Grille des profils - Premium Glass Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {profiles.map((profile, index) => (
-            <Card
+            <div
               key={profile.id}
-              className={`group relative overflow-hidden border-2 transition-all duration-500 hover:shadow-2xl hover:scale-105 cursor-pointer ${
-                hoveredCard === profile.id ? 'border-primary' : 'border-border'
-              } animate-fade-in`}
-              style={{ 
-                animationDelay: `${index * 150}ms`,
-                animationFillMode: 'both'
-              }}
+              className={`glass-card group p-1 transition-all duration-500 cursor-pointer ${hoveredCard === profile.id ? 'scale-[1.03] glow-border' : 'opacity-80 scale-100 border-white/20'
+                }`}
               onMouseEnter={() => setHoveredCard(profile.id)}
               onMouseLeave={() => setHoveredCard(null)}
               onClick={() => navigate(profile.route)}
             >
-              {/* Gradient background */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${profile.color} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
-              
-              <CardHeader className="relative z-10 text-center pb-4">
-                <div className={`mx-auto w-16 h-16 rounded-full bg-gradient-to-br ${profile.color} flex items-center justify-center text-white mb-6 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-12`}>
-                  {profile.icon}
+              <div className="bg-white/30 backdrop-blur-2xl rounded-[2.2rem] p-8 h-full flex flex-col justify-between border border-white/40 shadow-xl overflow-hidden relative">
+                {/* Decorative Pattern */}
+                <div className={`absolute -top-10 -right-10 w-32 h-32 ${profile.color} opacity-5 rounded-full blur-3xl group-hover:opacity-20 transition-opacity`} />
+
+                <div className="space-y-6">
+                  <div className={`w-14 h-14 rounded-2xl ${profile.color} flex items-center justify-center text-white shadow-2xl transition-transform duration-500 group-hover:rotate-12`}>
+                    <profile.icon className="h-7 w-7" />
+                  </div>
+
+                  <div className="space-y-1">
+                    <h3 className="text-3xl font-black tracking-tighter text-foreground uppercase">
+                      {profile.title}
+                    </h3>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-primary opacity-80">
+                      {profile.subtitle}
+                    </p>
+                  </div>
+
+                  <p className="text-sm font-medium text-muted-foreground/80 leading-relaxed min-h-[3rem]">
+                    {profile.description}
+                  </p>
                 </div>
-                
-                <CardTitle className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors duration-300">
-                  {profile.title}
-                </CardTitle>
-                
-                <CardDescription className="text-lg font-semibold text-primary/80 mt-2">
-                  {profile.subtitle}
-                </CardDescription>
-              </CardHeader>
-              
-              <CardContent className="relative z-10 text-center pb-8">
-                <p className="text-muted-foreground text-base leading-relaxed mb-6">
-                  {profile.description}
-                </p>
-                
-                <Button 
-                  variant="outline" 
-                  className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 font-semibold"
-                >
-                  Commencer
-                </Button>
-              </CardContent>
-              
-              {/* Effet de brillance */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 transform -skew-x-12 translate-x-full group-hover:translate-x-[-200%] transition-all duration-1000" />
-            </Card>
+
+                <div className="mt-10">
+                  <Button
+                    className="w-full bg-foreground text-background hover:bg-foreground/90 transition-all duration-300 font-black uppercase tracking-[0.1em] h-14 rounded-2xl group-hover:shadow-2xl flex items-center justify-center gap-2"
+                  >
+                    Démarrer la Session <Zap className="h-4 w-4 fill-current" />
+                  </Button>
+                </div>
+              </div>
+            </div>
           ))}
+        </div>
+
+        {/* System Footer */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-12 border-t border-white/40">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2 px-4 py-2 bg-white/40 rounded-full border border-white/40 shadow-md">
+              <ShieldCheck className="h-4 w-4 text-green-600" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-green-700">Flux de Données Chiffré</span>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 bg-white/40 rounded-full border border-white/40 shadow-md">
+              <Globe className="h-4 w-4 text-primary" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-primary">Serveur: Abidjan Main</span>
+            </div>
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">
+            © 2026 PHARMAGO LOGISTICS • GLOBAL OPS
+          </p>
         </div>
       </div>
     </div>

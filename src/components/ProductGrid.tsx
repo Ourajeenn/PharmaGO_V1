@@ -23,7 +23,9 @@ const products = [
     pharmacy: "Pharmacie du Centre",
     distance: "1.2 km",
     delivery: "15-20 min",
-    description: "Paracétamol pour douleurs et fièvre"
+    description: "Paracétamol pour douleurs et fièvre",
+    molecule: "Paracétamol",
+    symptoms: ["Fièvre", "Douleur", "Maux de tête"]
   },
   {
     id: 2,
@@ -38,7 +40,9 @@ const products = [
     pharmacy: "Pharmacie de la Paix",
     distance: "2.1 km",
     delivery: "20-25 min",
-    description: "Antibiotique à large spectre"
+    description: "Antibiotique à large spectre",
+    molecule: "Amoxicilline",
+    symptoms: ["Infection bactérienne", "Angine", "Otite"]
   },
   {
     id: 3,
@@ -53,7 +57,9 @@ const products = [
     pharmacy: "Pharmacie Moderne",
     distance: "0.8 km",
     delivery: "10-15 min",
-    description: "Complément vitaminique"
+    description: "Complément vitaminique",
+    molecule: "Acide ascorbique",
+    symptoms: ["Fatigue", "Rhume", "Carence"]
   },
   {
     id: 4,
@@ -68,7 +74,9 @@ const products = [
     pharmacy: "Pharmacie de la Santé",
     distance: "1.5 km",
     delivery: "Indisponible",
-    description: "Solution pour lavage nasal"
+    description: "Solution pour lavage nasal",
+    molecule: "Chlorure de sodium",
+    symptoms: ["Nez bouché", "Yeux secs"]
   },
   {
     id: 5,
@@ -83,7 +91,9 @@ const products = [
     pharmacy: "Pharmacie Express",
     distance: "0.5 km",
     delivery: "10-15 min",
-    description: "Anti-inflammatoire non stéroïdien"
+    description: "Anti-inflammatoire non stéroïdien",
+    molecule: "Ibuprofène",
+    symptoms: ["Douleur", "Inflammation", "Courbatures"]
   },
   {
     id: 6,
@@ -98,17 +108,32 @@ const products = [
     pharmacy: "Pharmacie du Port",
     distance: "3.2 km",
     delivery: "25-30 min",
-    description: "Thermomètre électronique précis"
+    description: "Thermomètre électronique précis",
+    molecule: "",
+    symptoms: ["Fièvre"]
   }
 ];
 
+import { useSearchParams } from "react-router-dom";
+import { useEffect } from "react";
+
+// ... existing imports
+
 const ProductGrid = () => {
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("q") || "");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedType, setSelectedType] = useState("all");
   const [priceRange, setPriceRange] = useState("all");
   const [favorites, setFavorites] = useState<number[]>([]);
   const { addToCart } = useCart();
+
+  useEffect(() => {
+    const query = searchParams.get("q");
+    if (query) {
+      setSearchTerm(query);
+    }
+  }, [searchParams]);
 
   const categories = ["all", "Antalgique", "Antibiotique", "Complément", "Hygiène", "Anti-inflammatoire", "Matériel médical"];
   const types = ["all", "Prescription", "Libre"];
@@ -129,8 +154,13 @@ const ProductGrid = () => {
   };
 
   const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const term = searchTerm.toLowerCase();
+    const matchesSearch =
+      product.name.toLowerCase().includes(term) ||
+      product.description.toLowerCase().includes(term) ||
+      (product.molecule && product.molecule.toLowerCase().includes(term)) ||
+      (product.symptoms && product.symptoms.some(s => s.toLowerCase().includes(term)));
+
     const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
     const matchesType = selectedType === "all" || product.type === selectedType;
 
@@ -171,7 +201,7 @@ const ProductGrid = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Rechercher un médicament..."
+                  placeholder="Rechercher par nom, molécule, symptôme..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -264,6 +294,9 @@ const ProductGrid = () => {
                       <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
                         {product.name}
                       </h3>
+                      {product.molecule && (
+                        <p className="text-xs text-primary/80 font-medium">{product.molecule}</p>
+                      )}
                       <p className="text-sm text-muted-foreground">{product.description}</p>
                     </div>
 
