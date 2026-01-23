@@ -76,7 +76,7 @@ const Index = () => {
           className="h-14 px-8 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-2xl shadow-orange-500/30 transition-all duration-300 hover:scale-110 font-black uppercase tracking-widest text-white border-none"
         >
           <Sparkles className="mr-2 h-5 w-5" />
-          Explorer V2
+          V2
         </Button>
       </div>
 

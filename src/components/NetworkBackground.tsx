@@ -12,6 +12,11 @@ const NetworkBackground = () => {
         // await console.log(container);
     }, []);
 
+    // Simple mobile detection to disable particles for performance
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+    if (isMobile) return null;
+
     return (
         <Particles
             id="tsparticles"

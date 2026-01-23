@@ -90,7 +90,7 @@ const Header = () => {
               <Button
                 variant="ghost"
                 onClick={() => navigate('/profile-selection')}
-                className="flex items-center rounded-full overflow-hidden shadow-sm hover:shadow-md transition-all hover:scale-105 group border-none bg-[#f1f7ff] hover:bg-primary hover:text-white h-10 px-4 gap-2"
+                className="flex items-center rounded-full overflow-hidden shadow-sm hover:shadow-md transition-all hover:scale-105 group border-none bg-[#f1f7ff] hover:bg-primary hover:text-white h-10 px-2 md:px-4 gap-1 md:gap-2"
               >
                 <div className="p-1.5 rounded-full bg-primary text-white group-hover:bg-white group-hover:text-primary transition-colors">
                   <User className="h-4 w-4" />
@@ -144,7 +144,13 @@ const Header = () => {
                 <Link to="/consultation" className="text-foreground hover:text-primary transition-colors font-medium">
                   Consultation Médicale
                 </Link>
-                <div className="pt-4 border-t border-white/10">
+
+                <div className="flex items-center justify-between py-2 border-t border-white/10 mt-2">
+                  <span className="text-sm font-medium">Thème</span>
+                  <ThemeToggle />
+                </div>
+
+                <div className="pt-2 border-t border-white/10">
                   <p className="text-xs font-bold text-muted-foreground uppercase mb-3 px-2">Espaces Utilisateurs</p>
                   <Button
                     variant="outline"
