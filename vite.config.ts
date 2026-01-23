@@ -17,7 +17,8 @@ export default defineConfig(({ mode }) => ({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.png', 'robots.txt', '*.png', '*.svg', '*.jpg'],
+      injectRegister: 'auto',
+      includeAssets: ['favicon.png', 'robots.txt', '**/*.png', '**/*.svg', '**/*.jpg', '**/*.jpeg', '**/*.ico'],
       manifest: {
         name: 'PharmaGo Express',
         short_name: 'PharmaGo',
@@ -62,6 +63,7 @@ export default defineConfig(({ mode }) => ({
         ]
       },
       workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg}'],
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
@@ -73,7 +75,7 @@ export default defineConfig(({ mode }) => ({
               cacheName: 'google-fonts-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // <== 365 days
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 365 days
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -87,28 +89,15 @@ export default defineConfig(({ mode }) => ({
               cacheName: 'gstatic-fonts-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // <== 365 days
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 365 days
               },
               cacheableResponse: {
                 statuses: [0, 200]
               },
             }
           },
+          // Cache Supabase Auth & DB
           {
-            // Cache API calls
-            urlPattern: ({ url }) => url.pathname.startsWith('/api'),
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 // 1 day
-              },
-              networkTimeoutSeconds: 10
-            }
-          },
-          {
-            // Cache Supabase calls
             urlPattern: ({ url }) => url.hostname.includes('supabase.co'),
             handler: 'NetworkFirst',
             options: {
@@ -119,6 +108,18 @@ export default defineConfig(({ mode }) => ({
               },
               networkTimeoutSeconds: 5
             }
+          },
+          // Cache configured external images (if any)
+          {
+            urlPattern: ({ request }) => request.destination === 'image',
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'images-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 Days
+              }
+            }
           }
         ]
       },
@@ -127,8 +128,6 @@ export default defineConfig(({ mode }) => ({
         type: 'module',
       },
     }),
-    // mode === 'development' &&
-    // componentTagger(),
   ].filter(Boolean),
   resolve: {
     alias: {
