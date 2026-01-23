@@ -145,8 +145,8 @@ export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
                         <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nom complet</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <User className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                            <Input placeholder="Jean Kouassi" {...field} className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
+                            <User className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+                            <Input placeholder="Jean Kouassi" {...field} className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-0" />
                           </div>
                         </FormControl>
                         <FormMessage />
@@ -162,8 +162,14 @@ export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
                         <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                            <Input type="email" placeholder="nom@exemple.com" {...field} className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
+                            <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+                            <Input
+                              type="email"
+                              placeholder="nom@exemple.com"
+                              {...field}
+                              autoComplete="username webauthn"
+                              className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-0"
+                            />
                           </div>
                         </FormControl>
                         <FormMessage />
@@ -179,8 +185,8 @@ export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
                         <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Téléphone</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Phone className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                            <Input type="tel" placeholder="+225 07..." {...field} className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
+                            <Phone className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+                            <Input type="tel" placeholder="+225 07..." {...field} className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-0" />
                           </div>
                         </FormControl>
                         <FormMessage />
@@ -196,17 +202,18 @@ export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
                         <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Mot de passe</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Lock className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                            <Lock className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                             <Input
                               type={showPassword ? "text" : "password"}
                               placeholder="••••••••"
                               {...field}
-                              className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold"
+                              autoComplete="new-password webauthn"
+                              className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-0"
                             />
                             <button
                               type="button"
                               onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-3 top-3.5 text-muted-foreground hover:text-foreground"
+                              className="absolute right-3 top-3.5 text-muted-foreground hover:text-foreground z-20"
                             >
                               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </button>
@@ -225,12 +232,12 @@ export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
                         <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Confirmer mot de passe</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Lock className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                            <Lock className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                             <Input
                               type={showPassword ? "text" : "password"}
                               placeholder="••••••••"
                               {...field}
-                              className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold"
+                              className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-0"
                             />
                           </div>
                         </FormControl>
