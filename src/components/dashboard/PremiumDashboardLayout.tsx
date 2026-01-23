@@ -26,10 +26,11 @@ import { Input } from '@/components/ui/input'
 
 interface PremiumDashboardLayoutProps {
     children: React.ReactNode
-    activeTab?: string
+    activeTab?: string,
+    role?: 'patient' | 'pharmacy' | 'driver' | 'doctor' | 'insurer' | 'admin' | 'visitor'
 }
 
-export const PremiumDashboardLayout = ({ children, activeTab = 'home' }: PremiumDashboardLayoutProps) => {
+export const PremiumDashboardLayout = ({ children, activeTab = 'home', role = 'patient' }: PremiumDashboardLayoutProps) => {
     const { profile, signOut } = useAuth()
     const navigate = useNavigate()
 
@@ -37,6 +38,68 @@ export const PremiumDashboardLayout = ({ children, activeTab = 'home' }: Premium
         await signOut()
         navigate('/auth')
     }
+
+    // Role-based Color Mapping
+    const roleThemes = {
+        patient: {
+            primary: 'text-blue-600',
+            bg: 'bg-blue-600',
+            light: 'bg-blue-500/10',
+            border: 'border-blue-200/50',
+            gradient: 'from-blue-600 to-indigo-600',
+            shadow: 'shadow-blue-500/20'
+        },
+        pharmacy: {
+            primary: 'text-green-600',
+            bg: 'bg-green-600',
+            light: 'bg-green-500/10',
+            border: 'border-green-200/50',
+            gradient: 'from-green-600 to-emerald-600',
+            shadow: 'shadow-green-500/20'
+        },
+        driver: {
+            primary: 'text-orange-600',
+            bg: 'bg-orange-600',
+            light: 'bg-orange-500/10',
+            border: 'border-orange-200/50',
+            gradient: 'from-orange-500 to-amber-600',
+            shadow: 'shadow-orange-500/20'
+        },
+        doctor: {
+            primary: 'text-cyan-600',
+            bg: 'bg-cyan-600',
+            light: 'bg-cyan-500/10',
+            border: 'border-cyan-200/50',
+            gradient: 'from-cyan-600 to-blue-600',
+            shadow: 'shadow-cyan-500/20'
+        },
+        insurer: {
+            primary: 'text-purple-600',
+            bg: 'bg-purple-600',
+            light: 'bg-purple-500/10',
+            border: 'border-purple-200/50',
+            gradient: 'from-purple-600 to-violet-600',
+            shadow: 'shadow-purple-500/20'
+        },
+        admin: {
+            primary: 'text-slate-800',
+            bg: 'bg-slate-800',
+            light: 'bg-slate-500/10',
+            border: 'border-slate-200/50',
+            gradient: 'from-slate-700 to-slate-900',
+            shadow: 'shadow-slate-500/20'
+        },
+        visitor: {
+            primary: 'text-gray-600',
+            bg: 'bg-gray-600',
+            light: 'bg-gray-500/10',
+            border: 'border-gray-200/50',
+            gradient: 'from-gray-600 to-gray-700',
+            shadow: 'shadow-gray-500/20'
+        }
+    }
+
+    const theme = roleThemes[role] || roleThemes['patient']
 
     const navItems = [
         { id: 'home', icon: Home, label: 'Tableau de bord', path: '/dashboard' },
@@ -50,8 +113,8 @@ export const PremiumDashboardLayout = ({ children, activeTab = 'home' }: Premium
             {/* Sidebar - Glass Effect */}
             <aside className="w-20 lg:w-64 glass-sidebar flex flex-col z-50">
                 <div className="p-6 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                        <span className="text-white font-bold text-xl">P</span>
+                    <div className={`w-10 h-10 bg-gradient-to-br ${theme.gradient} rounded-xl flex items-center justify-center shadow-lg`}>
+                        <span className="text-white font-bold text-xl">{role.charAt(0).toUpperCase()}</span>
                     </div>
                     <span className="hidden lg:block font-bold text-xl tracking-tight text-foreground/80">PharmaGo</span>
                 </div>
@@ -62,11 +125,11 @@ export const PremiumDashboardLayout = ({ children, activeTab = 'home' }: Premium
                             key={item.id}
                             onClick={() => item.path !== '#' && navigate(item.path)}
                             className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-300 group ${activeTab === item.id
-                                    ? 'bg-primary/10 text-primary shadow-[0_0_15px_rgba(59,130,246,0.1)]'
-                                    : 'text-muted-foreground hover:bg-white/40 hover:text-foreground'
+                                ? `${theme.light} ${theme.primary} shadow-sm border ${theme.border}`
+                                : 'text-muted-foreground hover:bg-white/40 hover:text-foreground'
                                 }`}
                         >
-                            <item.icon className={`h-6 w-6 transition-transform duration-300 group-hover:scale-110 ${activeTab === item.id ? 'text-primary' : ''
+                            <item.icon className={`h-6 w-6 transition-transform duration-300 group-hover:scale-110 ${activeTab === item.id ? theme.primary : ''
                                 }`} />
                             <span className="hidden lg:block font-medium">{item.label}</span>
                         </button>
@@ -105,9 +168,9 @@ export const PremiumDashboardLayout = ({ children, activeTab = 'home' }: Premium
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <div className="flex items-center gap-3 glass-card pl-2 pr-4 py-1 cursor-pointer border-white/40">
-                                    <Avatar className="h-8 w-8 border-2 border-primary/20">
+                                    <Avatar className={`h-8 w-8 border-2 ${theme.border}`}>
                                         <AvatarImage src="" />
-                                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-xs">
+                                        <AvatarFallback className={`bg-gradient-to-br ${theme.gradient} text-white text-xs`}>
                                             {profile?.name?.substring(0, 2).toUpperCase() || 'US'}
                                         </AvatarFallback>
                                     </Avatar>
@@ -120,10 +183,10 @@ export const PremiumDashboardLayout = ({ children, activeTab = 'home' }: Premium
                             <DropdownMenuContent className="glass-morphism border-white/20 rounded-xl w-56 mt-2" align="end">
                                 <DropdownMenuLabel>Mon Compte</DropdownMenuLabel>
                                 <DropdownMenuSeparator className="bg-white/20" />
-                                <DropdownMenuItem className="focus:bg-primary/10 rounded-lg cursor-pointer">
+                                <DropdownMenuItem className={`focus:${theme.light} rounded-lg cursor-pointer`}>
                                     <User className="mr-2 h-4 w-4" /> Profil
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="focus:bg-primary/10 rounded-lg cursor-pointer">
+                                <DropdownMenuItem className={`focus:${theme.light} rounded-lg cursor-pointer`}>
                                     <Settings className="mr-2 h-4 w-4" /> Paramètres
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator className="bg-white/20" />

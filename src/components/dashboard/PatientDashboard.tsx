@@ -130,7 +130,7 @@ export const PatientDashboard = () => {
   }
 
   return (
-    <PremiumDashboardLayout activeTab="home">
+    <PremiumDashboardLayout activeTab="home" role="patient">
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
         {/* Welcome Section */}
         <div className="flex justify-between items-end">

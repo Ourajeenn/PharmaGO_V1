@@ -133,7 +133,7 @@ export const InsurerDashboard = () => {
   }
 
   return (
-    <PremiumDashboardLayout activeTab="home">
+    <PremiumDashboardLayout activeTab="home" role="insurer">
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
         {/* Financial Header */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">

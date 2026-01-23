@@ -46,7 +46,7 @@ export const profiles: ProfileOption[] = [
         description: 'Gestion des patients et prescriptions',
         icon: Stethoscope,
         route: '/auth/doctor',
-        color: 'bg-[#0070c0]'
+        color: 'bg-[#06b6d4]' // Cyan-500
     },
     {
         id: 'insurer',
@@ -55,7 +55,7 @@ export const profiles: ProfileOption[] = [
         description: 'Gestion des remboursements et CMU',
         icon: Shield,
         route: '/auth/insurer',
-        color: 'bg-[#00b050]'
+        color: 'bg-[#9333ea]' // Purple-600
     },
     {
         id: 'visitor',
@@ -63,7 +63,7 @@ export const profiles: ProfileOption[] = [
         subtitle: 'Mode Visiteur',
         description: 'Parcourir le catalogue sans compte',
         icon: Globe,
-        route: '/',
-        color: 'bg-[#f97316]'
+        route: '/visitor',
+        color: 'bg-[#64748b]' // Slate-500
     }
 ];

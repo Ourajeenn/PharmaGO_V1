@@ -182,7 +182,7 @@ export const DriverDashboard = () => {
   const historyDeliveries = deliveries.filter(d => d.status === 'livre')
 
   return (
-    <PremiumDashboardLayout activeTab="home">
+    <PremiumDashboardLayout activeTab="home" role="driver">
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
         {/* Delivery Header */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">

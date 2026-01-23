@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Zap, ShieldCheck, Globe } from 'lucide-react';
+import { ArrowLeft, Zap } from 'lucide-react';
 import { profiles } from '@/config/profiles';
 
 const ProfileSelection = () => {
@@ -87,21 +86,7 @@ const ProfileSelection = () => {
         </div>
 
         {/* System Footer */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-12 border-t border-white/40">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 px-4 py-2 bg-white/40 rounded-full border border-white/40 shadow-md">
-              <ShieldCheck className="h-4 w-4 text-green-600" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-green-700">Flux de Données Chiffré</span>
-            </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-white/40 rounded-full border border-white/40 shadow-md">
-              <Globe className="h-4 w-4 text-primary" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-primary">Serveur: Abidjan Main</span>
-            </div>
-          </div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">
-            © 2026 PHARMAGO LOGISTICS • GLOBAL OPS
-          </p>
-        </div>
+
       </div>
     </div>
   );
