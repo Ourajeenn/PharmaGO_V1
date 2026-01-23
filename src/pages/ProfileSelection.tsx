@@ -20,12 +20,7 @@ const ProfileSelection = () => {
           <ArrowLeft className="h-4 w-4" />
           <span className="text-xs uppercase tracking-widest">Retour</span>
         </Button>
-        <div className="flex items-center gap-2 pointer-events-none">
-          <div className="w-8 h-8 bg-white/40 border border-white/60 rounded-xl flex items-center justify-center shadow-lg">
-            <span className="text-primary font-black text-sm">P</span>
-          </div>
-          <span className="text-sm font-black uppercase tracking-widest text-foreground/80">Protocol v2.4</span>
-        </div>
+
       </div>
 
       <div className="max-w-7xl w-full space-y-16 relative z-10 animate-in fade-in duration-1000">

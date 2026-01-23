@@ -1,134 +1,107 @@
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, Eye, EyeOff, User, Heart, Shield, ArrowLeft } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+import { Loader2, ArrowLeft, User, Mail, Phone, Lock, HeartPulse, Zap, Eye, EyeOff } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+
+const signInSchema = z.object({
+  email: z.string().email('Email invalide'),
+  password: z.string().min(6, 'Le mot de passe doit contenir au moins 6 caractères')
+})
+
+const signUpSchema = z.object({
+  name: z.string().min(2, 'Le nom complet est requis'),
+  email: z.string().email('Email invalide'),
+  password: z.string().min(6, 'Le mot de passe doit contenir au moins 6 caractères'),
+  confirmPassword: z.string(),
+  phone: z.string().min(8, 'Numéro de téléphone requis'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Les mots de passe ne correspondent pas',
+  path: ['confirmPassword']
+})
 
 interface PatientAuthFormProps {
   onSuccess?: () => void
 }
 
 export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
+  const navigate = useNavigate()
   const [isSignUp, setIsSignUp] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const { signIn, signUp } = useAuth()
   const { toast } = useToast()
 
-  // Sign In State
-  const [signInEmail, setSignInEmail] = useState('')
-  const [signInPassword, setSignInPassword] = useState('')
+  const signInForm = useForm<z.infer<typeof signInSchema>>({
+    resolver: zodResolver(signInSchema),
+    defaultValues: {
+      email: '',
+      password: ''
+    }
+  })
 
-  // Sign Up State
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [phone, setPhone] = useState('')
-  const [insuranceNumber, setInsuranceNumber] = useState('')
-  const [cmuNumber, setCmuNumber] = useState('')
+  const signUpForm = useForm<z.infer<typeof signUpSchema>>({
+    resolver: zodResolver(signUpSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      phone: ''
+    }
+  })
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const onSignIn = async (values: z.infer<typeof signInSchema>) => {
     setLoading(true)
-
     try {
-      if (!signInEmail || !signInPassword) {
-        throw new Error('Veuillez remplir tous les champs')
-      }
-
-      const { error } = await signIn(signInEmail, signInPassword)
-      if (error) {
-        if (error.message.includes('Invalid login')) {
-          throw new Error('Email ou mot de passe incorrect')
-        }
-        throw error
-      }
+      const { error } = await signIn(values.email, values.password)
+      if (error) throw error
 
       toast({
-        title: 'Connexion réussie',
-        description: 'Bienvenue dans votre espace patient!'
+        title: 'Connexion réussie !',
+        description: 'Bienvenue sur votre espace patient.',
       })
       onSuccess?.()
     } catch (error: any) {
       toast({
         title: 'Erreur de connexion',
-        description: error.message || 'Impossible de se connecter',
-        variant: 'destructive'
+        description: error.message,
+        variant: 'destructive',
       })
     } finally {
       setLoading(false)
     }
   }
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const onSignUp = async (values: z.infer<typeof signUpSchema>) => {
     setLoading(true)
-
     try {
-      // Validation
-      if (!name || !email || !password || !phone) {
-        throw new Error('Veuillez remplir tous les champs obligatoires')
-      }
-
-      if (password.length < 6) {
-        throw new Error('Le mot de passe doit contenir au moins 6 caractères')
-      }
-
-      if (password !== confirmPassword) {
-        throw new Error('Les mots de passe ne correspondent pas')
-      }
-
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        throw new Error('Email invalide')
-      }
-
-      const userData = {
-        name: name.trim(),
-        email: email.trim().toLowerCase(),
-        phone: phone.trim(),
-        role: 'patient' as const,
-        insurance_id: insuranceNumber.trim() || undefined,
-        cmu_number: cmuNumber.trim() || undefined,
-      }
-
-      const { error } = await signUp(email.trim().toLowerCase(), password, userData)
-
-      if (error) {
-        if (error.message.includes('already registered') || error.message.includes('already exists')) {
-          throw new Error('Cet email est déjà utilisé. Veuillez vous connecter.')
-        }
-        if (error.message.includes('Password should be')) {
-          throw new Error('Le mot de passe doit contenir au moins 6 caractères.')
-        }
-
-        throw new Error(error.message || 'Erreur lors de la création du compte')
-      }
-
-      toast({
-        title: '✅ Inscription réussie !',
-        description: 'Votre compte patient a été créé. Vérifiez votre email pour confirmer votre inscription.'
+      const { error } = await signUp(values.email, values.password, {
+        name: values.name,
+        phone: values.phone,
+        role: 'patient'
       })
 
-      // Reset form
-      setName('')
-      setEmail('')
-      setPassword('')
-      setConfirmPassword('')
-      setPhone('')
-      setInsuranceNumber('')
-      setCmuNumber('')
-      setIsSignUp(false)
-    } catch (error: any) {
-      console.error('Registration error:', error)
+      if (error) throw error
+
       toast({
-        title: '❌ Erreur d\'inscription',
-        description: error.message || 'Une erreur est survenue. Veuillez réessayer.',
-        variant: 'destructive'
+        title: 'Inscription réussie !',
+        description: 'Veuillez vérifier votre email pour confirmer votre compte.',
+      })
+      // Delay to let toast show
+      setTimeout(() => onSuccess?.(), 1000)
+
+    } catch (error: any) {
+      toast({
+        title: 'Erreur lors de l\'inscription',
+        description: error.message,
+        variant: 'destructive',
       })
     } finally {
       setLoading(false)
@@ -136,276 +109,214 @@ export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-background to-green-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-6xl">
+    <div className="min-h-screen mesh-gradient flex items-center justify-center p-6 relative overflow-hidden bg-slate-50">
+      <div className="w-full max-w-lg relative z-10 animate-in zoom-in-95 duration-700">
         <Button
           variant="ghost"
-          onClick={() => window.history.back()}
-          className="mb-6 flex items-center gap-2 hover:bg-primary/10 transition-colors"
+          onClick={() => navigate('/profile-selection')}
+          className="mb-8 flex items-center gap-2 hover:bg-white/40 transition-all rounded-xl px-4 font-bold border border-transparent hover:border-white/40 text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
-          Retour
+          <span className="text-xs uppercase tracking-widest">Retour au sélecteur</span>
         </Button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-          {/* Section informative */}
-          <div className="space-y-6">
-            <div className="text-center lg:text-left">
-              <h1 className="text-4xl font-bold text-primary mb-4">
-                Espace Patient
-              </h1>
-              <p className="text-xl text-muted-foreground mb-6">
-                Commandez vos médicaments en toute sécurité
+        <div className="glass-card p-1 shadow-2xl rounded-[2.5rem] overflow-hidden">
+          <div className="bg-white/40 backdrop-blur-xl p-8 lg:p-10 rounded-[2.2rem] border border-white/40">
+            <div className="space-y-2 text-center mb-10">
+              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 border border-primary/20">
+                <HeartPulse className="h-8 w-8 text-primary" />
+              </div>
+              <h2 className="text-4xl font-black tracking-tighter text-foreground uppercase leading-[0.9]">
+                Espace <span className="text-primary tracking-normal italic">Patient</span>
+              </h2>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">
+                {isSignUp ? 'Rejoignez l\'excellence logistique' : 'Authentification sécurisée'}
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-white p-4 rounded-lg shadow-sm border text-center">
-                <Heart className="h-8 w-8 text-red-500 mx-auto mb-2" />
-                <h3 className="font-semibold text-sm">Ordonnances</h3>
-                <p className="text-xs text-muted-foreground">Uploadez vos prescriptions</p>
-              </div>
-              <div className="bg-white p-4 rounded-lg shadow-sm border text-center">
-                <Shield className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                <h3 className="font-semibold text-sm">Assurance</h3>
-                <p className="text-xs text-muted-foreground">Prise en charge CMU</p>
-              </div>
-              <div className="bg-white p-4 rounded-lg shadow-sm border text-center">
-                <User className="h-8 w-8 text-blue-500 mx-auto mb-2" />
-                <h3 className="font-semibold text-sm">Profil</h3>
-                <p className="text-xs text-muted-foreground">Historique sécurisé</p>
-              </div>
-            </div>
+            {isSignUp ? (
+              <Form {...signUpForm}>
+                <form onSubmit={signUpForm.handleSubmit(onSignUp)} className="space-y-5">
+                  <FormField
+                    control={signUpForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nom complet</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <User className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                            <Input placeholder="Jean Kouassi" {...field} className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-            <div className="bg-white/50 backdrop-blur-sm p-4 rounded-lg border">
-              <h3 className="font-semibold mb-2">Avantages Patient</h3>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <Badge variant="secondary" className="w-2 h-2 p-0 rounded-full bg-green-500"></Badge>
-                  Livraison rapide à domicile
-                </li>
-                <li className="flex items-center gap-2">
-                  <Badge variant="secondary" className="w-2 h-2 p-0 rounded-full bg-blue-500"></Badge>
-                  Suivi en temps réel
-                </li>
-                <li className="flex items-center gap-2">
-                  <Badge variant="secondary" className="w-2 h-2 p-0 rounded-full bg-purple-500"></Badge>
-                  Rappels de renouvellement
-                </li>
-              </ul>
+                  <FormField
+                    control={signUpForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                            <Input type="email" placeholder="nom@exemple.com" {...field} className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={signUpForm.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Téléphone</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Phone className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                            <Input type="tel" placeholder="+225 07..." {...field} className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={signUpForm.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Mot de passe</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              type={showPassword ? "text" : "password"}
+                              placeholder="••••••••"
+                              {...field}
+                              className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-3 top-3.5 text-muted-foreground hover:text-foreground"
+                            >
+                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={signUpForm.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Confirmer mot de passe</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              type={showPassword ? "text" : "password"}
+                              placeholder="••••••••"
+                              {...field}
+                              className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold"
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button type="submit" className="w-full h-14 rounded-xl bg-primary hover:bg-primary-hover text-white font-black uppercase tracking-widest shadow-xl shadow-primary/20 transition-all hover:scale-[1.01]" disabled={loading}>
+                    {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Zap className="mr-2 h-5 w-5" />}
+                    S'inscrire Maintenant
+                  </Button>
+                </form>
+              </Form>
+            ) : (
+              <Form {...signInForm}>
+                <form onSubmit={signInForm.handleSubmit(onSignIn)} className="space-y-5">
+                  <FormField
+                    control={signInForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                            <Input type="email" placeholder="nom@exemple.com" {...field} className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={signInForm.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="flex items-center justify-between ml-1">
+                          <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Mot de passe</FormLabel>
+                          <button type="button" className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline transition-all" onClick={() => navigate('/forgot-password')}>
+                            Oublié ?
+                          </button>
+                        </div>
+                        <FormControl>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              type={showPassword ? "text" : "password"}
+                              placeholder="••••••••"
+                              {...field}
+                              className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-3 top-3.5 text-muted-foreground hover:text-foreground"
+                            >
+                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button type="submit" className="w-full h-14 rounded-xl bg-primary hover:bg-primary-hover text-white font-black uppercase tracking-widest shadow-xl shadow-primary/20 transition-all hover:scale-[1.01]" disabled={loading}>
+                    {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Zap className="mr-2 h-5 w-5" />}
+                    Accéder au Dashboard
+                  </Button>
+                </form>
+              </Form>
+            )}
+
+            <div className="mt-8 text-center pt-6 border-t border-white/20">
+              <button
+                type="button"
+                className="text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
+                onClick={() => setIsSignUp(!isSignUp)}
+              >
+                {isSignUp ? 'Déjà un compte ? Se connecter' : 'Nouveau ? Créer un compte'}
+              </button>
             </div>
           </div>
-
-          {/* Formulaire */}
-          <Card className="w-full relative z-10">
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold text-center flex items-center justify-center gap-2">
-                <User className="h-6 w-6 text-primary" />
-                {isSignUp ? 'Créer mon compte patient' : 'Connexion Patient'}
-              </CardTitle>
-              <CardDescription className="text-center">
-                {isSignUp
-                  ? 'Rejoignez PharmaGo pour commander vos médicaments avec votre CMU'
-                  : 'Accédez à votre espace personnel et à vos commandes'
-                }
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {isSignUp ? (
-                <form onSubmit={handleSignUp} className="space-y-4" autoComplete="off">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Nom complet *</Label>
-                    <Input
-                      id="name"
-                      name="fullname"
-                      type="text"
-                      placeholder="Votre nom complet"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      autoComplete="name"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email *</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      placeholder="votre@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      autoComplete="email"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Téléphone *</Label>
-                    <Input
-                      id="phone"
-                      name="telephone"
-                      type="tel"
-                      placeholder="+225 XX XX XX XX"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      autoComplete="tel"
-                      required
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="insurance">N° Assurance (optionnel)</Label>
-                      <Input
-                        id="insurance"
-                        name="insurance-number"
-                        type="text"
-                        placeholder="XXXXXXXXXXXXX"
-                        value={insuranceNumber}
-                        onChange={(e) => setInsuranceNumber(e.target.value)}
-                        autoComplete="off"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="cmu">N° CMU (optionnel)</Label>
-                      <Input
-                        id="cmu"
-                        name="cmu-number"
-                        type="text"
-                        placeholder="XXXXXXXXXXXXX"
-                        value={cmuNumber}
-                        onChange={(e) => setCmuNumber(e.target.value)}
-                        autoComplete="off"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Mot de passe *</Label>
-                    <div className="relative">
-                      <Input
-                        id="password"
-                        name="new-password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        autoComplete="new-password"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirmer le mot de passe *</Label>
-                    <Input
-                      id="confirmPassword"
-                      name="confirm-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      autoComplete="new-password"
-                      required
-                    />
-                  </div>
-
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Inscription en cours...
-                      </>
-                    ) : (
-                      "S'inscrire"
-                    )}
-                  </Button>
-
-                  <div className="text-center text-sm">
-                    <span className="text-muted-foreground">Déjà un compte ? </span>
-                    <button
-                      type="button"
-                      onClick={() => setIsSignUp(false)}
-                      className="text-primary hover:underline font-medium"
-                    >
-                      Se connecter
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <form onSubmit={handleSignIn} className="space-y-4" autoComplete="on">
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-email">Email</Label>
-                    <Input
-                      id="signin-email"
-                      name="username"
-                      type="email"
-                      placeholder="votre@email.com"
-                      value={signInEmail}
-                      onChange={(e) => setSignInEmail(e.target.value)}
-                      autoComplete="username"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-password">Mot de passe</Label>
-                    <div className="relative">
-                      <Input
-                        id="signin-password"
-                        name="current-password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        value={signInPassword}
-                        onChange={(e) => setSignInPassword(e.target.value)}
-                        autoComplete="current-password"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Connexion...
-                      </>
-                    ) : (
-                      "Se connecter"
-                    )}
-                  </Button>
-
-                  <div className="text-center text-sm">
-                    <span className="text-muted-foreground">Pas encore de compte ? </span>
-                    <button
-                      type="button"
-                      onClick={() => setIsSignUp(true)}
-                      className="text-primary hover:underline font-medium"
-                    >
-                      S'inscrire
-                    </button>
-                  </div>
-                </form>
-              )}
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>

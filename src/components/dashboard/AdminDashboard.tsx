@@ -1,98 +1,180 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { supabase } from '@/integrations/supabase/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Progress } from '@/components/ui/progress'
-import { Input } from '@/components/ui/input'
 import {
   Users,
   Building,
   Truck,
   Activity,
-  ShoppingCart,
   DollarSign,
   TrendingUp,
   AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Search,
-  Eye,
-  Edit,
   Shield,
   BarChart,
   Zap,
-  ChevronRight,
   Server,
-  Globe,
-  Database
+  Clock
 } from 'lucide-react'
 import { UserManagement } from '@/components/admin/UserManagement'
 import { PremiumDashboardLayout } from './PremiumDashboardLayout'
+import { toast } from 'sonner'
 
 export const AdminDashboard = () => {
-  const [recentUsers] = useState([
-    {
-      id: 'USR001',
-      name: 'Marie Kouassi',
-      email: 'marie@example.com',
-      role: 'patient',
-      status: 'active',
-      joinedAt: '2024-01-15'
-    },
-    {
-      id: 'USR002',
-      name: 'Pharmacie Centrale',
-      email: 'contact@pharma-centrale.ci',
-      role: 'pharmacy',
-      status: 'pending',
-      joinedAt: '2024-01-14'
-    }
-  ])
+  const [loading, setLoading] = useState(true)
 
-  const [recentOrders] = useState([
-    {
-      id: 'CMD001',
-      patient: 'Aya Traoré',
-      pharmacy: 'Pharmacie du Plateau',
-      total: 25500,
-      status: 'completed',
-      date: '2024-01-15'
-    },
-    {
-      id: 'CMD002',
-      patient: 'Koffi Yao',
-      pharmacy: 'Pharmacie Centrale',
-      total: 18750,
-      status: 'in_progress',
-      date: '2024-01-15'
-    }
-  ])
+  // Data States
+  const [recentUsers, setRecentUsers] = useState<any[]>([])
+  const [recentOrders, setRecentOrders] = useState<any[]>([])
 
-  const stats = {
-    totalUsers: 1247,
-    pharmacies: 45,
-    drivers: 89,
-    todayOrders: 156,
-    monthlyRevenue: 15750000,
-    pendingVerifications: 12,
-    systemHealth: 98
+  // Stats State
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    pharmacies: 0,
+    drivers: 0,
+    todayOrders: 0,
+    monthlyRevenue: 0,
+    pendingVerifications: 0,
+    systemHealth: 99
+  })
+
+  useEffect(() => {
+    fetchAdminData()
+
+    // Real-time subscription could be added here
+  }, [])
+
+  const fetchAdminData = async () => {
+    try {
+      setLoading(true)
+      const today = new Date().toISOString().split('T')[0]
+      const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
+
+      // 1. Fetch Users Count & Breakdown
+      const { count: userCount, error: userError } = await supabase
+        .from('user_profiles')
+        .select('*', { count: 'exact', head: true })
+
+      const { count: pharmCount } = await supabase
+        .from('user_profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'pharmacy')
+
+      const { count: driverCount } = await supabase
+        .from('user_profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'driver')
+
+      if (userError) console.error('Error users:', userError)
+
+      // 2. Fetch Orders & Revenue
+      const { data: ordersData, error: ordersError } = await supabase
+        .from('orders')
+        .select(`
+          id,
+          total_amount,
+          status,
+          created_at,
+          patient_id,
+          pharmacy_id,
+          patients:patient_id (
+            user_profiles:user_id (name)
+          ),
+          pharmacies:pharmacy_id (
+            user_profiles:user_id (name)
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(50) // Fetch enough for stats calculation but limit payload
+
+      if (ordersError) console.error('Error orders:', ordersError)
+
+      let revenue = 0
+      let todayOrderCount = 0
+
+      if (ordersData) {
+        // Calculate Revenue (Monthly)
+        revenue = ordersData
+          .filter((o: any) => o.created_at >= firstDayOfMonth && o.status === 'delivered') // Assuming 'delivered' is the completed status
+          .reduce((sum: number, o: any) => sum + (o.total_amount || 0), 0)
+
+        // Today's orders
+        todayOrderCount = ordersData.filter((o: any) => o.created_at.startsWith(today)).length
+
+        // Format Recent Orders (Top 5)
+        const formattedOrders = ordersData.slice(0, 5).map((o: any) => ({
+          id: o.id.slice(0, 8).toUpperCase(),
+          patient: o.patients?.user_profiles?.name || 'Inconnu',
+          pharmacy: o.pharmacies?.user_profiles?.name || 'Inconnu',
+          total: o.total_amount || 0,
+          status: o.status,
+          date: new Date(o.created_at).toLocaleDateString()
+        }))
+        setRecentOrders(formattedOrders)
+      }
+
+      // 3. Fetch Recent Users
+      const { data: usersData, error: recentUsersError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(5)
+
+      if (recentUsersError) console.error('Error recent users:', recentUsersError)
+
+      if (usersData) {
+        setRecentUsers(usersData.map((u: any) => ({
+          id: u.id,
+          name: u.name || 'Sans nom',
+          email: u.email || 'N/A', // user_profiles might not have email directly depending on schema, usually in auth.users
+          role: u.role,
+          status: 'active', // Default for now
+          joinedAt: new Date(u.created_at).toLocaleDateString()
+        })))
+      }
+
+      // 4. Pending Verifications (Mocked query for now based on 'pending' status if it existed)
+      // Assuming we verify pharmacies/drivers manually
+      setStats({
+        totalUsers: userCount || 0,
+        pharmacies: pharmCount || 0,
+        drivers: driverCount || 0,
+        todayOrders: todayOrderCount,
+        monthlyRevenue: revenue,
+        pendingVerifications: 0, // Placeholder
+        systemHealth: 99
+      })
+
+    } catch (error) {
+      console.error('Admin Dashboard Error:', error)
+      toast.error("Erreur de chargement des données")
+    } finally {
+      setLoading(false)
+    }
   }
 
   const getStatusBadge = (status: string) => {
     const styles = {
-      active: 'bg-green-500/10 text-green-600 border-green-200/50',
-      pending: 'bg-orange-500/10 text-orange-600 border-orange-200/50',
-      suspended: 'bg-red-500/10 text-red-600 border-red-200/50',
+      delivered: 'bg-green-500/10 text-green-600 border-green-200/50',
       completed: 'bg-green-500/10 text-green-600 border-green-200/50',
-      in_progress: 'bg-blue-500/10 text-blue-600 border-blue-200/50',
+      pending: 'bg-orange-500/10 text-orange-600 border-orange-200/50',
+      en_livraison: 'bg-blue-500/10 text-blue-600 border-blue-200/50',
       cancelled: 'bg-red-500/10 text-red-600 border-red-200/50'
+    }
+    const labels = {
+      delivered: 'Livré',
+      completed: 'Terminé',
+      pending: 'En attente',
+      en_livraison: 'En cours',
+      cancelled: 'Annulé'
     }
     return (
       <Badge className={`${styles[status as keyof typeof styles] || 'bg-gray-100/10'} border px-2 py-0.5 rounded-full text-[10px] font-black uppercase`}>
-        {status}
+        {labels[status as keyof typeof labels] || status}
       </Badge>
     )
   }
@@ -124,10 +206,11 @@ export const AdminDashboard = () => {
               <Shield className="h-4 w-4 mr-2" /> Audit Sécurité
             </Button>
             <Button
+              onClick={fetchAdminData}
               className="rounded-xl px-6 bg-red-600 hover:bg-red-700 shadow-lg shadow-red-200 transition-all hover:scale-105 font-bold"
             >
               <Zap className="h-4 w-4 mr-2" />
-              Monitoring Live
+              Refresh Data
             </Button>
           </div>
         </div>
@@ -143,7 +226,7 @@ export const AdminDashboard = () => {
             </div>
             <div>
               <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Utilisateurs</p>
-              <h3 className="text-3xl font-black">{stats.totalUsers.toLocaleString()} <span className="text-sm font-normal text-muted-foreground tracking-tighter">+47 NEW</span></h3>
+              <h3 className="text-3xl font-black">{stats.totalUsers.toLocaleString()} <span className="text-sm font-normal text-muted-foreground tracking-tighter">Total</span></h3>
             </div>
           </div>
 
@@ -155,8 +238,8 @@ export const AdminDashboard = () => {
               <div className="text-[10px] font-black text-green-600 bg-green-500/10 px-2 py-1 rounded">REV</div>
             </div>
             <div>
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Revenus Brut</p>
-              <h3 className="text-3xl font-black">{(stats.monthlyRevenue / 1000000).toFixed(1)}M <span className="text-sm font-normal text-muted-foreground tracking-tighter">FCFA</span></h3>
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Revenus (Mensuel)</p>
+              <h3 className="text-3xl font-black">{(stats.monthlyRevenue / 1000000).toFixed(2)}M <span className="text-sm font-normal text-muted-foreground tracking-tighter">FCFA</span></h3>
             </div>
           </div>
 
@@ -168,21 +251,21 @@ export const AdminDashboard = () => {
               <div className="w-2 h-2 bg-orange-500 rounded-full animate-ping" />
             </div>
             <div>
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Vérifications</p>
-              <h3 className="text-3xl font-black text-orange-600">{stats.pendingVerifications} <span className="text-sm font-normal text-muted-foreground tracking-tighter text-foreground">PENDING</span></h3>
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Pharmacies</p>
+              <h3 className="text-3xl font-black text-orange-600">{stats.pharmacies} <span className="text-sm font-normal text-muted-foreground tracking-tighter text-foreground">Actives</span></h3>
             </div>
           </div>
 
           <div className="glass-card p-6 flex flex-col justify-between h-40 border-blue-500/20 bg-blue-500/5">
             <div className="flex justify-between items-start">
               <div className="p-3 bg-blue-500/10 rounded-xl">
-                <Activity className="h-6 w-6 text-blue-600" />
+                <Truck className="h-6 w-6 text-blue-600" />
               </div>
-              <div className="text-[10px] font-black text-blue-600 uppercase">System Health</div>
+              <div className="text-[10px] font-black text-blue-600 uppercase">Flotte</div>
             </div>
             <div>
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Uptime</p>
-              <h3 className="text-3xl font-black text-blue-600">{stats.systemHealth}%</h3>
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Livreurs</p>
+              <h3 className="text-3xl font-black text-blue-600">{stats.drivers}</h3>
             </div>
           </div>
         </div>
@@ -193,7 +276,6 @@ export const AdminDashboard = () => {
             <TabsTrigger value="users" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Accounts</TabsTrigger>
             <TabsTrigger value="orders" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Orders</TabsTrigger>
             <TabsTrigger value="analytics" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Metrics</TabsTrigger>
-            <TabsTrigger value="settings" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Config</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6 outline-none">
@@ -230,31 +312,17 @@ export const AdminDashboard = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="glass-card p-6 flex flex-col justify-between border-primary/20 bg-primary/5">
-                  <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Nouveaux Inscrits</h4>
-                  <h3 className="text-3xl font-black">+47</h3>
+                  <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Commandes Aujourd'hui</h4>
+                  <h3 className="text-3xl font-black">{stats.todayOrders}</h3>
                   <div className="flex items-center gap-2 text-primary font-bold text-xs">
-                    <TrendingUp className="h-4 w-4" /> 12% growth
+                    <TrendingUp className="h-4 w-4" /> Live Traffic
                   </div>
                 </div>
                 <div className="glass-card p-6 flex flex-col justify-between border-purple-500/20 bg-purple-500/5">
-                  <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Validations Pharm.</h4>
-                  <h3 className="text-3xl font-black">+8</h3>
+                  <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Pharmacies</h4>
+                  <h3 className="text-3xl font-black">+{stats.pharmacies}</h3>
                   <div className="flex items-center gap-2 text-purple-600 font-bold text-xs">
-                    <Building className="h-4 w-4" /> Ready for audit
-                  </div>
-                </div>
-                <div className="glass-card p-6 flex flex-col justify-between border-blue-500/20 bg-blue-500/5">
-                  <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Flotte Livreurs</h4>
-                  <h3 className="text-3xl font-black">+12</h3>
-                  <div className="flex items-center gap-2 text-blue-600 font-bold text-xs">
-                    <Truck className="h-4 w-4" /> Active on-boarding
-                  </div>
-                </div>
-                <div className="glass-card p-6 flex flex-col justify-between border-green-500/20 bg-green-500/5">
-                  <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Service Level</h4>
-                  <h3 className="text-3xl font-black">99%</h3>
-                  <div className="flex items-center gap-2 text-green-600 font-bold text-xs">
-                    <Shield className="h-4 w-4" /> Compliance OK
+                    <Building className="h-4 w-4" /> Network
                   </div>
                 </div>
               </div>
@@ -310,7 +378,7 @@ export const AdminDashboard = () => {
                   <h4 className="text-3xl font-black">{(stats.monthlyRevenue / 1000000).toFixed(1)}M</h4>
                   <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Revenus Mensuels</p>
                 </div>
-                <Badge className="bg-green-500/10 text-green-600 border-none font-bold text-[9px]">+15% vs MoM</Badge>
+                <Badge className="bg-green-500/10 text-green-600 border-none font-bold text-[9px]">Global Metrics</Badge>
               </div>
 
               <div className="glass-card p-8 text-center space-y-4 glow-border">
@@ -318,31 +386,11 @@ export const AdminDashboard = () => {
                   <TrendingUp className="h-8 w-8" />
                 </div>
                 <div>
-                  <h4 className="text-3xl font-black">+23%</h4>
-                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Retention Rate</p>
+                  <h4 className="text-3xl font-black">{(stats.totalUsers / 1000).toFixed(1)}k</h4>
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Utilisateurs Actifs</p>
                 </div>
-                <Badge className="bg-blue-500/10 text-blue-600 border-none font-bold text-[9px]">Excellent growth</Badge>
+                <Badge className="bg-blue-500/10 text-blue-600 border-none font-bold text-[9px]">Scale</Badge>
               </div>
-
-              <div className="glass-card p-8 text-center space-y-4 glow-border">
-                <div className="bg-blue-500/10 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto text-blue-600">
-                  <Clock className="h-8 w-8" />
-                </div>
-                <div>
-                  <h4 className="text-3xl font-black">22<span className="text-sm">min</span></h4>
-                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">SLA Livraison</p>
-                </div>
-                <Badge className="bg-green-500/10 text-green-600 border-none font-bold text-[9px]">Stable performance</Badge>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="settings" className="outline-none">
-            <div className="glass-card p-12 text-center border-dashed border-white/40">
-              <Shield className="h-20 w-20 mx-auto text-muted-foreground mb-4 opacity-20" />
-              <h3 className="text-xl font-black uppercase tracking-tight">System Core Config</h3>
-              <p className="text-sm text-muted-foreground mt-2 font-medium">Access restricted to Root Administrators only.</p>
-              <Button className="mt-8 rounded-xl bg-foreground text-background font-bold px-8">Authenticate Root Access</Button>
             </div>
           </TabsContent>
         </Tabs>
