@@ -6,12 +6,17 @@ export const ThemeToggle = () => {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
+    // Force default to light unless explicitly set to dark in local storage
+    // We ignore system preference initially as per user request
     const theme = localStorage.getItem('theme');
-    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setIsDark(theme === 'dark' || (!theme && systemDark));
-    
-    if (theme === 'dark' || (!theme && systemDark)) {
+
+    if (theme === 'dark') {
+      setIsDark(true);
       document.documentElement.classList.add('dark');
+    } else {
+      setIsDark(false);
+      document.documentElement.classList.remove('dark');
+      // If no theme is set, ensure we default to light explicitly in the DOM too just in case
     }
   }, []);
 

@@ -26,8 +26,8 @@ const Index = () => {
         url="https://pharmago.ci"
       />
 
-      {/* Spline 3D Background - Fixed position */}
-      <div className="spline-container fixed top-0 left-0 w-full h-full -z-20 overflow-hidden pointer-events-none">
+      {/* Spline 3D Background - Hidden on mobile for performance */}
+      <div className="spline-container fixed top-0 left-0 w-full h-full -z-20 overflow-hidden pointer-events-none hidden md:block">
         <iframe
           src="https://my.spline.design/celestialflowabstractdigitalform-ObUlVgj70g2y4bbx5vBKSfxN/"
           frameBorder="0"
@@ -69,13 +69,12 @@ const Index = () => {
       </main>
 
       {/* Floating button to new homepage */}
-      <div className="fixed bottom-24 right-8 z-50">
+      <div className="fixed bottom-24 right-4 z-50">
         <Button
           onClick={() => navigate('/home-v2')}
           size="lg"
-          className="h-14 px-8 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-2xl shadow-orange-500/30 transition-all duration-300 hover:scale-110 font-black uppercase tracking-widest text-white border-none"
+          className="h-12 w-12 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-xl shadow-orange-500/20 transition-all duration-300 hover:scale-110 font-black flex items-center justify-center text-white border-none p-0"
         >
-          <Sparkles className="mr-2 h-5 w-5" />
           V2
         </Button>
       </div>
