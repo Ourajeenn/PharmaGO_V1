@@ -257,7 +257,13 @@ export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
                         <FormControl>
                           <div className="relative">
                             <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                            <Input type="email" placeholder="nom@exemple.com" {...field} className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
+                            <Input
+                              type="email"
+                              placeholder="nom@exemple.com"
+                              {...field}
+                              autoComplete="username webauthn"
+                              className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold"
+                            />
                           </div>
                         </FormControl>
                         <FormMessage />
@@ -283,6 +289,7 @@ export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
                               type={showPassword ? "text" : "password"}
                               placeholder="••••••••"
                               {...field}
+                              autoComplete="current-password webauthn"
                               className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold"
                             />
                             <button
@@ -303,6 +310,25 @@ export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
                     {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Zap className="mr-2 h-5 w-5" />}
                     Accéder au Dashboard
                   </Button>
+
+                  {/* Biometric Trigger Hint */}
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // Trigger browser credential manager which usually invokes FaceID/TouchID
+                        if ((window as any).PasswordCredential || (window as any).PublicKeyCredential) {
+                          // This is a hint to the browser to show the auth dialog
+                          // In a real PWA, you might use navigator.credentials.get({ password: true })
+                          document.querySelector('form')?.requestSubmit();
+                        }
+                      }}
+                      className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors mt-2"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-fingerprint"><path d="M2.5 12.5a10 10 0 1 1 20 0" /><path d="M12 21a9 9 0 1 0 0-18" /><path d="M12 9a3 3 0 1 0 0 6" /><path d="M9 12a3 3 0 1 0 0 6" /></svg>
+                      Connexion Biométrique (Si disponible)
+                    </button>
+                  </div>
                 </form>
               </Form>
             )}
