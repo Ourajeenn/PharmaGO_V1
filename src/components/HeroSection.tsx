@@ -243,10 +243,9 @@ const HeroSection = ({
                     <div className="relative h-full w-full bg-background rounded-[14px] overflow-hidden">
                       <div className="relative h-full w-full" style={{
                         backgroundImage: `url(${slide.image})`,
-                        backgroundSize: 'contain',
+                        backgroundSize: 'cover',
                         backgroundPosition: 'center center',
                         backgroundRepeat: 'no-repeat',
-                        backgroundColor: '#1a1a1a',
                         ...((slide as any).bgStyle || {})
                       }}>
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
