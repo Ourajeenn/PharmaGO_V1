@@ -108,7 +108,7 @@ const PharmacyFinder = ({ onBackToHome }: PharmacyFinderProps) => {
       })
       .filter(pharmacy => {
         const matchesSearch = pharmacy.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          pharmacy.location.toLowerCase().includes(searchTerm.toLowerCase());
+          pharmacy.address.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCommune = selectedCommune === "Toutes" || pharmacy.commune === selectedCommune;
         const matchesOpen = !showOnlyOpen || pharmacy.isOpen;
         const matchesDelivery = !showOnlyDelivery || pharmacy.hasDelivery;
