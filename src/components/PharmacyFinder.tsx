@@ -94,7 +94,7 @@ const PharmacyFinder = ({ onBackToHome }: PharmacyFinderProps) => {
         let distVal = 0;
 
         // Calculate distance if user location is available
-        if (userLocation) {
+        if (userLocation && pharmacy.coordinates) {
           const dist = getDistance(
             userLocation,
             { latitude: pharmacy.coordinates.lat, longitude: pharmacy.coordinates.lng }

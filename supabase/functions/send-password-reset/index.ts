@@ -20,7 +20,8 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, resetLink }: PasswordResetRequest = await req.json();
+    const body = await req.json() as PasswordResetRequest;
+    const { email, resetLink } = body;
 
     const emailResponse = await resend.emails.send({
       from: "Pharmacie No-Reply <noreply@resend.dev>",
