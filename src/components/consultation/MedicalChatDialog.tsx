@@ -222,8 +222,8 @@ const MedicalChatDialog = ({ isOpen, onClose }: MedicalChatDialogProps) => {
                         <DialogHeader className="p-4 border-b bg-primary/5">
                             <DialogTitle className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <div className="bg-primary rounded-full p-1.5 z-10 relative">
-                                        <Bot className="h-5 w-5 text-white" />
+                                    <div className="bg-primary rounded-full z-10 relative overflow-hidden h-9 w-9 border-2 border-white shadow-sm">
+                                        <img src="/leslie-avatar.png" alt="Leslie" className="h-full w-full object-cover" />
                                     </div>
                                     <div className="z-10 relative">
                                         <span className="font-bold">Leslie</span> (Assistant Médical IA)
@@ -252,11 +252,14 @@ const MedicalChatDialog = ({ isOpen, onClose }: MedicalChatDialogProps) => {
                                         key={message.id}
                                         className={`flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
                                     >
-                                        <Avatar className="h-8 w-8">
+                                        <Avatar className="h-8 w-8 border border-primary/20">
                                             {message.role === 'assistant' ? (
-                                                <div className="bg-primary h-full w-full flex items-center justify-center">
-                                                    <Bot className="h-5 w-5 text-white" />
-                                                </div>
+                                                <>
+                                                    <AvatarImage src="/leslie-avatar.png" />
+                                                    <AvatarFallback className="bg-primary text-white">
+                                                        <Bot className="h-4 w-4" />
+                                                    </AvatarFallback>
+                                                </>
                                             ) : (
                                                 <div className="bg-secondary h-full w-full flex items-center justify-center">
                                                     <User className="h-5 w-5 text-white" />
@@ -280,10 +283,11 @@ const MedicalChatDialog = ({ isOpen, onClose }: MedicalChatDialogProps) => {
 
                             {isTyping && (
                                 <div className="flex gap-3">
-                                    <Avatar className="h-8 w-8">
-                                        <div className="bg-primary h-full w-full flex items-center justify-center">
-                                            <Bot className="h-5 w-5 text-white" />
-                                        </div>
+                                    <Avatar className="h-8 w-8 border border-primary/20">
+                                        <AvatarImage src="/leslie-avatar.png" />
+                                        <AvatarFallback className="bg-primary text-white">
+                                            <Bot className="h-4 w-4" />
+                                        </AvatarFallback>
                                     </Avatar>
                                     <div className="bg-muted rounded-lg p-3 flex items-center gap-1">
                                         <span className="w-1.5 h-1.5 bg-foreground/40 rounded-full animate-bounce [animation-delay:-0.3s]"></span>

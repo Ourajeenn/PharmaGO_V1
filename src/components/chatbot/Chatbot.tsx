@@ -119,7 +119,9 @@ export const Chatbot: React.FC = () => {
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm flex items-center gap-2">
-            <Bot className="h-4 w-4 text-primary" />
+            <div className="h-6 w-6 rounded-full overflow-hidden border border-primary/20">
+              <img src="/leslie-avatar.png" alt="Leslie" className="h-full w-full object-cover" />
+            </div>
             Assistant PharmaGo
             <Badge variant="secondary" className="text-xs">En ligne</Badge>
           </CardTitle>
@@ -170,14 +172,14 @@ export const Chatbot: React.FC = () => {
                   >
                     <div className="flex items-start gap-2 max-w-[85%]">
                       {message.type === 'bot' && (
-                        <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                          <Bot className="h-3 w-3 text-primary-foreground" />
+                        <div className="h-6 w-6 rounded-full overflow-hidden border border-primary/20 flex-shrink-0 shadow-sm">
+                          <img src="/leslie-avatar.png" alt="Leslie" className="h-full w-full object-cover" />
                         </div>
                       )}
                       <div
                         className={`px-3 py-2 rounded-lg text-sm ${message.type === 'user'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted'
                           }`}
                       >
                         {message.content}
@@ -194,8 +196,8 @@ export const Chatbot: React.FC = () => {
               {isTyping && (
                 <div className="flex justify-start">
                   <div className="flex items-center gap-2">
-                    <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center">
-                      <Bot className="h-3 w-3 text-primary-foreground" />
+                    <div className="h-6 w-6 rounded-full overflow-hidden border border-primary/20">
+                      <img src="/leslie-avatar.png" alt="Leslie" className="h-full w-full object-cover" />
                     </div>
                     <div className="bg-muted px-3 py-2 rounded-lg">
                       <div className="flex space-x-1">
