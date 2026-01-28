@@ -112,6 +112,14 @@
     @apply bg-black/40 backdrop-blur-2xl backdrop-saturate-200 border border-white/10;
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
   }
+
+  .premium-rounded {
+    border-radius: 2.5rem !important;
+    overflow: hidden !important;
+    transform: translateZ(0);
+    isolation: isolate;
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
+  }
 }
 
 @layer components {

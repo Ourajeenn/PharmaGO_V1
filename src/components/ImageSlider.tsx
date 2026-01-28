@@ -94,7 +94,7 @@ const ImageSlider = () => {
       <ScrollReveal animation="zoom-in" delay={0.2}>
         <div className="relative max-w-4xl mx-auto">
           {/* Main Slider Card */}
-          <Card className="relative overflow-hidden min-h-[450px] md:h-[500px] flex items-center transition-all duration-500 rounded-[2.5rem] border-none shadow-2xl isolate transform translate-z-0">
+          <Card className="relative min-h-[450px] md:h-[500px] flex items-center transition-all duration-500 border-none shadow-2xl premium-rounded">
             <div className={`absolute inset-0 bg-gradient-to-br ${currentSlideData.gradient} opacity-95`} />
 
             {/* Background Pattern */}

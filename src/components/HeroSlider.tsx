@@ -164,7 +164,7 @@ export const HeroSlider: React.FC = () => {
 
                 {/* Image/Visual */}
                 <div className="relative animate-scale-in">
-                  <div className="relative w-full h-96 lg:h-[500px] rounded-[2.5rem] overflow-hidden shadow-2xl isolate transform translate-z-0">
+                  <div className="relative w-full h-96 lg:h-[500px] shadow-2xl premium-rounded">
                     <img
                       src={slide.image}
                       alt={slide.title}
