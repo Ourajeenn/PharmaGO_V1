@@ -197,9 +197,9 @@ const HeroSection = ({
                 delay: 5000,
               }),
             ]}
-            className="w-full relative h-[500px] rounded-[2.5rem] overflow-hidden shadow-2xl"
+            className="w-full relative h-[500px] rounded-[2.5rem] overflow-hidden shadow-2xl transform translate-z-0 isolate"
           >
-            <CarouselContent>
+            <CarouselContent className="h-full rounded-[2.5rem] overflow-hidden transform translate-z-0">
               {[
                 {
                   image: "/hero-carousel/pharmacist-service.jpg",
@@ -227,9 +227,9 @@ const HeroSection = ({
                   glow: "rgba(168, 85, 247, 0.8)" // purple
                 }
               ].map((slide, index) => (
-                <CarouselItem key={index} className="p-0">
+                <CarouselItem key={index} className="p-0 h-full rounded-[2.5rem] overflow-hidden transform translate-z-0">
                   {/* Outer container for the border effect */}
-                  <div className="relative h-[500px] w-full rounded-[2.5rem] overflow-hidden group p-[3px]">
+                  <div className="relative h-[500px] w-full rounded-[2.5rem] overflow-hidden group p-[3px] transform translate-z-0 isolate">
 
                     {/* Rotating LED Border */}
                     <div

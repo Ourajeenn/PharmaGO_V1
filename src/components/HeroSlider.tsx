@@ -109,10 +109,10 @@ export const HeroSlider: React.FC = () => {
           <div
             key={slide.id}
             className={`absolute inset-0 transition-all duration-1000 ease-in-out ${index === currentSlide
-                ? 'opacity-100 translate-x-0'
-                : index < currentSlide
-                  ? 'opacity-0 -translate-x-full'
-                  : 'opacity-0 translate-x-full'
+              ? 'opacity-100 translate-x-0'
+              : index < currentSlide
+                ? 'opacity-0 -translate-x-full'
+                : 'opacity-0 translate-x-full'
               }`}
           >
             <div className={`absolute inset-0 bg-gradient-to-r ${slide.gradient} opacity-90`} />
@@ -164,7 +164,7 @@ export const HeroSlider: React.FC = () => {
 
                 {/* Image/Visual */}
                 <div className="relative animate-scale-in">
-                  <div className="relative w-full h-96 lg:h-[500px] rounded-[2.5rem] overflow-hidden shadow-2xl">
+                  <div className="relative w-full h-96 lg:h-[500px] rounded-[2.5rem] overflow-hidden shadow-2xl isolate transform translate-z-0">
                     <img
                       src={slide.image}
                       alt={slide.title}
@@ -205,8 +205,8 @@ export const HeroSlider: React.FC = () => {
                 key={index}
                 onClick={() => goToSlide(index)}
                 className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentSlide
-                    ? 'bg-white w-8'
-                    : 'bg-white/50 hover:bg-white/80'
+                  ? 'bg-white w-8'
+                  : 'bg-white/50 hover:bg-white/80'
                   }`}
               />
             ))}
