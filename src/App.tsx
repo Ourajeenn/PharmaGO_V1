@@ -41,6 +41,9 @@ import BirthRecord from "./components/ecarnet/BirthRecord";
 import AlertsPanel from "./components/ecarnet/AlertsPanel";
 import DeliveryTracking from "./pages/DeliveryTracking";
 import PharmacistDashboard from "./pages/PharmacistDashboard";
+import ContactsDashboardPage from "./pages/ContactsDashboardPage";
+import PatientMobilePage from "./pages/PatientMobilePage";
+import PharmaciesGardePage from "./pages/PharmaciesGardePage";
 
 import Login from "./pages/Login";
 
@@ -91,6 +94,7 @@ const App = () => {
                 {/* <Route path="/login" element={<Login />} /> 
                 <Route path="/connexion" element={<Login />} /> Redundant, Auth handles this */}
                 <Route path="/pharmacies" element={<PharmaciesPage />} />
+                <Route path="/pharmacies-garde" element={<PharmaciesGardePage />} />
                 <Route path="/suivi" element={<TrackingPage />} />
                 <Route path="/livraison/suivi" element={<DeliveryTracking />} />
                 <Route path="/pharmacien/dashboard" element={<PharmacistDashboard />} />
@@ -98,6 +102,8 @@ const App = () => {
                 <Route path="/parapharmacie" element={<ParapharmacyPage />} />
                 <Route path="/medicaments" element={<MedicinesPage />} />
                 <Route path="/contact" element={<ContactPage />} />
+                <Route path="/contacts-dashboard" element={<ContactsDashboardPage />} />
+                <Route path="/patient-mobile" element={<PatientMobilePage />} />
                 <Route path="/ordonnances" element={<PrescriptionsPage />} />
                 <Route path="/consultation" element={<ConsultationPage />} />
                 <Route path="/consultation/:featureId" element={<ConsultationFeaturePage />} />

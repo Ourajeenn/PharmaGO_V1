@@ -1,7 +1,7 @@
-import { PharmacyDashboard } from "@/components/dashboard/PharmacyDashboard";
+import { PharmacyDashboardNew } from "@/components/dashboard/PharmacyDashboardNew";
 
 const PharmacistDashboardPage = () => {
-    return <PharmacyDashboard />;
+    return <PharmacyDashboardNew />;
 };
 
 export default PharmacistDashboardPage;

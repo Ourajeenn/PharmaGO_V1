@@ -53,13 +53,38 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ children }) => {
         </SheetHeader>
 
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center py-8">
-            <ShoppingCart className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">Votre panier est vide</h3>
-            <p className="text-muted-foreground mb-4">Ajoutez des médicaments pour commencer</p>
+          <div className="relative flex flex-col items-center justify-center h-full text-center py-8 rounded-3xl overflow-hidden">
+            {/* Background Image */}
+            <div
+              className="absolute inset-0 bg-cover bg-center opacity-90"
+              style={{
+                backgroundImage: 'url(/cart-background.png)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
+            />
+            {/* Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-50/80 via-blue-50/70 to-teal-50/80 backdrop-blur-[2px]" />
+
+            {/* Content */}
+            <div className="relative z-10 space-y-4 px-6">
+              <div className="bg-white/90 backdrop-blur-md rounded-2xl p-6 shadow-xl border border-white/50">
+                <ShoppingCart className="h-16 w-16 text-cyan-600 mb-4 mx-auto" />
+                <h3 className="text-2xl font-bold mb-2 text-slate-900">Find your perfect Medicine</h3>
+                <p className="text-slate-600 mb-6">Votre panier est vide. Ajoutez des médicaments pour commencer votre commande.</p>
+                <Button
+                  onClick={() => navigate('/medicaments')}
+                  className="bg-blue-500 hover:bg-blue-600 text-white rounded-full px-8 py-6 text-base font-semibold shadow-lg hover:shadow-xl transition-all"
+                >
+                  Buy now
+                </Button>
+              </div>
+            </div>
           </div>
         ) : (
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col h-full relative">
+            {/* Subtle Background for Cart with Items */}
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-50/30 via-blue-50/20 to-teal-50/30 -z-10 rounded-3xl" />
             <ScrollArea className="flex-1 py-4">
               <div className="space-y-4">
                 {Object.entries(groupedItems).map(([pharmacyId, pharmacyItems]) => {

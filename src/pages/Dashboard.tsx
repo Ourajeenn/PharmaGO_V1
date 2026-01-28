@@ -2,10 +2,10 @@ import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/integrations/supabase/client'
 import { Navigate } from 'react-router-dom'
 import { PatientDashboard } from '@/components/dashboard/PatientDashboard'
-import { PharmacyDashboard } from '@/components/dashboard/PharmacyDashboard'
+import { PharmacyDashboardNew } from '@/components/dashboard/PharmacyDashboardNew'
 import { DriverDashboard } from '@/components/dashboard/DriverDashboard'
 import { AdminDashboard } from '@/components/dashboard/AdminDashboard'
-import { DoctorDashboard } from '@/components/dashboard/DoctorDashboard'
+import { DoctorDashboardNew } from '@/components/dashboard/DoctorDashboardNew'
 import { InsurerDashboard } from '@/components/dashboard/InsurerDashboard'
 import { ProfileCompletion } from '@/components/auth/ProfileCompletion'
 import { useState, useEffect, useMemo } from 'react'
@@ -50,10 +50,10 @@ export default function Dashboard() {
     if (!profile) return null
     switch (profile.role) {
       case 'patient': return <PatientDashboard />
-      case 'pharmacy': return <PharmacyDashboard />
+      case 'pharmacy': return <PharmacyDashboardNew />
       case 'driver': return <DriverDashboard />
       case 'admin': return <AdminDashboard />
-      case 'doctor': return <DoctorDashboard />
+      case 'doctor': return <DoctorDashboardNew />
       case 'insurer': return <InsurerDashboard />
       default: return <PatientDashboard />
     }
