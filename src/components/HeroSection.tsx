@@ -209,7 +209,7 @@ const HeroSection = ({
                   bgStyle: { backgroundSize: 'cover' }
                 },
                 {
-                  image: "/hero-carousel/consultation.png",
+                  image: "/hero-carousel/delivery-v2.png",
                   title: "Consultation en Ligne",
                   subtitle: "Parlez à un pharmacien certifié en direct",
                   glow: "rgba(59, 130, 246, 0.8)" // blue
