@@ -27,4 +27,8 @@ dist-ssr
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
+# Scraper debug files
+pharmacies-api/*.html
+pharmacies-api/*.png
+pharmacies-api/*.txt
+pharmacies-api/__pycache__/

@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  pharmacie-api:
+    build: .
+    container_name: pharmacie-garde-api
+    ports:
+      - "5000:5000"
+    volumes:
+      # Persister la base de données
+      - ./data:/app/data
+      # Logs
+      - ./logs:/app/logs
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_PATH=/app/data/pharmacies_garde.db
+      # Intervalle de synchronisation auto (en secondes)
+      - AUTO_SYNC_INTERVAL=21600
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Optionnel: Nginx comme reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: pharmacie-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - pharmacie-api
+    restart: unless-stopped
+
+volumes:
+  data:
+  logs:
