@@ -58,7 +58,7 @@ export const HeroSlider: React.FC = () => {
 
   useEffect(() => {
     if (!isAutoPlaying) return;
-    
+
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 5000);
@@ -93,7 +93,7 @@ export const HeroSlider: React.FC = () => {
               animationDuration: `${3 + Math.random() * 4}s`
             }}
           >
-            <div 
+            <div
               className="w-2 h-2 bg-white/20 rounded-full"
               style={{
                 transform: `scale(${0.5 + Math.random()})`,
@@ -108,16 +108,15 @@ export const HeroSlider: React.FC = () => {
         {slides.map((slide, index) => (
           <div
             key={slide.id}
-            className={`absolute inset-0 transition-all duration-1000 ease-in-out ${
-              index === currentSlide 
-                ? 'opacity-100 translate-x-0' 
-                : index < currentSlide 
-                ? 'opacity-0 -translate-x-full' 
-                : 'opacity-0 translate-x-full'
-            }`}
+            className={`absolute inset-0 transition-all duration-1000 ease-in-out ${index === currentSlide
+                ? 'opacity-100 translate-x-0'
+                : index < currentSlide
+                  ? 'opacity-0 -translate-x-full'
+                  : 'opacity-0 translate-x-full'
+              }`}
           >
             <div className={`absolute inset-0 bg-gradient-to-r ${slide.gradient} opacity-90`} />
-            
+
             <div className="container mx-auto px-4 h-full flex items-center relative z-10">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center w-full">
                 {/* Content */}
@@ -125,11 +124,11 @@ export const HeroSlider: React.FC = () => {
                   <Badge variant="secondary" className="bg-white/20 text-white border-white/30 hover:bg-white/30">
                     {slide.subtitle}
                   </Badge>
-                  
+
                   <h1 className="text-4xl md:text-6xl font-bold leading-tight">
                     {slide.title}
                   </h1>
-                  
+
                   <p className="text-lg md:text-xl text-white/90 leading-relaxed max-w-2xl">
                     {slide.description}
                   </p>
@@ -151,9 +150,9 @@ export const HeroSlider: React.FC = () => {
                         {slide.cta}
                       </Link>
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      size="lg" 
+                    <Button
+                      variant="outline"
+                      size="lg"
                       className="border-white text-white hover:bg-white hover:text-primary"
                       onClick={() => setIsAutoPlaying(!isAutoPlaying)}
                     >
@@ -165,15 +164,15 @@ export const HeroSlider: React.FC = () => {
 
                 {/* Image/Visual */}
                 <div className="relative animate-scale-in">
-                  <div className="relative w-full h-96 lg:h-[500px] rounded-2xl overflow-hidden shadow-2xl">
-                    <img 
-                      src={slide.image} 
+                  <div className="relative w-full h-96 lg:h-[500px] rounded-[2.5rem] overflow-hidden shadow-2xl">
+                    <img
+                      src={slide.image}
                       alt={slide.title}
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                   </div>
-                  
+
                   {/* Floating elements */}
                   <div className="absolute -top-4 -right-4 bg-white rounded-full p-4 shadow-lg animate-bounce">
                     <Shield className="h-6 w-6 text-primary" />
@@ -199,21 +198,20 @@ export const HeroSlider: React.FC = () => {
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          
+
           <div className="flex gap-2">
             {slides.map((_, index) => (
               <button
                 key={index}
                 onClick={() => goToSlide(index)}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  index === currentSlide 
-                    ? 'bg-white w-8' 
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentSlide
+                    ? 'bg-white w-8'
                     : 'bg-white/50 hover:bg-white/80'
-                }`}
+                  }`}
               />
             ))}
           </div>
-          
+
           <Button
             variant="ghost"
             size="icon"

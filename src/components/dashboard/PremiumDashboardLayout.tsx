@@ -103,7 +103,7 @@ export const PremiumDashboardLayout = ({ children, activeTab = 'home', role = 'p
 
     const navItems = [
         { id: 'home', icon: Home, label: 'Tableau de bord', path: '/dashboard' },
-        { id: 'shop', icon: ShoppingBag, label: 'Boutique', path: '/medicaments' },
+        { id: 'shop', icon: ShoppingBag, label: 'Médicaments', path: '/medicaments' },
         { id: 'analytics', icon: BarChart2, label: 'Analyses', path: '#' },
         { id: 'settings', icon: Settings, label: 'Paramètres', path: '#' },
     ]
@@ -131,7 +131,7 @@ export const PremiumDashboardLayout = ({ children, activeTab = 'home', role = 'p
                         >
                             <item.icon className={`h-6 w-6 transition-transform duration-300 group-hover:scale-110 ${activeTab === item.id ? theme.primary : ''
                                 }`} />
-                            <span className="hidden lg:block font-medium">{item.label}</span>
+                            <span className="hidden lg:block font-bold text-xs uppercase tracking-widest">{item.label}</span>
                         </button>
                     ))}
                 </nav>
@@ -175,8 +175,8 @@ export const PremiumDashboardLayout = ({ children, activeTab = 'home', role = 'p
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="hidden lg:block text-left">
-                                        <p className="text-sm font-bold text-foreground/80 leading-none">{profile?.name || 'Utilisateur'}</p>
-                                        <p className="text-[10px] text-muted-foreground mt-1 capitalize">{profile?.role}</p>
+                                        <p className="text-xs font-black uppercase tracking-widest text-foreground/90 leading-none">{profile?.name || 'Utilisateur'}</p>
+                                        <p className="text-[9px] font-bold text-muted-foreground mt-1 uppercase tracking-tighter">{profile?.role}</p>
                                     </div>
                                 </div>
                             </DropdownMenuTrigger>

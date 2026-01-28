@@ -91,27 +91,26 @@ const Header = () => {
               </div>
             </div>
 
-            {/* Middle: Desktop Navigation */}
             <nav className="hidden xl:flex items-center space-x-6">
-              <a href="/" className="story-link text-foreground hover:text-primary transition-colors font-medium text-sm">
+              <a href="/" className="text-foreground hover:text-primary transition-colors font-bold text-sm tracking-tight uppercase">
                 Accueil
               </a>
-              <Link to="/ordonnances" className="story-link text-foreground hover:text-primary transition-colors font-medium text-sm">
+              <Link to="/ordonnances" className="text-foreground hover:text-primary transition-colors font-bold text-sm tracking-tight uppercase">
                 Ordonnances
               </Link>
-              <Link to="/medicaments" className="story-link text-foreground hover:text-primary transition-colors font-medium text-sm">
+              <Link to="/medicaments" className="text-foreground hover:text-primary transition-colors font-bold text-sm tracking-tight uppercase">
                 Médicaments
               </Link>
-              <Link to="/pharmacies" className="story-link text-foreground hover:text-primary transition-colors font-medium text-sm">
+              <Link to="/pharmacies" className="text-foreground hover:text-primary transition-colors font-bold text-sm tracking-tight uppercase">
                 Pharmacies
               </Link>
-              <Link to="/pharmacies-garde" className="story-link text-foreground hover:text-primary transition-colors font-medium text-sm">
-                Pharmacies de Garde
+              <Link to="/pharmacies-garde" className="text-foreground hover:text-primary transition-colors font-bold text-sm tracking-tight uppercase">
+                Garde
               </Link>
-              <Link to="/consultation" className="story-link text-foreground hover:text-primary transition-colors font-medium text-sm">
+              <Link to="/consultation" className="text-foreground hover:text-primary transition-colors font-bold text-sm tracking-tight uppercase">
                 Consultation
               </Link>
-              <Link to="/ecarnet" className="story-link text-foreground hover:text-primary transition-colors font-medium text-sm">
+              <Link to="/ecarnet" className="text-foreground hover:text-primary transition-colors font-bold text-sm tracking-tight uppercase">
                 E-Carnet
               </Link>
             </nav>
@@ -123,7 +122,7 @@ const Header = () => {
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="flex items-center gap-2 md:gap-3 rounded-full overflow-hidden shadow-sm hover:shadow-md transition-all hover:scale-105 border-none bg-[#f1f7ff] hover:bg-primary/10 h-10 px-2 md:px-4"
+                      className="flex items-center gap-2 md:gap-3 rounded-full overflow-hidden shadow-sm hover:shadow-md transition-all hover:scale-105 border-none bg-primary/5 hover:bg-primary/10 h-10 px-2 md:px-4"
                     >
                       <Avatar className="h-8 w-8 border-2 border-primary/20">
                         <AvatarImage src={profile.avatar_url || ''} />
@@ -131,9 +130,9 @@ const Header = () => {
                           {profile.name?.charAt(0) || 'U'}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="hidden md:flex flex-col items-start">
-                        <span className="text-sm font-bold text-slate-900">{profile.name || 'Utilisateur'}</span>
-                        <Badge className={`text-[10px] px-2 py-0 ${getRoleBadge(profile.role).color}`}>
+                      <div className="hidden md:flex flex-col items-start text-left">
+                        <span className="text-xs font-black uppercase tracking-widest text-foreground">{profile.name || 'Utilisateur'}</span>
+                        <Badge className={`text-[9px] px-1.5 py-0 font-bold uppercase ${getRoleBadge(profile.role).color}`}>
                           {getRoleBadge(profile.role).label}
                         </Badge>
                       </div>
@@ -161,12 +160,12 @@ const Header = () => {
                 <Button
                   variant="ghost"
                   onClick={() => navigate('/profile-selection')}
-                  className="flex items-center rounded-full overflow-hidden shadow-sm hover:shadow-md transition-all hover:scale-105 group border-none bg-[#f1f7ff] hover:bg-primary hover:text-white h-10 px-2 md:px-4 gap-1 md:gap-2"
+                  className="flex items-center rounded-full overflow-hidden shadow-sm hover:shadow-md transition-all hover:scale-105 group border-none bg-primary/5 hover:bg-primary hover:text-white h-10 px-2 md:px-4 gap-1 md:gap-2"
                 >
                   <div className="p-1.5 rounded-full bg-primary text-white group-hover:bg-white group-hover:text-primary transition-colors">
                     <User className="h-4 w-4" />
                   </div>
-                  <span className="text-[#0070c0] font-bold text-xs md:text-sm group-hover:text-white transition-colors">
+                  <span className="text-primary font-black text-xs uppercase tracking-widest group-hover:text-white transition-colors">
                     Profils
                   </span>
                 </Button>
@@ -201,20 +200,26 @@ const Header = () => {
           {isMenuOpen && (
             <div className="md:hidden border-t border-white/10 py-4 bg-background/60 backdrop-blur-xl">
               <nav className="flex flex-col space-y-4 px-4">
-                <a href="/" className="text-foreground hover:text-primary transition-colors font-medium">
+                <a href="/" className="text-foreground hover:text-primary transition-colors font-bold text-sm uppercase tracking-widest">
                   Accueil
                 </a>
-                <Link to="/ordonnances" className="text-foreground hover:text-primary transition-colors font-medium">
+                <Link to="/ordonnances" className="text-foreground hover:text-primary transition-colors font-bold text-sm uppercase tracking-widest">
                   Ordonnances
                 </Link>
-                <Link to="/medicaments" className="text-foreground hover:text-primary transition-colors font-medium">
-                  Médicaments & Parapharmacie
+                <Link to="/medicaments" className="text-foreground hover:text-primary transition-colors font-bold text-sm uppercase tracking-widest">
+                  Médicaments
                 </Link>
-                <Link to="/pharmacies" className="text-foreground hover:text-primary transition-colors font-medium">
+                <Link to="/pharmacies" className="text-foreground hover:text-primary transition-colors font-bold text-sm uppercase tracking-widest">
                   Pharmacies
                 </Link>
-                <Link to="/consultation" className="text-foreground hover:text-primary transition-colors font-medium">
-                  Consultation Médicale
+                <Link to="/pharmacies-garde" className="text-foreground hover:text-primary transition-colors font-bold text-sm uppercase tracking-widest">
+                  Garde
+                </Link>
+                <Link to="/consultation" className="text-foreground hover:text-primary transition-colors font-bold text-sm uppercase tracking-widest">
+                  Consultation
+                </Link>
+                <Link to="/ecarnet" className="text-foreground hover:text-primary transition-colors font-bold text-sm uppercase tracking-widest">
+                  E-Carnet
                 </Link>
 
                 <div className="flex items-center justify-between py-2 border-t border-white/10 mt-2">

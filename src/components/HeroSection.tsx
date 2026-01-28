@@ -197,7 +197,7 @@ const HeroSection = ({
                 delay: 5000,
               }),
             ]}
-            className="w-full relative h-[500px] rounded-2xl overflow-hidden"
+            className="w-full relative h-[500px] rounded-[2.5rem] overflow-hidden shadow-2xl"
           >
             <CarouselContent>
               {[
@@ -227,11 +227,11 @@ const HeroSection = ({
                   glow: "rgba(168, 85, 247, 0.8)" // purple
                 }
               ].map((slide, index) => (
-                <CarouselItem key={index} className="p-1">
+                <CarouselItem key={index} className="p-0">
                   {/* Outer container for the border effect */}
-                  <div className="relative h-[500px] w-full rounded-2xl overflow-hidden group p-[2px]">
+                  <div className="relative h-[500px] w-full rounded-[2.5rem] overflow-hidden group p-[3px]">
 
-                    {/* Rotating LED Border - Using a larger spinning element behind */}
+                    {/* Rotating LED Border */}
                     <div
                       className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] animate-[spin_4s_linear_infinite]"
                       style={{
@@ -239,8 +239,8 @@ const HeroSection = ({
                       }}
                     />
 
-                    {/* Inner content container - z-index higher to sit on top of the spinner */}
-                    <div className="relative h-full w-full bg-background rounded-[14px] overflow-hidden">
+                    {/* Inner content container */}
+                    <div className="relative h-full w-full bg-background rounded-[2.3rem] overflow-hidden">
                       <div className="relative h-full w-full" style={{
                         backgroundImage: `url(${slide.image})`,
                         backgroundSize: 'cover',
@@ -248,11 +248,11 @@ const HeroSection = ({
                         backgroundRepeat: 'no-repeat',
                         ...((slide as any).bgStyle || {})
                       }}>
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
 
-                        <div className="absolute bottom-6 left-6 text-white p-4">
-                          <h3 className="text-3xl font-bold mb-2 drop-shadow-md">{slide.title}</h3>
-                          <p className="text-white/90 text-lg drop-shadow-sm">{slide.subtitle}</p>
+                        <div className="absolute bottom-10 left-10 text-white p-4 max-w-md">
+                          <h3 className="text-4xl font-black mb-3 drop-shadow-2xl tracking-tighter uppercase">{slide.title}</h3>
+                          <p className="text-white/80 text-xl font-medium drop-shadow-md leading-relaxed">{slide.subtitle}</p>
                         </div>
                       </div>
                     </div>
