@@ -4,7 +4,7 @@ echo   Demarrage API Pharmacies de Garde
 echo ========================================
 echo.
 
-cd "c:\Users\jenra\Downloads\PHARMA-GO_FINALE\DOSSIER_TECH_pharma\doc_pharcie de garde"
+cd "%~dp0pharmacies-api"
 
 echo Verification de Python...
 python --version
