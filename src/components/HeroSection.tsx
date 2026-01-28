@@ -276,7 +276,7 @@ const HeroSection = ({
               </div>
             </div>
 
-            <Card className="p-6 bg-white/40 backdrop-blur-md border border-white/30 shadow-xl hover:shadow-2xl transition-all duration-300">
+            <Card className="p-6 bg-white/40 backdrop-blur-md border border-white/30 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center">
                   <span className="text-2xl">💊</span>
