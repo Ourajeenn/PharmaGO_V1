@@ -215,7 +215,7 @@ const HeroSection = ({
                   glow: "rgba(59, 130, 246, 0.8)" // blue
                 },
                 {
-                  image: "/hero-carousel/delivery.png",
+                  image: "/hero-carousel/delivery-v2.png",
                   title: "Suivi en Temps Réel",
                   subtitle: "Sachez exactement où est votre commande",
                   glow: "rgba(34, 197, 94, 0.8)" // green

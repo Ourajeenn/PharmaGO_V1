@@ -164,6 +164,43 @@ export const PharmacyDashboard = () => {
     }
   }
 
+  const handleStatusUpdate = async (orderId: string, newStatus: string, patientPhone: string, patientName: string) => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: newStatus })
+        .eq('id', orderId)
+
+      if (error) throw error
+
+      toast.success(`Statut mis à jour: ${newStatus}`)
+
+      // Update local state
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o))
+
+      // Send SMS Notification
+      if (patientPhone) {
+        let message = ''
+        if (newStatus === 'pret') {
+          message = `Bonjour ${patientName}, votre commande PharmaGo est prête ! Un livreur va la récupérer sous peu.`
+        } else if (newStatus === 'annule') {
+          message = `Bonjour ${patientName}, nous sommes désolés, votre commande PharmaGo a été annulée. Contactez la pharmacie pour plus d'infos.`
+        }
+
+        if (message) {
+          await supabase.functions.invoke('send-sms', {
+            body: { to: patientPhone, message }
+          })
+        }
+      }
+
+      fetchDashboardData() // Refresh everything
+    } catch (error: any) {
+      console.error('Error updating status:', error)
+      toast.error("Échec de la mise à jour")
+    }
+  }
+
   const getStatusBadge = (status: string) => {
     const styles = {
       en_preparation: 'bg-orange-500/10 text-orange-600 border-orange-200/50',
@@ -341,7 +378,11 @@ export const PharmacyDashboard = () => {
 
                     <div className="flex gap-2 pt-2 border-t border-white/20 mt-4">
                       {order.status === 'en_preparation' && (
-                        <Button className="flex-1 rounded-xl bg-primary shadow-md shadow-primary/20 font-bold text-xs" size="sm">
+                        <Button
+                          className="flex-1 rounded-xl bg-primary shadow-md shadow-primary/20 font-bold text-xs"
+                          size="sm"
+                          onClick={() => handleStatusUpdate(order.id, 'pret', order.phone, order.patient)}
+                        >
                           Prêt pour expédition
                         </Button>
                       )}

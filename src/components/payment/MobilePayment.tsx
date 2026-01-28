@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CreditCard, Smartphone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MobilePaymentProps {
     amount: number;
@@ -18,8 +19,9 @@ export const MobilePayment = ({ amount, onSuccess }: MobilePaymentProps) => {
 
     const providers = [
         { id: 'orange', name: 'Orange Money', color: 'bg-orange-500', logo: '🔶' },
-        { id: 'wave', name: 'Wave', color: 'bg-blue-500', logo: '🌊' },
         { id: 'mtn', name: 'MTN Mobile Money', color: 'bg-yellow-500', logo: '📱' },
+        { id: 'wave', name: 'Wave', color: 'bg-blue-500', logo: '🌊' },
+        { id: 'moov', name: 'Moov Money', color: 'bg-blue-600', logo: '🔹' },
     ];
 
     const handlePayment = async () => {
@@ -35,31 +37,29 @@ export const MobilePayment = ({ amount, onSuccess }: MobilePaymentProps) => {
         setProcessing(true);
 
         try {
-            // Simulate payment API call
-            // In production, integrate with actual payment providers
-            await new Promise((resolve) => setTimeout(resolve, 2000));
+            const { data, error } = await supabase.functions.invoke('process-payment', {
+                body: {
+                    amount,
+                    phoneNumber,
+                    provider: selectedProvider,
+                }
+            });
 
-            // Generate payment QR code or initiate USSD
-            const provider = providers.find((p) => p.id === selectedProvider);
+            if (error) throw error;
 
             toast({
                 title: '✅ Paiement initié',
-                description: `Confirmez le paiement de ${amount} FCFA sur votre ${provider?.name}`,
+                description: data.message || `Confirmez le paiement de ${amount} FCFA sur votre téléphone`,
             });
 
-            // Simulate payment confirmation
-            await new Promise((resolve) => setTimeout(resolve, 3000));
-
-            toast({
-                title: '🎉 Paiement réussi',
-                description: 'Votre commande a été confirmée',
-            });
-
+            // In a real scenario, we might wait for a webhook or poll for status
+            // For the demo, we show success after initiation
             onSuccess?.();
-        } catch (error) {
+        } catch (error: any) {
+            console.error('Payment error:', error);
             toast({
                 title: '❌ Échec du paiement',
-                description: 'Une erreur est survenue',
+                description: error.message || 'Une erreur est survenue lors de la communication avec le service de paiement',
                 variant: 'destructive',
             });
         } finally {

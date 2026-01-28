@@ -150,6 +150,43 @@ export const DriverDashboard = () => {
     }
   }
 
+  const handleStatusUpdate = async (orderId: string, newStatus: string, customerPhone: string, customerName: string) => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: newStatus })
+        .eq('id', orderId)
+
+      if (error) throw error
+
+      toast.success(`Statut mis à jour: ${newStatus}`)
+
+      // Update local state
+      setDeliveries(prev => prev.map(d => d.id === orderId ? { ...d, status: newStatus } : d))
+
+      // Send SMS Notification
+      if (customerPhone) {
+        let message = ''
+        if (newStatus === 'en_livraison') {
+          message = `Bonjour ${customerName}, votre livreur PharmaGo est en route ! Votre commande arrive bientôt.`
+        } else if (newStatus === 'livre') {
+          message = `Bonjour ${customerName}, votre commande PharmaGo a été livrée avec succès. Merci de nous avoir fait confiance !`
+        }
+
+        if (message) {
+          await supabase.functions.invoke('send-sms', {
+            body: { to: customerPhone, message }
+          })
+        }
+      }
+
+      fetchDashboardData() // Refresh everything
+    } catch (error: any) {
+      console.error('Error updating status:', error)
+      toast.error("Échec de la mise à jour")
+    }
+  }
+
   const getStatusBadge = (status: string) => {
     const styles = {
       en_attente: 'bg-yellow-500/10 text-yellow-600 border-yellow-200/50',
@@ -343,12 +380,18 @@ export const DriverDashboard = () => {
 
                       <div className="flex gap-3">
                         {delivery.status === 'pret' && (
-                          <Button className="flex-1 rounded-xl bg-primary shadow-xl shadow-primary/20 font-bold group-hover:translate-y-[-2px] transition-all">
+                          <Button
+                            className="flex-1 rounded-xl bg-primary shadow-xl shadow-primary/20 font-bold group-hover:translate-y-[-2px] transition-all"
+                            onClick={() => handleStatusUpdate(delivery.id, 'en_livraison', delivery.phone, delivery.customer)}
+                          >
                             <CheckCircle className="h-4 w-4 mr-2" /> Récupérer
                           </Button>
                         )}
                         {delivery.status === 'en_livraison' && (
-                          <Button className="flex-1 rounded-xl bg-green-600 shadow-xl shadow-green-200 font-bold group-hover:translate-y-[-2px] transition-all">
+                          <Button
+                            className="flex-1 rounded-xl bg-green-600 shadow-xl shadow-green-200 font-bold group-hover:translate-y-[-2px] transition-all"
+                            onClick={() => handleStatusUpdate(delivery.id, 'livre', delivery.phone, delivery.customer)}
+                          >
                             <Zap className="h-4 w-4 mr-2" /> Valider Livraison
                           </Button>
                         )}
