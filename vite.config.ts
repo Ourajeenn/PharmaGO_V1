@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
-      includeAssets: ['favicon.png', 'robots.txt', '**/*.png', '**/*.svg', '**/*.jpg', '**/*.jpeg', '**/*.ico'],
+      includeAssets: ['favicon.png', 'robots.txt', '**/*.png', '**/*.svg', '**/*.jpg', '**/*.jpeg', '**/*.ico', '**/*.mp4'],
       manifest: {
         name: 'PharmaGo Express',
         short_name: 'PharmaGo',
@@ -63,7 +63,7 @@ export default defineConfig(({ mode }) => ({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,mp4}'],
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
