@@ -61,7 +61,13 @@ const App = () => {
   useEffect(() => {
     // Initialize E-Carnet mock data
     initializeMockData();
-    setLoading(false);
+
+    // Ensure preloader displays for minimum 2 seconds to show video
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 2000);
+
+    return () => clearTimeout(timer);
   }, []);
 
   if (loading) {
