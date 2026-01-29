@@ -12,7 +12,7 @@ const slides = [
     description: "Commandez vos médicaments en ligne et recevez-les directement à votre domicile avec notre service de livraison sécurisé et rapide.",
     cta: "Commander maintenant",
     ctaLink: "/auth/patient",
-    image: "/hero-pharmacy.jpg",
+    image: "/hero-carousel/delivery-v2.png",
     features: [
       { icon: Shield, text: "Médicaments authentiques" },
       { icon: Clock, text: "Livraison express" },
@@ -27,7 +27,7 @@ const slides = [
     description: "Accédez aux pharmacies de garde près de chez vous à tout moment. Service d'urgence avec livraison express en moins de 30 minutes.",
     cta: "Voir les pharmacies",
     ctaLink: "/#garde",
-    image: "/hero-pharmacy.jpg",
+    image: "/hero-carousel/pharmacist-service.jpg",
     features: [
       { icon: Clock, text: "Service 24h/24" },
       { icon: Truck, text: "Livraison express" },
@@ -42,7 +42,7 @@ const slides = [
     description: "Devenez livreur PharmaGo et générez des revenus avec des horaires flexibles. Formation gratuite et équipement fourni.",
     cta: "Devenir livreur",
     ctaLink: "/auth/driver",
-    image: "/hero-pharmacy.jpg",
+    image: "/hero-carousel/express_delivery.png",
     features: [
       { icon: Truck, text: "Horaires flexibles" },
       { icon: Shield, text: "Formation gratuite" },

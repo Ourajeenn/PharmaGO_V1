@@ -9,7 +9,7 @@ const promoSlides = [{
   title: "Livraison Express 24h/24",
   subtitle: "Vos médicaments en 30 minutes",
   description: "Service de livraison ultra rapide dans toute la région d'Abidjan",
-  image: "/pharmacy-hero.jpg",
+  image: "/hero-carousel/delivery-v2.png",
   badge: "NOUVEAU",
   cta: "Commander maintenant",
   gradient: "from-primary to-secondary",
@@ -19,7 +19,7 @@ const promoSlides = [{
   title: "Pharmacies de Garde",
   subtitle: "Service d'urgence nocturne",
   description: "Plus de 50 pharmacies ouvertes 24h/24 pour vos urgences",
-  image: "/pharmacy-hero.jpg",
+  image: "/hero-carousel/pharmacist-service.jpg",
   badge: "URGENT",
   cta: "Voir les pharmacies",
   gradient: "from-accent to-primary",
@@ -29,7 +29,7 @@ const promoSlides = [{
   title: "Consultation en ligne",
   subtitle: "Téléconsultation avec nos médecins",
   description: "Consultez un médecin depuis chez vous et recevez votre ordonnance",
-  image: "/pharmacy-hero.jpg",
+  image: "/hero-carousel/consultation.png",
   badge: "SANTÉ",
   cta: "Prendre rendez-vous",
   gradient: "from-secondary to-accent",
@@ -39,7 +39,7 @@ const promoSlides = [{
   title: "Programme Fidélité",
   subtitle: "Cumulez des points à chaque achat",
   description: "Économisez sur vos futurs achats grâce à notre programme de fidélité",
-  image: "/pharmacy-hero.jpg",
+  image: "/hero-carousel/app.png",
   badge: "BONUS",
   cta: "Rejoindre le programme",
   gradient: "from-violet-500 to-purple-600",
@@ -49,7 +49,7 @@ const promoSlides = [{
   title: "Assurance Santé",
   subtitle: "Partenariat avec les mutuelles",
   description: "Bénéficiez de remboursements directs avec votre mutuelle",
-  image: "/pharmacy-hero.jpg",
+  image: "/hero-carousel/express_delivery.png",
   badge: "PARTENAIRE",
   cta: "En savoir plus",
   gradient: "from-emerald-500 to-teal-600",
@@ -147,14 +147,27 @@ const ImageSlider = () => {
                   </div>
 
                   <div className="hidden md:flex items-center justify-center">
-                    <div className="w-64 h-64 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 flex items-center justify-center">
-                      <div className="text-8xl">
-                        {currentSlideData.id === 1 && "🚀"}
-                        {currentSlideData.id === 2 && "🏥"}
-                        {currentSlideData.id === 3 && "👨‍⚕️"}
-                        {currentSlideData.id === 4 && "🎁"}
-                        {currentSlideData.id === 5 && "💳"}
-                      </div>
+                    <div className="w-80 h-80 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/30 backdrop-blur-sm bg-white/5">
+                      <img
+                        src={currentSlideData.image}
+                        alt={currentSlideData.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          // Fallback to emoji if image fails to load
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent) {
+                            parent.innerHTML = `<div class="w-full h-full flex items-center justify-center text-8xl">
+                              ${currentSlideData.id === 1 ? "🚀" : ""}
+                              ${currentSlideData.id === 2 ? "🏥" : ""}
+                              ${currentSlideData.id === 3 ? "👨‍⚕️" : ""}
+                              ${currentSlideData.id === 4 ? "🎁" : ""}
+                              ${currentSlideData.id === 5 ? "💳" : ""}
+                            </div>`;
+                          }
+                        }}
+                      />
                     </div>
                   </div>
                 </div>

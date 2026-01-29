@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { usePharmaciesGarde, useNearestPharmacies, useCommunes } from '@/hooks/usePharmaciesGarde';
-import { PharmacieCard } from '@/components/pharmacie-garde/PharmacieCard';
+import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { realPharmacies, communes as communesList } from '@/data/pharmacyData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -8,12 +8,16 @@ import { Badge } from '@/components/ui/badge';
 import {
     MapPin,
     Search,
-    Loader2,
     AlertCircle,
-    Navigation,
     Phone,
     Clock,
-    Building2
+    Building2,
+    ArrowLeft,
+    Navigation,
+    Star,
+    Truck,
+    CreditCard,
+    Verified
 } from 'lucide-react';
 import {
     Select,
@@ -24,43 +28,82 @@ import {
 } from "@/components/ui/select";
 
 export default function PharmaciesGardePage() {
+    const navigate = useNavigate();
     const [selectedCommune, setSelectedCommune] = useState<string>('');
     const [searchQuery, setSearchQuery] = useState('');
 
-    const { communes } = useCommunes();
-    const { pharmacies, loading, error } = usePharmaciesGarde(selectedCommune);
-    const {
-        pharmacies: nearestPharmacies,
-        loading: loadingNearest,
-        findNearest
-    } = useNearestPharmacies();
+    // Filter pharmacies that are on guard or open 24h
+    const gardePharmacies = useMemo(() => {
+        return realPharmacies.filter(p => p.isOnGuard || p.hours.toLowerCase().includes("24h"));
+    }, []);
 
-    // Filtrer les pharmacies par recherche
-    const filteredPharmacies = pharmacies.filter(p => {
-        if (!searchQuery) return true;
-        const query = searchQuery.toLowerCase();
-        return (
-            p.nom.toLowerCase().includes(query) ||
-            p.quartier?.toLowerCase().includes(query) ||
-            p.adresse?.toLowerCase().includes(query)
-        );
-    });
+    // Apply search and commune filters
+    const filteredPharmacies = useMemo(() => {
+        return gardePharmacies.filter(p => {
+            const matchesSearch = !searchQuery ||
+                p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                p.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                p.commune.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const displayPharmacies = nearestPharmacies.length > 0 ? nearestPharmacies : filteredPharmacies;
+            const matchesCommune = !selectedCommune || p.commune === selectedCommune;
+
+            return matchesSearch && matchesCommune;
+        });
+    }, [gardePharmacies, searchQuery, selectedCommune]);
+
+    const handleCall = (phone: string) => {
+        window.location.href = `tel:${phone}`;
+    };
+
+    const handleGetDirections = (pharmacy: typeof realPharmacies[0]) => {
+        const communeCoords: { [key: string]: [number, number] } = {
+            "Plateau": [5.3200, -4.0200],
+            "Cocody": [5.3600, -3.9800],
+            "Adjamé": [5.3500, -4.0300],
+            "Marcory": [5.2900, -3.9900],
+            "Treichville": [5.2800, -4.0100],
+            "Yopougon": [5.3400, -4.0900],
+            "Abobo": [5.4200, -4.0200],
+            "Koumassi": [5.2900, -3.9500],
+            "Port-Bouët": [5.2500, -3.9200],
+            "Attécoubé": [5.3300, -4.0500],
+            "Bingerville": [5.3600, -3.8900],
+            "Anyama": [5.4900, -4.0500]
+        };
+
+        const coords = communeCoords[pharmacy.commune] || [5.345317, -4.024429];
+        const [lat, lng] = coords;
+        const uniqueLat = lat + (pharmacy.id * 0.001);
+        const uniqueLng = lng + ((pharmacy.id % 7) * 0.001);
+
+        const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${uniqueLat},${uniqueLng}&destination_place_id=${encodeURIComponent(pharmacy.name)}`;
+        window.open(mapsUrl, '_blank');
+    };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-green-600 text-white py-12">
+            <div className="bg-gradient-to-r from-primary to-secondary text-white py-12">
                 <div className="container mx-auto px-4">
+                    <div className="flex items-center gap-4 mb-4">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate('/')}
+                            className="text-white hover:bg-white/10"
+                        >
+                            <ArrowLeft className="h-4 w-4 mr-2" />
+                            Retour
+                        </Button>
+                    </div>
                     <div className="max-w-4xl mx-auto text-center">
                         <h1 className="text-4xl md:text-5xl font-bold mb-4">
                             🏥 Pharmacies de Garde
                         </h1>
-                        <p className="text-xl text-blue-100 mb-2">
+                        <p className="text-xl text-white/90 mb-2">
                             Abidjan - Côte d'Ivoire
                         </p>
-                        <p className="text-blue-100">
+                        <p className="text-white/80">
                             Trouvez rapidement une pharmacie de garde près de chez vous
                         </p>
                     </div>
@@ -78,7 +121,7 @@ export default function PharmaciesGardePage() {
                                 </div>
                                 <div>
                                     <p className="text-sm text-slate-600">Total</p>
-                                    <p className="text-2xl font-bold">{pharmacies.length}</p>
+                                    <p className="text-2xl font-bold">{gardePharmacies.length}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -92,7 +135,7 @@ export default function PharmaciesGardePage() {
                                 </div>
                                 <div>
                                     <p className="text-sm text-slate-600">Communes</p>
-                                    <p className="text-2xl font-bold">{communes.length}</p>
+                                    <p className="text-2xl font-bold">{communesList.length - 1}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -136,26 +179,6 @@ export default function PharmaciesGardePage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        {/* Geolocation Button */}
-                        <Button
-                            onClick={() => findNearest(5)}
-                            disabled={loadingNearest}
-                            className="w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white h-12"
-                            size="lg"
-                        >
-                            {loadingNearest ? (
-                                <>
-                                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                                    Recherche en cours...
-                                </>
-                            ) : (
-                                <>
-                                    <Navigation className="h-5 w-5 mr-2" />
-                                    Trouver les pharmacies les plus proches
-                                </>
-                            )}
-                        </Button>
-
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* Search Input */}
                             <div className="relative">
@@ -175,7 +198,7 @@ export default function PharmaciesGardePage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="">Toutes les communes</SelectItem>
-                                    {communes.map((commune) => (
+                                    {communesList.filter(c => c !== "Toutes").map((commune) => (
                                         <SelectItem key={commune} value={commune}>
                                             {commune}
                                         </SelectItem>
@@ -196,34 +219,12 @@ export default function PharmaciesGardePage() {
                                     "{searchQuery}" ✕
                                 </Badge>
                             )}
-                            {nearestPharmacies.length > 0 && (
-                                <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                                    📍 Près de vous
-                                </Badge>
-                            )}
                         </div>
                     </CardContent>
                 </Card>
 
                 {/* Results */}
-                {loading ? (
-                    <div className="flex flex-col items-center justify-center py-12">
-                        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-                        <p className="text-slate-600">Chargement des pharmacies...</p>
-                    </div>
-                ) : error ? (
-                    <Card className="border-red-200 bg-red-50">
-                        <CardContent className="pt-6">
-                            <div className="flex items-center gap-3 text-red-700">
-                                <AlertCircle className="h-6 w-6" />
-                                <div>
-                                    <p className="font-semibold">Erreur de chargement</p>
-                                    <p className="text-sm">{error}</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ) : displayPharmacies.length === 0 ? (
+                {filteredPharmacies.length === 0 ? (
                     <Card>
                         <CardContent className="pt-12 pb-12 text-center">
                             <Building2 className="h-16 w-16 text-slate-300 mx-auto mb-4" />
@@ -248,20 +249,127 @@ export default function PharmaciesGardePage() {
                     <>
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="text-2xl font-bold text-slate-900">
-                                {nearestPharmacies.length > 0 ? 'Pharmacies près de vous' : 'Pharmacies de garde'}
+                                Pharmacies de garde
                             </h2>
                             <Badge variant="outline" className="text-lg px-4 py-2">
-                                {displayPharmacies.length} résultat{displayPharmacies.length > 1 ? 's' : ''}
+                                {filteredPharmacies.length} résultat{filteredPharmacies.length > 1 ? 's' : ''}
                             </Badge>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {displayPharmacies.map((pharmacie) => (
-                                <PharmacieCard key={pharmacie.id} pharmacie={pharmacie} />
+                            {filteredPharmacies.map((pharmacy) => (
+                                <Card
+                                    key={pharmacy.id}
+                                    className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-secondary/30 bg-gradient-to-br from-card to-secondary/5"
+                                >
+                                    <CardHeader>
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <CardTitle className="text-lg group-hover:text-primary transition-colors">
+                                                        {pharmacy.name}
+                                                    </CardTitle>
+                                                    {pharmacy.isPartner && (
+                                                        <Verified className="h-5 w-5 text-primary" />
+                                                    )}
+                                                </div>
+
+                                                <div className="flex flex-wrap gap-2">
+                                                    <Badge className="bg-secondary/10 text-secondary border-secondary/20">
+                                                        🟢 Ouverte 24h/24
+                                                    </Badge>
+                                                    {pharmacy.hasDelivery && (
+                                                        <Badge className="bg-primary/10 text-primary border-primary/20">
+                                                            <Truck className="h-3 w-3 mr-1" />
+                                                            Livraison
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-1">
+                                                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                                                <span className="text-sm font-medium">{pharmacy.rating}</span>
+                                            </div>
+                                        </div>
+                                    </CardHeader>
+
+                                    <CardContent className="space-y-4">
+                                        <div className="space-y-3">
+                                            <div className="flex items-start gap-2">
+                                                <MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                                                <div className="text-sm">
+                                                    <div>{pharmacy.address}</div>
+                                                    <div className="text-muted-foreground">{pharmacy.commune} • {pharmacy.distance}</div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <Phone className="h-4 w-4 text-secondary" />
+                                                <span>{pharmacy.phone}</span>
+                                            </div>
+
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <Clock className="h-4 w-4 text-accent" />
+                                                <span className="font-semibold text-secondary">{pharmacy.hours}</span>
+                                            </div>
+                                        </div>
+
+                                        {pharmacy.specialties && pharmacy.specialties.length > 0 && (
+                                            <div>
+                                                <h4 className="text-sm font-semibold mb-2">Spécialités</h4>
+                                                <div className="flex flex-wrap gap-1">
+                                                    {pharmacy.specialties.map(specialty => (
+                                                        <Badge key={specialty} variant="outline" className="text-xs">
+                                                            {specialty}
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="flex gap-2 pt-2">
+                                            <Button
+                                                size="sm"
+                                                className="flex-1"
+                                                onClick={() => handleCall(pharmacy.phone)}
+                                            >
+                                                <Phone className="h-4 w-4 mr-2" />
+                                                Appeler
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="flex-1"
+                                                onClick={() => handleGetDirections(pharmacy)}
+                                            >
+                                                <Navigation className="h-4 w-4 mr-2" />
+                                                Itinéraire
+                                            </Button>
+                                        </div>
+                                    </CardContent>
+                                </Card>
                             ))}
                         </div>
                     </>
                 )}
+
+                {/* Emergency Notice */}
+                <Card className="mt-12 bg-accent/10 border-accent/20">
+                    <CardContent className="pt-6">
+                        <div className="flex items-start gap-3">
+                            <AlertCircle className="h-6 w-6 text-accent flex-shrink-0 mt-0.5" />
+                            <div>
+                                <h3 className="font-semibold text-accent mb-2">Information importante</h3>
+                                <p className="text-sm">
+                                    En cas d'urgence médicale grave, contactez le <strong>SAMU au 185</strong> ou
+                                    rendez-vous directement aux urgences de l'hôpital le plus proche.
+                                    Les pharmacies de garde sont ouvertes pour les besoins pharmaceutiques urgents.
+                                </p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
         </div>
     );
