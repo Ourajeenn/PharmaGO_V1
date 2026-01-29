@@ -197,7 +197,7 @@ const HeroSection = ({
                 delay: 5000,
               }),
             ]}
-            className="w-full relative h-[500px] shadow-2xl premium-rounded"
+            className="w-full relative h-[400px] shadow-2xl premium-rounded"
           >
             <CarouselContent className="h-full premium-rounded">
               {[
@@ -229,7 +229,7 @@ const HeroSection = ({
               ].map((slide, index) => (
                 <CarouselItem key={index} className="p-0 h-full premium-rounded">
                   {/* Outer container for the border effect */}
-                  <div className="relative h-[500px] w-full group p-[3px] premium-rounded">
+                  <div className="relative h-[400px] w-full group p-[3px] premium-rounded">
 
                     {/* Rotating LED Border */}
                     <div

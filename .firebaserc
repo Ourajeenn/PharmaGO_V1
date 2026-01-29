@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "pharma-go"
-  }
+    "default": "pharma-go-72470"
+  },
+  "targets": {},
+  "etags": {}
 }
