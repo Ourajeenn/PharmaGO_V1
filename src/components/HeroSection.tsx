@@ -192,6 +192,10 @@ const HeroSection = ({
         {/* Right Content - Carousel */}
         <div className="space-y-8">
           <Carousel
+            opts={{
+              align: "start",
+              loop: true,
+            }}
             plugins={[
               Autoplay({
                 delay: 5000,
