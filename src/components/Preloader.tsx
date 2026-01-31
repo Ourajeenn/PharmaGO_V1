@@ -12,7 +12,7 @@ export default function Preloader() {
         playsInline
         className="absolute inset-0 w-full h-full object-cover"
       >
-        <source src="/preloader.mp4" type="video/mp4" />
+        <source src="/ChargementLogo.mp4" type="video/mp4" />
         Votre navigateur ne prend pas en charge la vidéo.
       </video>
 
