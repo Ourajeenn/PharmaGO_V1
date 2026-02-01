@@ -10,14 +10,23 @@ export default function Preloader() {
         muted
         loop
         playsInline
+        preload="auto"
+        disableRemotePlayback
+        disablePictureInPicture
         className="absolute inset-0 w-full h-full object-cover"
+        style={{
+          objectFit: 'cover',
+          transform: 'translateZ(0)',
+          willChange: 'transform',
+          backfaceVisibility: 'hidden',
+        }}
       >
         <source src="/ChargementLogo.mp4" type="video/mp4" />
         Votre navigateur ne prend pas en charge la vidéo.
       </video>
 
       {/* Glassmorphism overlay for smoother integration */}
-      <div className="absolute inset-0 bg-white/10 backdrop-blur-[2px] pointer-events-none" />
+      <div className="absolute inset-0 bg-white/5 backdrop-blur-[1px] pointer-events-none" />
 
       {/* Accessible loading text for screen readers (hidden visually) */}
       <span className="sr-only">Chargement de PharmaGo...</span>
