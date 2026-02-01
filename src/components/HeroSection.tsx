@@ -235,7 +235,7 @@ const HeroSection = ({
               ].map((slide, index) => (
                 <CarouselItem key={index} className="p-0 h-full">
                   {/* Simple image container with rounded corners */}
-                  <div className="relative h-[400px] w-full rounded-3xl overflow-hidden shadow-2xl">
+                  <div className="relative h-[400px] w-full rounded-3xl overflow-hidden">
                     {/* Background image */}
                     <div className="absolute inset-0" style={{
                       backgroundImage: `url(${slide.image})`,
