@@ -4,57 +4,52 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Play, Pause, Star, Heart } from "lucide-react";
 import ScrollReveal from "@/components/ScrollReveal";
-const promoSlides = [{
-  id: 1,
-  title: "Livraison Express 24h/24",
-  subtitle: "Vos médicaments en 30 minutes",
-  description: "Service de livraison ultra rapide dans toute la région d'Abidjan",
-  image: "hero-carousel/delivery-v2.png",
-  badge: "NOUVEAU",
-  cta: "Commander maintenant",
-  gradient: "from-primary to-secondary",
-  offer: "-15% sur votre première commande"
-}, {
-  id: 2,
-  title: "Pharmacies de Garde",
-  subtitle: "Service d'urgence nocturne",
-  description: "Plus de 50 pharmacies ouvertes 24h/24 pour vos urgences",
-  image: "hero-carousel/pharmacist-service.jpg",
-  badge: "URGENT",
-  cta: "Voir les pharmacies",
-  gradient: "from-accent to-primary",
-  offer: "Assistance 24h/24"
-}, {
-  id: 3,
-  title: "Consultation en ligne",
-  subtitle: "Téléconsultation avec nos médecins",
-  description: "Consultez un médecin depuis chez vous et recevez votre ordonnance",
-  image: "hero-carousel/consultation.png",
-  badge: "SANTÉ",
-  cta: "Prendre rendez-vous",
-  gradient: "from-secondary to-accent",
-  offer: "Première consultation gratuite"
-}, {
-  id: 4,
-  title: "Programme Fidélité",
-  subtitle: "Cumulez des points à chaque achat",
-  description: "Économisez sur vos futurs achats grâce à notre programme de fidélité",
-  image: "hero-carousel/app.png",
-  badge: "BONUS",
-  cta: "Rejoindre le programme",
-  gradient: "from-violet-500 to-purple-600",
-  offer: "Jusqu'à 20% de réduction"
-}, {
-  id: 5,
-  title: "Assurance Santé",
-  subtitle: "Partenariat avec les mutuelles",
-  description: "Bénéficiez de remboursements directs avec votre mutuelle",
-  image: "hero-carousel/express_delivery.png",
-  badge: "PARTENAIRE",
-  cta: "En savoir plus",
-  gradient: "from-emerald-500 to-teal-600",
-  offer: "Remboursement jusqu'à 80%"
-}];
+const promoSlides = [
+  {
+    id: 1,
+    title: "Service Pharmacie de Qualité",
+    subtitle: "Conseils d'experts et écoute personnalisée",
+    description: "Bénéficiez de conseils professionnels de pharmaciens certifiés pour tous vos besoins de santé",
+    image: "hero-carousel/pharmacist-service.jpg",
+    badge: "QUALITÉ",
+    cta: "Nos Services",
+    gradient: "from-teal-500 to-cyan-600",
+    offer: "Conseils gratuits 24h/24"
+  },
+  {
+    id: 2,
+    title: "Consultation en Ligne",
+    subtitle: "Parlez à un pharmacien certifié en direct",
+    description: "Téléconsultation rapide et sécurisée avec nos pharmaciens disponibles à tout moment",
+    image: "hero-carousel/consultation.png",
+    badge: "TÉLÉSANTÉ",
+    cta: "Consulter maintenant",
+    gradient: "from-blue-500 to-indigo-600",
+    offer: "Première consultation offerte"
+  },
+  {
+    id: 3,
+    title: "Suivi en Temps Réel",
+    subtitle: "Sachez exactement où est votre commande",
+    description: "Suivez votre livraison en direct avec notre système de tracking GPS en temps réel",
+    image: "hero-carousel/delivery-v2.png",
+    badge: "LIVRAISON",
+    cta: "Suivre ma commande",
+    gradient: "from-green-500 to-emerald-600",
+    offer: "Livraison en 30 minutes"
+  },
+  {
+    id: 4,
+    title: "Gestion Santé",
+    subtitle: "Votre santé à portée de main",
+    description: "Application mobile complète pour gérer vos ordonnances, rendez-vous et historique médical",
+    image: "hero-carousel/app.png",
+    badge: "APPLICATION",
+    cta: "Télécharger l'app",
+    gradient: "from-purple-500 to-violet-600",
+    offer: "Disponible sur iOS & Android"
+  }
+];
 const ImageSlider = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
@@ -206,16 +201,15 @@ const ImageSlider = () => {
 
       {/* Thumbnails */}
       <ScrollReveal animation="fade-up" delay={0.4}>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-8 max-w-4xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 max-w-4xl mx-auto">
           {promoSlides.map((slide, index) => <Card key={slide.id} className={`cursor-pointer transition-all duration-300 hover:scale-105 h-32 ${index === currentSlide ? 'ring-2 ring-primary shadow-lg' : 'hover:shadow-md'}`} onClick={() => goToSlide(index)}>
             <div className={`p-4 bg-gradient-to-br ${slide.gradient} text-white rounded-lg h-full flex items-center justify-center`}>
               <div className="text-center">
                 <div className="text-2xl mb-2">
-                  {slide.id === 1 && "🚀"}
-                  {slide.id === 2 && "🏥"}
-                  {slide.id === 3 && "👨‍⚕️"}
-                  {slide.id === 4 && "🎁"}
-                  {slide.id === 5 && "💳"}
+                  {slide.id === 1 && "💊"}
+                  {slide.id === 2 && "👨‍⚕️"}
+                  {slide.id === 3 && "🚀"}
+                  {slide.id === 4 && "📱"}
                 </div>
                 <h4 className="font-semibold text-sm">{slide.title}</h4>
                 <p className="text-xs text-white/80 mt-1">{slide.badge}</p>
