@@ -105,9 +105,6 @@ const ImageSlider = () => {
                 <div className="grid md:grid-cols-2 gap-12 items-center">
                   <div className="text-white space-y-8">
                     <div className="space-y-3">
-                      <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30">
-                        {currentSlideData.badge}
-                      </Badge>
                       <h3 className="text-3xl md:text-4xl font-bold leading-tight">
                         {currentSlideData.title}
                       </h3>
@@ -125,23 +122,33 @@ const ImageSlider = () => {
                       </p>
                     </div>
 
-                    <div className="flex flex-wrap gap-4 pt-2">
+                    <div className="flex flex-wrap gap-3 pt-2">
                       <Button size="lg" className="bg-white text-gray-900 hover:bg-white/90 shadow-xl font-bold transition-all duration-300 hover:scale-105 px-8">
                         {currentSlideData.cta}
                       </Button>
                       <Button
                         variant="outline"
                         size="lg"
-                        className="bg-black/20 border-white/40 text-white hover:bg-white hover:text-gray-900 hover:border-white shadow-lg font-bold transition-all duration-300 hover:scale-105 px-8 flex items-center gap-2"
+                        className="bg-black/20 border-white/40 text-white hover:bg-white hover:text-gray-900 hover:border-white shadow-lg font-bold transition-all duration-300 hover:scale-105 px-6 flex items-center gap-2"
                         onClick={() => toggleFavorite(currentSlideData.id)}
                       >
                         <Heart className={`h-5 w-5 ${favorites.includes(currentSlideData.id) ? 'fill-red-500 text-red-500' : ''} transition-colors duration-300`} />
                         <span>{favorites.includes(currentSlideData.id) ? 'Sauvegardé' : 'Sauvegarder'}</span>
                       </Button>
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        className="bg-black/20 border-white/40 text-white hover:bg-white hover:text-gray-900 hover:border-white shadow-lg font-bold transition-all duration-300 hover:scale-105 px-6"
+                      >
+                        Télécharger
+                      </Button>
                     </div>
                   </div>
 
-                  <div className="hidden md:flex items-center justify-center">
+                  <div className="hidden md:flex flex-col items-center justify-center gap-4">
+                    <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30 text-sm px-4 py-1">
+                      {currentSlideData.badge}
+                    </Badge>
                     <div className="w-80 h-80 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/30 backdrop-blur-sm bg-white/5">
                       <img
                         src={`/${currentSlideData.image}`}
@@ -155,11 +162,10 @@ const ImageSlider = () => {
                           const parent = target.parentElement;
                           if (parent) {
                             parent.innerHTML = `<div class="w-full h-full flex items-center justify-center text-8xl bg-gradient-to-br ${currentSlideData.gradient}">
-                              ${currentSlideData.id === 1 ? "🚀" : ""}
-                              ${currentSlideData.id === 2 ? "🏥" : ""}
-                              ${currentSlideData.id === 3 ? "👨‍⚕️" : ""}
-                              ${currentSlideData.id === 4 ? "🎁" : ""}
-                              ${currentSlideData.id === 5 ? "💳" : ""}
+                              ${currentSlideData.id === 1 ? "💊" : ""}
+                              ${currentSlideData.id === 2 ? "👨‍⚕️" : ""}
+                              ${currentSlideData.id === 3 ? "🚀" : ""}
+                              ${currentSlideData.id === 4 ? "📱" : ""}
                             </div>`;
                           }
                         }}
@@ -171,8 +177,11 @@ const ImageSlider = () => {
               </div>
             </div>
 
-            {/* Controls */}
+            {/* Controls and Counter */}
             <div className="absolute top-4 right-4 flex gap-2">
+              <div className="bg-black/20 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm">
+                {currentSlide + 1} / {promoSlides.length}
+              </div>
               <Button variant="ghost" size="sm" onClick={toggleAutoPlay} className="bg-white/10 text-white hover:bg-white/20 border-white/20">
                 {isAutoPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
               </Button>
@@ -192,10 +201,7 @@ const ImageSlider = () => {
             {promoSlides.map((_, index) => <button key={index} onClick={() => goToSlide(index)} className={`w-3 h-3 rounded-full transition-all duration-300 ${index === currentSlide ? "bg-primary w-8" : "bg-muted hover:bg-muted-foreground/50"}`} />)}
           </div>
 
-          {/* Slide Counter */}
-          <div className="absolute bottom-4 left-4 bg-black/20 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm">
-            {currentSlide + 1} / {promoSlides.length}
-          </div>
+
         </div>
       </ScrollReveal>
 
