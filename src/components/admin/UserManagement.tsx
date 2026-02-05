@@ -32,11 +32,11 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Database } from '@/integrations/supabase/types'
-import { EditablePatientProfile } from '@/components/dashboard/EditablePatientProfile'
-import { EditablePharmacyProfile } from '@/components/dashboard/EditablePharmacyProfile'
-import { EditableInsurerProfile } from '@/components/dashboard/EditableInsurerProfile'
-import { EditableDoctorProfile } from '@/components/dashboard/EditableDoctorProfile'
-import { EditableDriverProfile } from '@/components/dashboard/EditableDriverProfile'
+import { EditablePatientProfile } from '@/components/dashboard/profiles/EditablePatientProfile'
+import { EditablePharmacyProfile } from '@/components/dashboard/profiles/EditablePharmacyProfile'
+import { EditableInsurerProfile } from '@/components/dashboard/profiles/EditableInsurerProfile'
+import { EditableDoctorProfile } from '@/components/dashboard/profiles/EditableDoctorProfile'
+import { EditableDriverProfile } from '@/components/dashboard/profiles/EditableDriverProfile'
 
 type UserRole = Database['public']['Enums']['user_role']
 

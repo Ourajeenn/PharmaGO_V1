@@ -678,6 +678,7 @@ export type Database = {
           emergency_contact: string | null
           insurance_card_scan: string | null
           insurance_id: string | null
+          insurance_name: string | null
           medical_history: string | null
           updated_at: string
           user_id: string
@@ -692,6 +693,7 @@ export type Database = {
           emergency_contact?: string | null
           insurance_card_scan?: string | null
           insurance_id?: string | null
+          insurance_name?: string | null
           medical_history?: string | null
           updated_at?: string
           user_id: string
@@ -706,6 +708,7 @@ export type Database = {
           emergency_contact?: string | null
           insurance_card_scan?: string | null
           insurance_id?: string | null
+          insurance_name?: string | null
           medical_history?: string | null
           updated_at?: string
           user_id?: string

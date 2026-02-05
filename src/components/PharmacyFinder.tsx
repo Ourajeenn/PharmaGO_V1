@@ -217,10 +217,10 @@ const PharmacyFinder = ({ onBackToHome }: PharmacyFinderProps) => {
       ) : (
         <div className="container mx-auto px-4 py-8">
           <Tabs defaultValue="list" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="list">Liste des pharmacies</TabsTrigger>
-              <TabsTrigger value="garde">Pharmacies de Garde</TabsTrigger>
-              <TabsTrigger value="map">Vue carte</TabsTrigger>
+            <TabsList className="flex flex-col sm:flex-row h-auto w-full bg-muted/50 p-1 gap-1">
+              <TabsTrigger value="list" className="flex-1 py-2.5 text-xs sm:text-sm">Liste des pharmacies</TabsTrigger>
+              <TabsTrigger value="garde" className="flex-1 py-2.5 text-xs sm:text-sm">Pharmacies de Garde</TabsTrigger>
+              <TabsTrigger value="map" className="flex-1 py-2.5 text-xs sm:text-sm">Vue carte</TabsTrigger>
             </TabsList>
 
             <div className="space-y-6">

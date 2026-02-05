@@ -36,7 +36,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
-import { EditablePharmacyProfile } from './EditablePharmacyProfile'
+import { EditablePharmacyProfile } from './profiles/EditablePharmacyProfile'
 import { AddMedicineDialog } from './AddMedicineDialog'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { PremiumDashboardLayout } from './PremiumDashboardLayout'

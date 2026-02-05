@@ -105,6 +105,7 @@ export const EditablePharmacyProfile = ({ userId }: EditablePharmacyProfileProps
                 .from('user_profiles')
                 .update({
                     name: editedData.name,
+                    email: editedData.email,
                     phone: editedData.phone
                 })
                 .eq('id', effectiveUserId)
@@ -210,6 +211,19 @@ export const EditablePharmacyProfile = ({ userId }: EditablePharmacyProfileProps
                             />
                         ) : (
                             <p className="p-2 bg-secondary/10 rounded font-medium">{profileData.name}</p>
+                        )}
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="email">Email de contact</Label>
+                        {isEditing ? (
+                            <Input
+                                id="email"
+                                value={editedData.email}
+                                onChange={(e) => handleChange('email', e.target.value)}
+                            />
+                        ) : (
+                            <p className="p-2 bg-secondary/10 rounded font-medium">{profileData.email}</p>
                         )}
                     </div>
 

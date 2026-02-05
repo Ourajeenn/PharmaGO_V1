@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { EditableDoctorProfile } from './EditableDoctorProfile'
+import { EditableDoctorProfile } from './profiles/EditableDoctorProfile'
 import { PrescriptionForm } from './PrescriptionForm'
 import {
   Table,

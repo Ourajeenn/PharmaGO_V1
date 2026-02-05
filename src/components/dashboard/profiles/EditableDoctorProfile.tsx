@@ -5,54 +5,53 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
-import { Edit, X, Loader2, Shield, Phone, FileText } from 'lucide-react'
+import { Edit, X, Loader2, Stethoscope, MapPin, FileText } from 'lucide-react'
 
-interface InsurerProfileData {
-    companyName: string
-    representativeName: string
+interface DoctorProfileData {
+    name: string
     email: string
     phone: string
+    specialization: string
     licenseNumber: string
-    coverageTypes: string // JSON representation
+    clinicName: string
+    clinicAddress: string
 }
 
-interface EditableInsurerProfileProps {
+interface EditableDoctorProfileProps {
     userId?: string
 }
 
-export const EditableInsurerProfile = ({ userId }: EditableInsurerProfileProps = {}) => {
+export const EditableDoctorProfile = ({ userId }: EditableDoctorProfileProps = {}) => {
     const { user: currentUser } = useAuth()
     const effectiveUserId = userId || currentUser?.id
     const [isEditing, setIsEditing] = useState(false)
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
 
-    const [profileData, setProfileData] = useState<InsurerProfileData>({
-        companyName: '',
-        representativeName: '',
+    const [profileData, setProfileData] = useState<DoctorProfileData>({
+        name: '',
         email: '',
         phone: '',
+        specialization: '',
         licenseNumber: '',
-        coverageTypes: ''
+        clinicName: '',
+        clinicAddress: ''
     })
 
-    // Buffer for edits
-    const [editedData, setEditedData] = useState<InsurerProfileData>(profileData)
+    const [editedData, setEditedData] = useState<DoctorProfileData>(profileData)
 
     useEffect(() => {
         if (effectiveUserId) {
-            fetchInsurerData()
+            fetchDoctorData()
         }
     }, [effectiveUserId])
 
-    const fetchInsurerData = async () => {
+    const fetchDoctorData = async () => {
         if (!effectiveUserId) return
         try {
             setLoading(true)
 
-            // 1. Get base profile
             const { data: userProfile, error: profileError } = await supabase
                 .from('user_profiles')
                 .select('*')
@@ -61,31 +60,31 @@ export const EditableInsurerProfile = ({ userId }: EditableInsurerProfileProps =
 
             if (profileError) throw profileError
 
-            // 2. Get insurer specific data
-            const { data: insurerData, error: insError } = await supabase
-                .from('insurers')
+            const { data: doctorData, error: docError } = await supabase
+                .from('doctors')
                 .select('*')
                 .eq('user_id', effectiveUserId)
                 .single()
 
-            if (insError && insError.code !== 'PGRST116') {
-                console.error('Error fetching insurer details:', insError)
+            if (docError && docError.code !== 'PGRST116') {
+                console.error('Error fetching doctor details:', docError)
             }
 
-            const mergedData: InsurerProfileData = {
-                companyName: insurerData?.company_name || '',
-                representativeName: userProfile?.name || '',
-                email: userProfile?.email || '', // Fallback to profile email
+            const mergedData: DoctorProfileData = {
+                name: userProfile?.name || '',
+                email: userProfile?.email || '',
                 phone: userProfile?.phone || '',
-                licenseNumber: insurerData?.license_number || '',
-                coverageTypes: insurerData?.coverage_types ? JSON.stringify(insurerData.coverage_types, null, 2) : ''
+                specialization: doctorData?.specialization || '',
+                licenseNumber: doctorData?.license_number || '',
+                clinicName: doctorData?.clinic_name || '',
+                clinicAddress: doctorData?.clinic_address || ''
             }
 
             setProfileData(mergedData)
             setEditedData(mergedData)
 
         } catch (error) {
-            console.error('Error loading insurer profile:', error)
+            console.error('Error loading doctor profile:', error)
             toast.error("Erreur lors du chargement du profil")
         } finally {
             setLoading(false)
@@ -96,40 +95,32 @@ export const EditableInsurerProfile = ({ userId }: EditableInsurerProfileProps =
         try {
             setSaving(true)
 
-            // 1. Update user_profiles (Representative Name & Phone)
             const { error: profileError } = await supabase
                 .from('user_profiles')
                 .update({
-                    name: editedData.representativeName,
+                    name: editedData.name,
+                    email: editedData.email,
                     phone: editedData.phone
                 })
                 .eq('id', effectiveUserId)
 
             if (profileError) throw profileError
 
-            // 2. Upsert insurers table
-            let parsedCoverage = null
-            try {
-                if (editedData.coverageTypes) parsedCoverage = JSON.parse(editedData.coverageTypes)
-            } catch (e) {
-                console.warn('Invalid JSON coverage', e)
-                // Optionally handle invalid JSON error here
-            }
-
-            const { error: insError } = await supabase
-                .from('insurers')
+            const { error: docError } = await supabase
+                .from('doctors')
                 .upsert({
                     user_id: effectiveUserId,
-                    company_name: editedData.companyName,
+                    specialization: editedData.specialization,
                     license_number: editedData.licenseNumber,
-                    coverage_types: parsedCoverage
+                    clinic_name: editedData.clinicName,
+                    clinic_address: editedData.clinicAddress
                 })
 
-            if (insError) throw insError
+            if (docError) throw docError
 
             setProfileData(editedData)
             setIsEditing(false)
-            toast.success('Profil Assurance mis à jour')
+            toast.success('Profil Docteur mis à jour')
 
         } catch (error) {
             console.error('Error saving profile:', error)
@@ -144,7 +135,7 @@ export const EditableInsurerProfile = ({ userId }: EditableInsurerProfileProps =
         setIsEditing(false)
     }
 
-    const handleChange = (field: keyof InsurerProfileData, value: string) => {
+    const handleChange = (field: keyof DoctorProfileData, value: string) => {
         setEditedData(prev => ({ ...prev, [field]: value }))
     }
 
@@ -157,8 +148,8 @@ export const EditableInsurerProfile = ({ userId }: EditableInsurerProfileProps =
             <CardHeader>
                 <div className="flex justify-between items-center">
                     <div>
-                        <CardTitle>Profil d'Assurance</CardTitle>
-                        <CardDescription>Informations de la compagnie et couverture</CardDescription>
+                        <CardTitle>Profil Médecin</CardTitle>
+                        <CardDescription>Informations professionnelles</CardDescription>
                     </div>
                     {!isEditing ? (
                         <Button onClick={() => setIsEditing(true)} variant="outline">
@@ -167,7 +158,7 @@ export const EditableInsurerProfile = ({ userId }: EditableInsurerProfileProps =
                         </Button>
                     ) : (
                         <div className="flex gap-2">
-                            <Button onClick={handleSave} size="sm" disabled={saving} className="bg-blue-600 hover:bg-blue-700">
+                            <Button onClick={handleSave} size="sm" disabled={saving}>
                                 {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Enregistrer
                             </Button>
@@ -180,45 +171,71 @@ export const EditableInsurerProfile = ({ userId }: EditableInsurerProfileProps =
                 </div>
             </CardHeader>
             <CardContent className="space-y-6">
-                <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                    <div className="h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Shield className="h-8 w-8 text-blue-600" />
+                <div className="flex items-center gap-4 p-4 bg-secondary/10 rounded-lg">
+                    <div className="h-16 w-16 bg-primary/20 rounded-full flex items-center justify-center">
+                        <Stethoscope className="h-8 w-8 text-primary" />
                     </div>
                     <div>
-                        <h3 className="font-semibold text-lg text-blue-900">{profileData.companyName || 'Nom de la Compagnie'}</h3>
-                        <p className="text-sm text-blue-700">Représentant: {profileData.representativeName}</p>
+                        <h3 className="font-semibold text-lg">{profileData.name || 'Nom du Docteur'}</h3>
+                        <p className="text-sm text-muted-foreground">{profileData.specialization || 'Spécialisation non définie'}</p>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                        <Label htmlFor="companyName">Nom de la Compagnie</Label>
+                        <Label htmlFor="name">Nom complet</Label>
                         {isEditing ? (
                             <Input
-                                id="companyName"
-                                value={editedData.companyName}
-                                onChange={(e) => handleChange('companyName', e.target.value)}
+                                id="name"
+                                value={editedData.name}
+                                onChange={(e) => handleChange('name', e.target.value)}
                             />
                         ) : (
-                            <p className="p-2 bg-secondary/10 rounded font-medium">{profileData.companyName}</p>
+                            <p className="p-2 bg-secondary/10 rounded">{profileData.name}</p>
                         )}
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="representative">Nom du Représentant</Label>
+                        <Label htmlFor="email">Email professionnel</Label>
                         {isEditing ? (
                             <Input
-                                id="representative"
-                                value={editedData.representativeName}
-                                onChange={(e) => handleChange('representativeName', e.target.value)}
+                                id="email"
+                                value={editedData.email}
+                                onChange={(e) => handleChange('email', e.target.value)}
                             />
                         ) : (
-                            <p className="p-2 bg-secondary/10 rounded font-medium">{profileData.representativeName}</p>
+                            <p className="p-2 bg-secondary/10 rounded">{profileData.email}</p>
                         )}
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="phone">Contact Téléphonique</Label>
+                        <Label htmlFor="specialization">Spécialisation</Label>
+                        {isEditing ? (
+                            <Input
+                                id="specialization"
+                                value={editedData.specialization}
+                                onChange={(e) => handleChange('specialization', e.target.value)}
+                            />
+                        ) : (
+                            <p className="p-2 bg-secondary/10 rounded">{profileData.specialization}</p>
+                        )}
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="clinicName">Nom de la Clinique</Label>
+                        {isEditing ? (
+                            <Input
+                                id="clinicName"
+                                value={editedData.clinicName}
+                                onChange={(e) => handleChange('clinicName', e.target.value)}
+                            />
+                        ) : (
+                            <p className="p-2 bg-secondary/10 rounded">{profileData.clinicName || 'Non renseigné'}</p>
+                        )}
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="phone">Téléphone</Label>
                         {isEditing ? (
                             <Input
                                 id="phone"
@@ -226,15 +243,28 @@ export const EditableInsurerProfile = ({ userId }: EditableInsurerProfileProps =
                                 onChange={(e) => handleChange('phone', e.target.value)}
                             />
                         ) : (
+                            <p className="p-2 bg-secondary/10 rounded">{profileData.phone}</p>
+                        )}
+                    </div>
+
+                    <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="clinicAddress">Adresse de la Clinique</Label>
+                        {isEditing ? (
+                            <Input
+                                id="clinicAddress"
+                                value={editedData.clinicAddress}
+                                onChange={(e) => handleChange('clinicAddress', e.target.value)}
+                            />
+                        ) : (
                             <div className="flex items-center gap-2 p-2 bg-secondary/10 rounded">
-                                <Phone className="h-4 w-4 text-muted-foreground" />
-                                {profileData.phone}
+                                <MapPin className="h-4 w-4 text-muted-foreground" />
+                                {profileData.clinicAddress || 'Non renseignée'}
                             </div>
                         )}
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="license">Numéro d'Agrément</Label>
+                        <Label htmlFor="license">Numéro de Licence</Label>
                         {isEditing ? (
                             <Input
                                 id="license"
@@ -246,24 +276,6 @@ export const EditableInsurerProfile = ({ userId }: EditableInsurerProfileProps =
                                 <FileText className="h-4 w-4 text-muted-foreground" />
                                 {profileData.licenseNumber || 'N/A'}
                             </div>
-                        )}
-                    </div>
-
-                    <div className="space-y-2 md:col-span-2">
-                        <Label htmlFor="coverage">Types de Couverture (Format JSON)</Label>
-                        {isEditing ? (
-                            <Textarea
-                                id="coverage"
-                                value={editedData.coverageTypes}
-                                onChange={(e) => handleChange('coverageTypes', e.target.value)}
-                                className="font-mono text-xs"
-                                rows={6}
-                                placeholder='{"maladie": 80, "maternite": 100}'
-                            />
-                        ) : (
-                            <pre className="p-2 bg-secondary/10 rounded overflow-auto text-xs">
-                                {profileData.coverageTypes || 'Aucune couverture définie'}
-                            </pre>
                         )}
                     </div>
                 </div>

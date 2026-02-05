@@ -7,7 +7,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
-import { Save, Edit, X, Upload, Loader2 } from 'lucide-react'
+import { Save, Edit, X, Upload, Loader2, ChevronDown } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import insuranceData from '@/data/insurances.json'
 
 interface PatientProfileData {
   name: string
@@ -16,6 +18,7 @@ interface PatientProfileData {
   dateOfBirth?: string
   address?: string
   insuranceId?: string
+  insuranceName?: string
   cmuNumber?: string
   emergencyContact?: string
   bloodType?: string
@@ -44,6 +47,7 @@ export const EditablePatientProfile = ({ userId }: EditablePatientProfileProps =
     dateOfBirth: '',
     address: '',
     insuranceId: '',
+    insuranceName: '',
     cmuNumber: '',
     emergencyContact: '',
     bloodType: '',
@@ -95,6 +99,7 @@ export const EditablePatientProfile = ({ userId }: EditablePatientProfileProps =
         dateOfBirth: patientData?.date_of_birth || '',
         address: patientData?.address || '',
         insuranceId: patientData?.insurance_id || '',
+        insuranceName: patientData?.insurance_name || '',
         cmuNumber: patientData?.cmu_number || '',
         emergencyContact: patientData?.emergency_contact || '',
         bloodType: patientData?.blood_type || '',
@@ -122,6 +127,7 @@ export const EditablePatientProfile = ({ userId }: EditablePatientProfileProps =
         .from('user_profiles')
         .update({
           name: editedData.name,
+          email: editedData.email,
           phone: editedData.phone
         })
         .eq('id', effectiveUserId)
@@ -135,6 +141,7 @@ export const EditablePatientProfile = ({ userId }: EditablePatientProfileProps =
           user_id: effectiveUserId,
           address: editedData.address,
           insurance_id: editedData.insuranceId,
+          insurance_name: editedData.insuranceName,
           cmu_number: editedData.cmuNumber,
           emergency_contact: editedData.emergencyContact,
           blood_type: editedData.bloodType,
@@ -232,12 +239,15 @@ export const EditablePatientProfile = ({ userId }: EditablePatientProfileProps =
 
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                value={editedData.email}
-                disabled={true} // Email cannot be changed here
-                className="bg-muted"
-              />
+              {isEditing ? (
+                <Input
+                  id="email"
+                  value={editedData.email}
+                  onChange={(e) => handleChange('email', e.target.value)}
+                />
+              ) : (
+                <p className="p-2 bg-secondary/5 rounded">{profileData.email || 'Non renseigné'}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -301,12 +311,54 @@ export const EditablePatientProfile = ({ userId }: EditablePatientProfileProps =
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="insuranceId">Numéro d'assurance</Label>
+              <Label htmlFor="insuranceName">Compagnie d'assurance</Label>
+              {isEditing ? (
+                <div className="space-y-2">
+                  <Select
+                    value={insuranceData.includes(editedData.insuranceName || '') ? editedData.insuranceName : 'Autre'}
+                    onValueChange={(value) => {
+                      if (value === 'Autre') {
+                        handleChange('insuranceName', '')
+                      } else {
+                        handleChange('insuranceName', value)
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionnez votre assurance" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {insuranceData.map((name) => (
+                        <SelectItem key={name} value={name}>
+                          {name}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="Autre">Autre (Saisir manuellement)</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {(!insuranceData.includes(editedData.insuranceName || '') || editedData.insuranceName === '') && (
+                    <Input
+                      placeholder="Nom de votre assurance..."
+                      value={editedData.insuranceName}
+                      onChange={(e) => handleChange('insuranceName', e.target.value)}
+                      className="mt-2"
+                    />
+                  )}
+                </div>
+              ) : (
+                <p className="p-2 bg-secondary/5 rounded">{profileData.insuranceName || 'Non renseigné'}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="insuranceId">Numéro de carte d'assurance</Label>
               {isEditing ? (
                 <Input
                   id="insuranceId"
                   value={editedData.insuranceId}
                   onChange={(e) => handleChange('insuranceId', e.target.value)}
+                  placeholder="Ex: 123456789"
                 />
               ) : (
                 <p className="p-2 bg-secondary/5 rounded">{profileData.insuranceId || 'Non renseigné'}</p>

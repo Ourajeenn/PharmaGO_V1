@@ -67,7 +67,7 @@ if (!self.define) {
     });
   };
 }
-define(['./workbox-21a80088'], (function (workbox) { 'use strict';
+define(['./workbox-15ec2ecc'], (function (workbox) { 'use strict';
 
   self.skipWaiting();
   workbox.clientsClaim();
@@ -82,7 +82,7 @@ define(['./workbox-21a80088'], (function (workbox) { 'use strict';
     "revision": "3ca0b8505b4bec776b69afdba2768812"
   }, {
     "url": "index.html",
-    "revision": "0.c9clc16ltno"
+    "revision": "0.eejmvv0ep6c"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html"), {
@@ -108,22 +108,21 @@ define(['./workbox-21a80088'], (function (workbox) { 'use strict';
   }), 'GET');
   workbox.registerRoute(({
     url
-  }) => url.pathname.startsWith("/api"), new workbox.NetworkFirst({
-    "cacheName": "api-cache",
-    "networkTimeoutSeconds": 10,
-    plugins: [new workbox.ExpirationPlugin({
-      maxEntries: 50,
-      maxAgeSeconds: 86400
-    })]
-  }), 'GET');
-  workbox.registerRoute(({
-    url
   }) => url.hostname.includes("supabase.co"), new workbox.NetworkFirst({
     "cacheName": "supabase-cache",
     "networkTimeoutSeconds": 5,
     plugins: [new workbox.ExpirationPlugin({
       maxEntries: 100,
       maxAgeSeconds: 86400
+    })]
+  }), 'GET');
+  workbox.registerRoute(({
+    request
+  }) => request.destination === "image", new workbox.StaleWhileRevalidate({
+    "cacheName": "images-cache",
+    plugins: [new workbox.ExpirationPlugin({
+      maxEntries: 50,
+      maxAgeSeconds: 2592000
     })]
   }), 'GET');
 

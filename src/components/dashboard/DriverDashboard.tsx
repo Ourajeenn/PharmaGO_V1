@@ -31,7 +31,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { EditableDriverProfile } from './EditableDriverProfile'
+import { EditableDriverProfile } from './profiles/EditableDriverProfile'
 import { PremiumDashboardLayout } from './PremiumDashboardLayout'
 
 export const DriverDashboard = () => {

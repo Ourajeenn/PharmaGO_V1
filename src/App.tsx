@@ -62,10 +62,10 @@ const App = () => {
     // Initialize E-Carnet mock data
     initializeMockData();
 
-    // Ensure preloader displays for minimum 2 seconds to show video
+    // Ensure preloader displays for 4 seconds to show animation sequence
     const timer = setTimeout(() => {
       setLoading(false);
-    }, 2000);
+    }, 4000);
 
     return () => clearTimeout(timer);
   }, []);

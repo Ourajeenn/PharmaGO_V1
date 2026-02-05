@@ -32,7 +32,7 @@ const promoSlides = [
     title: "Suivi en Temps Réel",
     subtitle: "Sachez exactement où est votre commande",
     description: "Suivez votre livraison en direct avec notre système de tracking GPS en temps réel",
-    image: "hero-carousel/delivery-v2.png",
+    image: "hero-carousel/delivery-new.jpg",
     badge: "LIVRAISON",
     cta: "Suivre ma commande",
     gradient: "from-green-500 to-emerald-600",
@@ -43,7 +43,7 @@ const promoSlides = [
     title: "Gestion Santé",
     subtitle: "Votre santé à portée de main",
     description: "Application mobile complète pour gérer vos ordonnances, rendez-vous et historique médical",
-    image: "hero-carousel/app.png",
+    image: "hero-carousel/app-v4.png",
     badge: "APPLICATION",
     cta: "Télécharger l'app",
     gradient: "from-purple-500 to-violet-600",
@@ -88,89 +88,167 @@ const ImageSlider = () => {
 
       <ScrollReveal animation="zoom-in" delay={0.2}>
         <div className="relative max-w-4xl mx-auto">
-          {/* Main Slider Card */}
-          <Card className="relative min-h-[450px] md:h-[500px] flex items-center transition-all duration-500 border-none shadow-2xl premium-rounded">
-            <div className={`absolute inset-0 bg-gradient-to-br ${currentSlideData.gradient} opacity-95`} />
+          <style>{`
+            @keyframes circulate {
+              0% { stroke-dashoffset: 0; }
+              100% { stroke-dashoffset: -6000; }
+            }
+            
+            .neon-frame {
+              position: absolute;
+              inset: 0;
+              border-radius: 20px;
+              pointer-events: none;
+              z-index: 10;
+            }
 
-            {/* Background Pattern */}
-            <div className="absolute inset-0 opacity-15">
-              <div className="absolute top-10 right-10 w-48 h-48 rounded-full bg-white/20 animate-pulse blur-2xl"></div>
-              <div className="absolute bottom-10 left-10 w-32 h-32 rounded-full bg-white/10 animate-pulse delay-1000 blur-xl"></div>
-              <div className="absolute top-1/2 left-1/2 w-64 h-64 rounded-full bg-white/5 animate-pulse delay-500 blur-3xl"></div>
+            .neon-svg {
+              width: 100%;
+              height: 100%;
+              overflow: visible;
+            }
+
+            .path-green {
+              fill: none;
+              stroke: #00ff88;
+              stroke-width: 2;
+              stroke-linecap: round;
+              stroke-dasharray: 800 5200;
+              animation: circulate 12s linear infinite;
+              filter: drop-shadow(0 0 3px #00ff88) drop-shadow(0 0 6px #00ff88);
+            }
+
+            .path-blue {
+              fill: none;
+              stroke: #00aaff;
+              stroke-width: 2;
+              stroke-linecap: round;
+              stroke-dasharray: 800 5200;
+              animation: circulate 12s linear infinite;
+              animation-delay: -3s;
+              filter: drop-shadow(0 0 3px #00aaff) drop-shadow(0 0 6px #00aaff);
+            }
+
+            .path-orange {
+              fill: none;
+              stroke: #ff8800;
+              stroke-width: 2;
+              stroke-linecap: round;
+              stroke-dasharray: 800 5200;
+              animation: circulate 12s linear infinite;
+              animation-delay: -6s;
+              filter: drop-shadow(0 0 3px #ff8800) drop-shadow(0 0 6px #ff8800);
+            }
+
+            .path-red {
+              fill: none;
+              stroke: #ff0044;
+              stroke-width: 2;
+              stroke-linecap: round;
+              stroke-dasharray: 800 5200;
+              animation: circulate 12s linear infinite;
+              animation-delay: -9s;
+              filter: drop-shadow(0 0 3px #ff0044) drop-shadow(0 0 6px #ff0044);
+            }
+            
+            .led-inner-frame {
+              position: relative;
+              width: 100%;
+              height: 100%;
+              border-radius: 20px;
+              overflow: hidden;
+              background: #000;
+              z-index: 1;
+              clip-path: inset(0 round 20px);
+            }
+          `}</style>
+
+          {/* Pronounced Glassmorphism Card */}
+          <Card className="relative min-h-[450px] md:h-[500px] flex items-center transition-all duration-500 border-2 border-white/30 shadow-[0_20px_50px_rgba(0,0,0,0.3)] premium-rounded overflow-hidden bg-white/15 backdrop-blur-3xl">
+            {/* Interior Glossy Gradient */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent pointer-events-none" />
+
+            {/* Background Pattern - Stronger for contrast */}
+            <div className="absolute inset-0 opacity-30">
+              <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-white/20 blur-3xl"></div>
+              <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full bg-primary/20 blur-3xl"></div>
             </div>
 
             {/* Content */}
             <div className="relative z-10 w-full py-12">
               <div className="container mx-auto px-6 md:px-12">
                 <div className="grid md:grid-cols-2 gap-12 items-center">
-                  <div className="text-white space-y-8">
+                  <div className="text-foreground space-y-4">
                     <div className="space-y-3">
-                      <h3 className="text-3xl md:text-4xl font-bold leading-tight">
+                      <h3 className="text-xl md:text-2xl font-black leading-tight text-foreground tracking-tighter">
                         {currentSlideData.title}
                       </h3>
-                      <p className="text-xl md:text-2xl font-medium text-white/90">
+                      <p className="text-base md:text-lg font-extrabold text-primary/100">
                         {currentSlideData.subtitle}
                       </p>
-                      <p className="text-white/80 text-lg">
+                      <p className="opacity-95 text-sm md:text-base font-bold leading-relaxed text-foreground/80 max-w-md">
                         {currentSlideData.description}
                       </p>
                     </div>
 
-                    <div className="bg-white/15 backdrop-blur-md rounded-xl p-4 border border-white/20 shadow-inner max-w-fit">
-                      <p className="text-white font-bold text-lg flex items-center gap-2">
+                    <div className="bg-white/20 backdrop-blur-md rounded-xl p-4 border border-white/30 shadow-lg max-w-fit">
+                      <p className="font-bold text-lg flex items-center gap-2">
                         <span className="text-2xl">🎉</span> {currentSlideData.offer}
                       </p>
                     </div>
 
                     <div className="flex flex-wrap gap-3 pt-2">
-                      <Button size="lg" className="bg-white text-gray-900 hover:bg-white/90 shadow-xl font-bold transition-all duration-300 hover:scale-105 px-8">
+                      <Button size="lg" className="bg-primary text-white hover:brightness-110 shadow-xl font-bold transition-all duration-300 hover:scale-105 px-8">
                         {currentSlideData.cta}
                       </Button>
                       <Button
                         variant="outline"
                         size="lg"
-                        className="bg-black/20 border-white/40 text-white hover:bg-white hover:text-gray-900 hover:border-white shadow-lg font-bold transition-all duration-300 hover:scale-105 px-6 flex items-center gap-2"
+                        className="bg-white/20 border-white/30 text-foreground hover:bg-white/30 shadow-lg font-bold transition-all duration-300 hover:scale-105 px-6 flex items-center gap-2"
                         onClick={() => toggleFavorite(currentSlideData.id)}
                       >
                         <Heart className={`h-5 w-5 ${favorites.includes(currentSlideData.id) ? 'fill-red-500 text-red-500' : ''} transition-colors duration-300`} />
                         <span>{favorites.includes(currentSlideData.id) ? 'Sauvegardé' : 'Sauvegarder'}</span>
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="lg"
-                        className="bg-black/20 border-white/40 text-white hover:bg-white hover:text-gray-900 hover:border-white shadow-lg font-bold transition-all duration-300 hover:scale-105 px-6"
-                      >
-                        Télécharger
-                      </Button>
                     </div>
                   </div>
 
                   <div className="hidden md:flex flex-col items-center justify-center gap-4">
-                    <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30 text-sm px-4 py-1">
+                    <Badge className="bg-white/10 text-white border-white/10 hover:bg-white/20 text-sm px-4 py-1">
                       {currentSlideData.badge}
                     </Badge>
-                    <div className="w-80 h-80 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/30 backdrop-blur-sm bg-white/5">
-                      <img
-                        src={`/${currentSlideData.image}`}
-                        alt={currentSlideData.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          console.error(`Failed to load image: /${currentSlideData.image}`);
-                          // Fallback to emoji if image fails to load
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          const parent = target.parentElement;
-                          if (parent) {
-                            parent.innerHTML = `<div class="w-full h-full flex items-center justify-center text-8xl bg-gradient-to-br ${currentSlideData.gradient}">
-                              ${currentSlideData.id === 1 ? "💊" : ""}
-                              ${currentSlideData.id === 2 ? "👨‍⚕️" : ""}
-                              ${currentSlideData.id === 3 ? "🚀" : ""}
-                              ${currentSlideData.id === 4 ? "📱" : ""}
-                            </div>`;
-                          }
-                        }}
-                        onLoad={() => console.log(`Successfully loaded: /${currentSlideData.image}`)}
-                      />
+
+                    {/* Neon Border Image Frame */}
+                    <div className="relative w-80 h-80">
+                      <div className="neon-frame">
+                        <svg className="neon-svg" viewBox="0 0 1200 1200" preserveAspectRatio="none">
+                          <path className="path-green" d="M 50,5 L 1150,5 Q 1195,5 1195,50 L 1195,1150 Q 1195,1195 1150,1195 L 50,1195 Q 5,1195 5,1150 L 5,50 Q 5,5 50,5" />
+                          <path className="path-blue" d="M 50,5 L 1150,5 Q 1195,5 1195,50 L 1195,1150 Q 1195,1195 1150,1195 L 50,1195 Q 5,1195 5,1150 L 5,50 Q 5,5 50,5" />
+                          <path className="path-orange" d="M 50,5 L 1150,5 Q 1195,5 1195,50 L 1195,1150 Q 1195,1195 1150,1195 L 50,1195 Q 5,1195 5,1150 L 5,50 Q 5,5 50,5" />
+                          <path className="path-red" d="M 50,5 L 1150,5 Q 1195,5 1195,50 L 1195,1150 Q 1195,1195 1150,1195 L 50,1195 Q 5,1195 5,1150 L 5,50 Q 5,5 50,5" />
+                        </svg>
+                      </div>
+                      <div className="led-inner-frame w-full h-full">
+                        <img
+                          src={`/${currentSlideData.image}`}
+                          alt={currentSlideData.title}
+                          className="w-full h-full object-cover"
+                          style={{ borderRadius: '20px' }}
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const parent = target.parentElement;
+                            if (parent) {
+                              parent.innerHTML = `<div class="w-full h-full flex items-center justify-center text-8xl bg-slate-900 text-white">
+                                ${currentSlideData.id === 1 ? "💊" : ""}
+                                ${currentSlideData.id === 2 ? "👨‍⚕️" : ""}
+                                ${currentSlideData.id === 3 ? "🚀" : ""}
+                                ${currentSlideData.id === 4 ? "📱" : ""}
+                              </div>`;
+                            }
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, MapPin, Phone, Clock, User, ShoppingCart, Eye, Building2, Truck, Stethoscope, Shield, ArrowLeft, LogOut } from "lucide-react";
+import { Menu, X, MapPin, Phone, Clock, User, ShoppingCart, Eye, Building2, Truck, Stethoscope, Shield, ArrowLeft, LogOut, ChevronDown } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { CartDrawer } from "./cart/CartDrawer"
 import { ThemeToggle } from "./ThemeToggle"
@@ -101,12 +101,22 @@ const Header = () => {
               <Link to="/medicaments" className="text-foreground hover:text-primary transition-colors font-bold text-sm tracking-tight uppercase">
                 Médicaments
               </Link>
-              <Link to="/pharmacies" className="text-foreground hover:text-primary transition-colors font-bold text-sm tracking-tight uppercase">
-                Pharmacies
-              </Link>
-              <Link to="/pharmacies-garde" className="text-foreground hover:text-primary transition-colors font-bold text-sm tracking-tight uppercase">
-                Garde
-              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger className="flex items-center gap-1 text-foreground hover:text-primary transition-colors font-bold text-sm tracking-tight uppercase border-none bg-transparent outline-none">
+                  Pharmacies
+                  <ChevronDown className="h-4 w-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-56">
+                  <DropdownMenuItem onClick={() => navigate('/pharmacies')}>
+                    <Building2 className="h-4 w-4 mr-2" />
+                    Toutes les pharmacies
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/pharmacies-garde')}>
+                    <Clock className="h-4 w-4 mr-2" />
+                    Pharmacie de garde
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Link to="/consultation" className="text-foreground hover:text-primary transition-colors font-bold text-sm tracking-tight uppercase">
                 Consultation
               </Link>
@@ -209,12 +219,15 @@ const Header = () => {
                 <Link to="/medicaments" className="text-foreground hover:text-primary transition-colors font-bold text-sm uppercase tracking-widest">
                   Médicaments
                 </Link>
-                <Link to="/pharmacies" className="text-foreground hover:text-primary transition-colors font-bold text-sm uppercase tracking-widest">
-                  Pharmacies
-                </Link>
-                <Link to="/pharmacies-garde" className="text-foreground hover:text-primary transition-colors font-bold text-sm uppercase tracking-widest">
-                  Garde
-                </Link>
+                <div className="flex flex-col space-y-2 pb-2 border-b border-white/10">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2">Pharmacies</p>
+                  <Link to="/pharmacies" className="text-foreground hover:text-primary transition-colors font-bold text-sm uppercase tracking-widest px-4" onClick={() => setIsMenuOpen(false)}>
+                    Toutes les pharmacies
+                  </Link>
+                  <Link to="/pharmacies-garde" className="text-foreground hover:text-primary transition-colors font-bold text-sm uppercase tracking-widest px-4" onClick={() => setIsMenuOpen(false)}>
+                    Pharmacie de garde
+                  </Link>
+                </div>
                 <Link to="/consultation" className="text-foreground hover:text-primary transition-colors font-bold text-sm uppercase tracking-widest">
                   Consultation
                 </Link>

@@ -96,6 +96,7 @@ export const EditableDriverProfile = ({ userId }: EditableDriverProfileProps = {
                 .from('user_profiles')
                 .update({
                     name: editedData.name,
+                    email: editedData.email,
                     phone: editedData.phone
                 })
                 .eq('id', effectiveUserId)
@@ -187,6 +188,19 @@ export const EditableDriverProfile = ({ userId }: EditableDriverProfileProps = {
                             />
                         ) : (
                             <p className="p-2 bg-secondary/10 rounded">{profileData.name}</p>
+                        )}
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        {isEditing ? (
+                            <Input
+                                id="email"
+                                value={editedData.email}
+                                onChange={(e) => handleChange('email', e.target.value)}
+                            />
+                        ) : (
+                            <p className="p-2 bg-secondary/10 rounded">{profileData.email}</p>
                         )}
                     </div>
 

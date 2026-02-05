@@ -29,7 +29,7 @@ import {
 
 export default function PharmaciesGardePage() {
     const navigate = useNavigate();
-    const [selectedCommune, setSelectedCommune] = useState<string>('');
+    const [selectedCommune, setSelectedCommune] = useState<string>('Toutes');
     const [searchQuery, setSearchQuery] = useState('');
 
     // Filter pharmacies that are on guard or open 24h
@@ -45,7 +45,7 @@ export default function PharmaciesGardePage() {
                 p.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 p.commune.toLowerCase().includes(searchQuery.toLowerCase());
 
-            const matchesCommune = !selectedCommune || p.commune === selectedCommune;
+            const matchesCommune = selectedCommune === 'Toutes' || p.commune === selectedCommune;
 
             return matchesSearch && matchesCommune;
         });
@@ -197,10 +197,9 @@ export default function PharmaciesGardePage() {
                                     <SelectValue placeholder="Toutes les communes" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="">Toutes les communes</SelectItem>
-                                    {communesList.filter(c => c !== "Toutes").map((commune) => (
+                                    {communesList.map((commune) => (
                                         <SelectItem key={commune} value={commune}>
-                                            {commune}
+                                            {commune === "Toutes" ? "Toutes les communes" : commune}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -209,8 +208,8 @@ export default function PharmaciesGardePage() {
 
                         {/* Active Filters */}
                         <div className="flex flex-wrap gap-2">
-                            {selectedCommune && (
-                                <Badge variant="secondary" className="cursor-pointer" onClick={() => setSelectedCommune('')}>
+                            {selectedCommune !== "Toutes" && (
+                                <Badge variant="secondary" className="cursor-pointer" onClick={() => setSelectedCommune('Toutes')}>
                                     {selectedCommune} ✕
                                 </Badge>
                             )}
@@ -236,7 +235,7 @@ export default function PharmaciesGardePage() {
                             </p>
                             <Button
                                 onClick={() => {
-                                    setSelectedCommune('');
+                                    setSelectedCommune('Toutes');
                                     setSearchQuery('');
                                 }}
                                 variant="outline"
