@@ -27,9 +27,14 @@ import {
     Star,
     ChevronLeft,
     ChevronRight,
-    Stethoscope
+    Stethoscope,
+    Video,
+    Phone,
+    FileInput
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { VideoConsultation, VideoAppointmentCard } from '@/components/consultation/VideoConsultation'
+import { AIMedicationRecommender } from '@/components/doctor/AIMedicationRecommender'
 
 interface Appointment {
     id: string
@@ -74,6 +79,7 @@ export const DoctorDashboardNew = () => {
     const [timeFilter, setTimeFilter] = useState('weekly')
     const [selectedDoctor, setSelectedDoctor] = useState('Dr. Jonathan Brown')
     const [currentWeekStart, setCurrentWeekStart] = useState(0)
+    const [activeTab, setActiveTab] = useState('dashboard')
 
     const [stats, setStats] = useState<Stats>({
         totalPatients: 1235,
@@ -229,10 +235,12 @@ export const DoctorDashboardNew = () => {
         visibleData.missedVisits.reduce((a, b) => a + b, 0)
 
     const menuItems = [
-        { icon: LayoutDashboard, label: 'Dashboard', active: true },
-        { icon: CalendarIcon, label: 'Schedule', active: false },
-        { icon: Users, label: 'Patients', active: false },
-        { icon: FileText, label: 'Appointments', active: false }
+        { icon: LayoutDashboard, id: 'dashboard', label: 'Dashboard' },
+        { icon: CalendarIcon, id: 'schedule', label: 'Availability' },
+        { icon: Users, id: 'patients', label: 'Patients' },
+        { icon: FileText, id: 'appointments', label: 'Appointments' },
+        { icon: Video, id: 'teleconsult', label: '🎞️ Téléconsult' },
+        { icon: Stethoscope, id: 'aiassist', label: '🧪 IA Prescripteur' }
     ]
 
     const documentsItems = [
@@ -275,9 +283,10 @@ export const DoctorDashboardNew = () => {
                             {menuItems.map((item) => (
                                 <button
                                     key={item.label}
-                                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${item.active
-                                            ? 'bg-blue-500 text-white shadow-lg'
-                                            : 'text-slate-600 hover:bg-slate-100'
+                                    onClick={() => setActiveTab(item.id)}
+                                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === item.id
+                                        ? 'bg-blue-500 text-white shadow-lg'
+                                        : 'text-slate-600 hover:bg-slate-100'
                                         }`}
                                 >
                                     <item.icon className="h-4 w-4" />
@@ -395,302 +404,448 @@ export const DoctorDashboardNew = () => {
                 </header>
 
                 {/* Content */}
-                <div className="p-8 space-y-6">
-                    {/* Stats Row */}
-                    <div className="grid grid-cols-4 gap-4">
-                        {/* Total Patients */}
-                        <Card className="bg-white border-slate-200 shadow-sm">
-                            <CardContent className="p-5">
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                                        <Users className="h-5 w-5 text-blue-600" />
+                {activeTab === 'dashboard' && (
+                    <div className="p-8 space-y-6">
+                        {/* Stats Row */}
+                        <div className="grid grid-cols-4 gap-4">
+                            {/* Total Patients */}
+                            <Card className="bg-white border-slate-200 shadow-sm">
+                                <CardContent className="p-5">
+                                    <div className="flex items-start justify-between mb-4">
+                                        <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                                            <Users className="h-5 w-5 text-blue-600" />
+                                        </div>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2">
+                                            <Plus className="h-4 w-4 text-blue-600" />
+                                        </Button>
                                     </div>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2">
-                                        <Plus className="h-4 w-4 text-blue-600" />
-                                    </Button>
-                                </div>
-                                <div>
-                                    <p className="text-xs font-medium text-slate-500 mb-1">Total Patients</p>
-                                    <div className="flex items-end gap-2">
-                                        <h3 className="text-2xl font-bold text-slate-900">{stats.totalPatients}</h3>
-                                        <div className="flex items-center gap-1 text-green-600 mb-1">
-                                            <TrendingUp className="h-3 w-3" />
-                                            <span className="text-xs font-semibold">+{stats.patientsGrowth}%</span>
+                                    <div>
+                                        <p className="text-xs font-medium text-slate-500 mb-1">Total Patients</p>
+                                        <div className="flex items-end gap-2">
+                                            <h3 className="text-2xl font-bold text-slate-900">{stats.totalPatients}</h3>
+                                            <div className="flex items-center gap-1 text-green-600 mb-1">
+                                                <TrendingUp className="h-3 w-3" />
+                                                <span className="text-xs font-semibold">+{stats.patientsGrowth}%</span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                                </CardContent>
+                            </Card>
 
-                        {/* Pending Prescriptions */}
-                        <Card className="bg-white border-slate-200 shadow-sm">
-                            <CardContent className="p-5">
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
-                                        <FileText className="h-5 w-5 text-purple-600" />
+                            {/* Pending Prescriptions */}
+                            <Card className="bg-white border-slate-200 shadow-sm">
+                                <CardContent className="p-5">
+                                    <div className="flex items-start justify-between mb-4">
+                                        <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                                            <FileText className="h-5 w-5 text-purple-600" />
+                                        </div>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2">
+                                            <Plus className="h-4 w-4 text-purple-600" />
+                                        </Button>
                                     </div>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2">
-                                        <Plus className="h-4 w-4 text-purple-600" />
-                                    </Button>
-                                </div>
-                                <div>
-                                    <p className="text-xs font-medium text-slate-500 mb-1">Pending Prescriptions</p>
-                                    <div className="flex items-end gap-2">
-                                        <h3 className="text-2xl font-bold text-slate-900">{stats.pendingPrescriptions}</h3>
-                                        <div className="flex items-center gap-1 text-green-600 mb-1">
-                                            <TrendingUp className="h-3 w-3" />
-                                            <span className="text-xs font-semibold">+{stats.prescriptionsGrowth}%</span>
+                                    <div>
+                                        <p className="text-xs font-medium text-slate-500 mb-1">Pending Prescriptions</p>
+                                        <div className="flex items-end gap-2">
+                                            <h3 className="text-2xl font-bold text-slate-900">{stats.pendingPrescriptions}</h3>
+                                            <div className="flex items-center gap-1 text-green-600 mb-1">
+                                                <TrendingUp className="h-3 w-3" />
+                                                <span className="text-xs font-semibold">+{stats.prescriptionsGrowth}%</span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                                </CardContent>
+                            </Card>
 
-                        {/* Active Appointments */}
-                        <Card className="bg-white border-slate-200 shadow-sm">
-                            <CardContent className="p-5">
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="w-10 h-10 bg-cyan-100 rounded-xl flex items-center justify-center">
-                                        <CalendarIcon className="h-5 w-5 text-cyan-600" />
+                            {/* Active Appointments */}
+                            <Card className="bg-white border-slate-200 shadow-sm">
+                                <CardContent className="p-5">
+                                    <div className="flex items-start justify-between mb-4">
+                                        <div className="w-10 h-10 bg-cyan-100 rounded-xl flex items-center justify-center">
+                                            <CalendarIcon className="h-5 w-5 text-cyan-600" />
+                                        </div>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2">
+                                            <Plus className="h-4 w-4 text-cyan-600" />
+                                        </Button>
                                     </div>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2">
-                                        <Plus className="h-4 w-4 text-cyan-600" />
-                                    </Button>
-                                </div>
-                                <div>
-                                    <p className="text-xs font-medium text-slate-500 mb-1">Active Appointments</p>
-                                    <div className="flex items-end gap-2">
-                                        <h3 className="text-2xl font-bold text-slate-900">{stats.activeAppointments}</h3>
-                                        <div className="flex items-center gap-1 text-red-600 mb-1">
-                                            <TrendingDown className="h-3 w-3" />
-                                            <span className="text-xs font-semibold">{stats.appointmentsChange}%</span>
+                                    <div>
+                                        <p className="text-xs font-medium text-slate-500 mb-1">Active Appointments</p>
+                                        <div className="flex items-end gap-2">
+                                            <h3 className="text-2xl font-bold text-slate-900">{stats.activeAppointments}</h3>
+                                            <div className="flex items-center gap-1 text-red-600 mb-1">
+                                                <TrendingDown className="h-3 w-3" />
+                                                <span className="text-xs font-semibold">{stats.appointmentsChange}%</span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                                </CardContent>
+                            </Card>
 
-                        {/* Today's Tasks */}
-                        <Card className="bg-white border-slate-200 shadow-sm">
-                            <CardContent className="p-5">
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                                        <CheckCircle className="h-5 w-5 text-green-600" />
+                            {/* Today's Tasks */}
+                            <Card className="bg-white border-slate-200 shadow-sm">
+                                <CardContent className="p-5">
+                                    <div className="flex items-start justify-between mb-4">
+                                        <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                                            <CheckCircle className="h-5 w-5 text-green-600" />
+                                        </div>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full">
+                                            <Plus className="h-4 w-4" />
+                                        </Button>
                                     </div>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full">
-                                        <Plus className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                                <div>
-                                    <p className="text-xs font-medium text-slate-500 mb-1">Today's Tasks</p>
-                                    <div className="flex items-center gap-2">
-                                        <h3 className="text-2xl font-bold text-slate-900">{stats.tasksCompleted}/{stats.tasksTotal}</h3>
+                                    <div>
+                                        <p className="text-xs font-medium text-slate-500 mb-1">Today's Tasks</p>
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="text-2xl font-bold text-slate-900">{stats.tasksCompleted}/{stats.tasksTotal}</h3>
+                                        </div>
+                                        <div className="mt-3 space-y-1.5">
+                                            {todayTasks.slice(0, 3).map((task) => (
+                                                <div key={task.id} className="flex items-center gap-2 text-xs">
+                                                    <span className="text-slate-500 font-medium w-12">{task.time}</span>
+                                                    <div className="flex items-center gap-2 flex-1">
+                                                        <span className={`truncate ${task.completed ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
+                                                            {task.title}
+                                                        </span>
+                                                        {task.completed && <CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0" />}
+                                                        {task.priority === 'high' && !task.completed && <Star className="h-3 w-3 text-yellow-500 flex-shrink-0" />}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
-                                    <div className="mt-3 space-y-1.5">
-                                        {todayTasks.slice(0, 3).map((task) => (
-                                            <div key={task.id} className="flex items-center gap-2 text-xs">
-                                                <span className="text-slate-500 font-medium w-12">{task.time}</span>
-                                                <div className="flex items-center gap-2 flex-1">
-                                                    <span className={`truncate ${task.completed ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        {/* Charts and Appointments Row */}
+                        <div className="grid grid-cols-2 gap-6">
+                            {/* Patients Reports Chart */}
+                            <Card className="bg-white border-slate-200">
+                                <CardContent className="p-6">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                <Users className="h-4 w-4 text-blue-600" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-sm font-bold text-slate-900">Patients Reports</h3>
+                                                <p className="text-2xl font-bold text-slate-900">{totalReports.toLocaleString()}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-1 text-green-600">
+                                            <TrendingUp className="h-4 w-4" />
+                                            <span className="text-sm font-semibold">+2%</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Bar Chart */}
+                                    <div className="relative h-48 flex items-end justify-between gap-1 mb-4">
+                                        {visibleData.labels.map((label, index) => {
+                                            const newPatientsHeight = (visibleData.newPatients[index] / maxValue) * 100
+                                            const visitsHeight = (visibleData.visits[index] / maxValue) * 100
+                                            const receiptsHeight = (visibleData.receipts[index] / maxValue) * 100
+                                            const missedHeight = (visibleData.missedVisits[index] / maxValue) * 100
+
+                                            return (
+                                                <div key={label} className="flex-1 flex flex-col items-center gap-2">
+                                                    <div className="w-full relative flex gap-0.5" style={{ height: '160px' }}>
+                                                        <div
+                                                            className="flex-1 bg-blue-300 rounded-t transition-all hover:opacity-80"
+                                                            style={{ height: `${newPatientsHeight}%`, alignSelf: 'flex-end' }}
+                                                        />
+                                                        <div
+                                                            className="flex-1 bg-purple-300 rounded-t transition-all hover:opacity-80"
+                                                            style={{ height: `${visitsHeight}%`, alignSelf: 'flex-end' }}
+                                                        />
+                                                        <div
+                                                            className="flex-1 bg-lime-300 rounded-t transition-all hover:opacity-80"
+                                                            style={{ height: `${receiptsHeight}%`, alignSelf: 'flex-end' }}
+                                                        />
+                                                        <div
+                                                            className="flex-1 bg-pink-300 rounded-t transition-all hover:opacity-80"
+                                                            style={{ height: `${missedHeight}%`, alignSelf: 'flex-end' }}
+                                                        />
+                                                    </div>
+                                                    <span className="text-[10px] font-medium text-slate-500">{label}</span>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+
+                                    {/* Legend */}
+                                    <div className="flex items-center justify-center gap-4 text-xs">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-2 h-2 rounded-full bg-blue-300" />
+                                            <span className="text-slate-600">New Patients</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-2 h-2 rounded-full bg-purple-300" />
+                                            <span className="text-slate-600">Visits</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-2 h-2 rounded-full bg-lime-300" />
+                                            <span className="text-slate-600">Receipts</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-2 h-2 rounded-full bg-pink-300" />
+                                            <span className="text-slate-600">Missed visits</span>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Today's Tasks Full List */}
+                            <Card className="bg-white border-slate-200">
+                                <CardContent className="p-6">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h3 className="text-sm font-bold text-slate-900">Today's Tasks</h3>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full">
+                                            <Plus className="h-3 w-3" />
+                                        </Button>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        {todayTasks.map((task) => (
+                                            <div
+                                                key={task.id}
+                                                className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+                                                onClick={() => toggleTask(task.id)}
+                                            >
+                                                <span className="text-xs font-medium text-slate-500 w-12">{task.time}</span>
+                                                <div className="flex-1">
+                                                    <p className={`text-sm ${task.completed ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
                                                         {task.title}
-                                                    </span>
-                                                    {task.completed && <CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0" />}
-                                                    {task.priority === 'high' && !task.completed && <Star className="h-3 w-3 text-yellow-500 flex-shrink-0" />}
+                                                    </p>
+                                                </div>
+                                                {task.completed ? (
+                                                    <CheckCircle className="h-4 w-4 text-green-600" />
+                                                ) : task.priority === 'high' ? (
+                                                    <Star className="h-4 w-4 text-yellow-500" />
+                                                ) : null}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        {/* Upcoming Appointments */}
+                        <Card className="bg-white border-slate-200">
+                            <CardContent className="p-6">
+                                <div className="flex items-center justify-between mb-6">
+                                    <h3 className="text-base font-bold text-slate-900">Upcoming Appointments</h3>
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-2">
+                                            <Avatar className="h-7 w-7">
+                                                <AvatarFallback className="bg-blue-100 text-blue-700 text-xs font-semibold">
+                                                    JB
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <span className="text-sm font-medium text-slate-700">{selectedDoctor}</span>
+                                        </div>
+                                        <Button className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-4 py-2 rounded-lg font-semibold h-8">
+                                            Filter
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {/* Calendar Grid */}
+                                <div className="relative">
+                                    <div className="grid grid-cols-6 gap-4">
+                                        {/* Time Column */}
+                                        <div className="space-y-16 pt-12">
+                                            <div className="text-xs font-medium text-slate-500">9 am</div>
+                                            <div className="text-xs font-medium text-slate-500">10 am</div>
+                                            <div className="text-xs font-medium text-slate-500">10 am</div>
+                                        </div>
+
+                                        {/* Days */}
+                                        {['Tue, 21', 'Wed, 22', 'Thu, 23', 'Fri, 24', 'Sat, 25'].map((day, dayIndex) => (
+                                            <div key={day} className="space-y-2">
+                                                <div className="text-xs font-semibold text-slate-600 text-center mb-3">{day}</div>
+                                                <div className="space-y-2">
+                                                    {upcomingAppointments
+                                                        .filter(app => app.date === day)
+                                                        .map((appointment) => (
+                                                            <div
+                                                                key={appointment.id}
+                                                                className="bg-slate-50 hover:bg-slate-100 p-3 rounded-lg border border-slate-200 transition-all cursor-pointer group"
+                                                            >
+                                                                <div className="flex items-start gap-2">
+                                                                    <Avatar className="h-8 w-8 flex-shrink-0">
+                                                                        <AvatarImage src={appointment.patientAvatar} />
+                                                                        <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-400 text-white text-xs font-semibold">
+                                                                            {appointment.patientName.split(' ').map(n => n[0]).join('')}
+                                                                        </AvatarFallback>
+                                                                    </Avatar>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <p className="text-xs font-semibold text-slate-900 truncate">{appointment.patientName}</p>
+                                                                        <p className="text-[10px] text-slate-500 line-clamp-2">{appointment.condition}</p>
+                                                                        <div className="flex gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                            <Button size="sm" className="h-6 text-[10px] px-2 bg-blue-600 hover:bg-blue-700">
+                                                                                <Video className="h-3 w-3 mr-1" /> Call
+                                                                            </Button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
+
+                                    {/* Navigation Arrows */}
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="absolute -right-12 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white"
+                                        onClick={() => navigateWeek('next')}
+                                    >
+                                        <ChevronRight className="h-4 w-4" />
+                                    </Button>
                                 </div>
                             </CardContent>
                         </Card>
                     </div>
+                )}
 
-                    {/* Charts and Appointments Row */}
-                    <div className="grid grid-cols-2 gap-6">
-                        {/* Patients Reports Chart */}
-                        <Card className="bg-white border-slate-200">
-                            <CardContent className="p-6">
-                                <div className="flex items-center justify-between mb-6">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                            <Users className="h-4 w-4 text-blue-600" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-sm font-bold text-slate-900">Patients Reports</h3>
-                                            <p className="text-2xl font-bold text-slate-900">{totalReports.toLocaleString()}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-1 text-green-600">
-                                        <TrendingUp className="h-4 w-4" />
-                                        <span className="text-sm font-semibold">+2%</span>
-                                    </div>
+                {activeTab === 'patients' && (
+                    <div className="p-8">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-bold text-slate-900">Patient Management</h2>
+                            <Button className="bg-blue-600 hover:bg-blue-700">
+                                <Plus className="h-4 w-4 mr-2" /> Add Patient
+                            </Button>
+                        </div>
+                        <Card className="border-slate-200 shadow-sm">
+                            <CardContent className="p-0">
+                                <div className="p-4 border-b border-slate-200 flex gap-4">
+                                    <Input placeholder="Search patients..." className="max-w-sm" />
                                 </div>
-
-                                {/* Bar Chart */}
-                                <div className="relative h-48 flex items-end justify-between gap-1 mb-4">
-                                    {visibleData.labels.map((label, index) => {
-                                        const newPatientsHeight = (visibleData.newPatients[index] / maxValue) * 100
-                                        const visitsHeight = (visibleData.visits[index] / maxValue) * 100
-                                        const receiptsHeight = (visibleData.receipts[index] / maxValue) * 100
-                                        const missedHeight = (visibleData.missedVisits[index] / maxValue) * 100
-
-                                        return (
-                                            <div key={label} className="flex-1 flex flex-col items-center gap-2">
-                                                <div className="w-full relative flex gap-0.5" style={{ height: '160px' }}>
-                                                    <div
-                                                        className="flex-1 bg-blue-300 rounded-t transition-all hover:opacity-80"
-                                                        style={{ height: `${newPatientsHeight}%`, alignSelf: 'flex-end' }}
-                                                    />
-                                                    <div
-                                                        className="flex-1 bg-purple-300 rounded-t transition-all hover:opacity-80"
-                                                        style={{ height: `${visitsHeight}%`, alignSelf: 'flex-end' }}
-                                                    />
-                                                    <div
-                                                        className="flex-1 bg-lime-300 rounded-t transition-all hover:opacity-80"
-                                                        style={{ height: `${receiptsHeight}%`, alignSelf: 'flex-end' }}
-                                                    />
-                                                    <div
-                                                        className="flex-1 bg-pink-300 rounded-t transition-all hover:opacity-80"
-                                                        style={{ height: `${missedHeight}%`, alignSelf: 'flex-end' }}
-                                                    />
+                                <div className="divide-y divide-slate-100">
+                                    {[1, 2, 3, 4, 5].map((i) => (
+                                        <div key={i} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                                            <div className="flex items-center gap-4">
+                                                <Avatar>
+                                                    <AvatarFallback className="bg-blue-100 text-blue-700">P{i}</AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <h4 className="font-bold text-slate-900">Patient Demo {i}</h4>
+                                                    <p className="text-xs text-slate-500">ID: #8392{i}</p>
                                                 </div>
-                                                <span className="text-[10px] font-medium text-slate-500">{label}</span>
                                             </div>
-                                        )
-                                    })}
-                                </div>
-
-                                {/* Legend */}
-                                <div className="flex items-center justify-center gap-4 text-xs">
-                                    <div className="flex items-center gap-1.5">
-                                        <div className="w-2 h-2 rounded-full bg-blue-300" />
-                                        <span className="text-slate-600">New Patients</span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5">
-                                        <div className="w-2 h-2 rounded-full bg-purple-300" />
-                                        <span className="text-slate-600">Visits</span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5">
-                                        <div className="w-2 h-2 rounded-full bg-lime-300" />
-                                        <span className="text-slate-600">Receipts</span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5">
-                                        <div className="w-2 h-2 rounded-full bg-pink-300" />
-                                        <span className="text-slate-600">Missed visits</span>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Today's Tasks Full List */}
-                        <Card className="bg-white border-slate-200">
-                            <CardContent className="p-6">
-                                <div className="flex items-center justify-between mb-6">
-                                    <h3 className="text-sm font-bold text-slate-900">Today's Tasks</h3>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full">
-                                        <Plus className="h-3 w-3" />
-                                    </Button>
-                                </div>
-
-                                <div className="space-y-3">
-                                    {todayTasks.map((task) => (
-                                        <div
-                                            key={task.id}
-                                            className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
-                                            onClick={() => toggleTask(task.id)}
-                                        >
-                                            <span className="text-xs font-medium text-slate-500 w-12">{task.time}</span>
-                                            <div className="flex-1">
-                                                <p className={`text-sm ${task.completed ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
-                                                    {task.title}
-                                                </p>
+                                            <div className="flex gap-2">
+                                                <Button variant="outline" size="sm" className="text-blue-600 border-blue-200 hover:bg-blue-50">
+                                                    <FileInput className="h-4 w-4 mr-2" /> E-Carnet
+                                                </Button>
+                                                <Button variant="outline" size="sm">History</Button>
                                             </div>
-                                            {task.completed ? (
-                                                <CheckCircle className="h-4 w-4 text-green-600" />
-                                            ) : task.priority === 'high' ? (
-                                                <Star className="h-4 w-4 text-yellow-500" />
-                                            ) : null}
                                         </div>
                                     ))}
                                 </div>
                             </CardContent>
                         </Card>
                     </div>
+                )}
 
-                    {/* Upcoming Appointments */}
-                    <Card className="bg-white border-slate-200">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between mb-6">
-                                <h3 className="text-base font-bold text-slate-900">Upcoming Appointments</h3>
-                                <div className="flex items-center gap-3">
-                                    <div className="flex items-center gap-2">
-                                        <Avatar className="h-7 w-7">
-                                            <AvatarFallback className="bg-blue-100 text-blue-700 text-xs font-semibold">
-                                                JB
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <span className="text-sm font-medium text-slate-700">{selectedDoctor}</span>
-                                    </div>
-                                    <Button className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-4 py-2 rounded-lg font-semibold h-8">
-                                        Filter
-                                    </Button>
-                                </div>
+                {activeTab === 'schedule' && (
+                    <div className="p-8">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-bold text-slate-900">Weekly Schedule</h2>
+                            <div className="flex gap-2">
+                                <Button variant="outline">Previous Week</Button>
+                                <Button variant="outline">Next Week</Button>
                             </div>
-
-                            {/* Calendar Grid */}
-                            <div className="relative">
-                                <div className="grid grid-cols-6 gap-4">
-                                    {/* Time Column */}
-                                    <div className="space-y-16 pt-12">
-                                        <div className="text-xs font-medium text-slate-500">9 am</div>
-                                        <div className="text-xs font-medium text-slate-500">10 am</div>
-                                        <div className="text-xs font-medium text-slate-500">10 am</div>
-                                    </div>
-
-                                    {/* Days */}
-                                    {['Tue, 21', 'Wed, 22', 'Thu, 23', 'Fri, 24', 'Sat, 25'].map((day, dayIndex) => (
-                                        <div key={day} className="space-y-2">
-                                            <div className="text-xs font-semibold text-slate-600 text-center mb-3">{day}</div>
-                                            <div className="space-y-2">
-                                                {upcomingAppointments
-                                                    .filter(app => app.date === day)
-                                                    .map((appointment) => (
-                                                        <div
-                                                            key={appointment.id}
-                                                            className="bg-slate-50 hover:bg-slate-100 p-3 rounded-lg border border-slate-200 transition-all cursor-pointer"
-                                                        >
-                                                            <div className="flex items-start gap-2">
-                                                                <Avatar className="h-8 w-8 flex-shrink-0">
-                                                                    <AvatarImage src={appointment.patientAvatar} />
-                                                                    <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-400 text-white text-xs font-semibold">
-                                                                        {appointment.patientName.split(' ').map(n => n[0]).join('')}
-                                                                    </AvatarFallback>
-                                                                </Avatar>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <p className="text-xs font-semibold text-slate-900 truncate">{appointment.patientName}</p>
-                                                                    <p className="text-[10px] text-slate-500 line-clamp-2">{appointment.condition}</p>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    ))}
+                        </div>
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 overflow-x-auto">
+                            <div className="grid grid-cols-8 gap-4 min-w-[800px]">
+                                <div className="col-span-1 pt-12 space-y-8 text-xs text-slate-400 font-medium text-right pr-4">
+                                    <div>09:00 AM</div>
+                                    <div>10:00 AM</div>
+                                    <div>11:00 AM</div>
+                                    <div>12:00 PM</div>
+                                    <div>01:00 PM</div>
+                                    <div>02:00 PM</div>
+                                </div>
+                                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+                                    <div key={day} className="col-span-1 space-y-4">
+                                        <div className="text-center font-bold text-slate-700 pb-4 border-b border-slate-100">{day}</div>
+                                        <div className="space-y-4 pt-2">
+                                            <div className="bg-blue-50 border border-blue-100 p-2 rounded-lg text-xs cursor-pointer hover:bg-blue-100 transition-colors">
+                                                <div className="font-bold text-blue-700">Consultation</div>
+                                                <div className="text-blue-500">9:00 - 9:30</div>
                                             </div>
+                                            {day === 'Wed' && (
+                                                <div className="bg-purple-50 border border-purple-100 p-2 rounded-lg text-xs cursor-pointer hover:bg-purple-100 transition-colors mt-12">
+                                                    <div className="font-bold text-purple-700">Surgery</div>
+                                                    <div className="text-purple-500">11:00 - 13:00</div>
+                                                </div>
+                                            )}
                                         </div>
-                                    ))}
-                                </div>
-
-                                {/* Navigation Arrows */}
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="absolute -right-12 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white"
-                                    onClick={() => navigateWeek('next')}
-                                >
-                                    <ChevronRight className="h-4 w-4" />
-                                </Button>
+                                    </div>
+                                ))}
                             </div>
-                        </CardContent>
-                    </Card>
-                </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'teleconsult' && (
+                    <div className="p-8 space-y-6">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h2 className="text-2xl font-bold text-slate-900">Téléconsultations</h2>
+                                <p className="text-sm text-muted-foreground">Consultations vidéo avec vos patients</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {/* Video Consultation Area */}
+                            <VideoConsultation
+                                patient={{
+                                    id: '1',
+                                    name: 'Kouassi Aya Marie',
+                                    condition: 'Suivi diabète type 2'
+                                }}
+                            />
+
+                            {/* Upcoming Video Appointments */}
+                            <Card className="bg-white border-slate-200 shadow-sm">
+                                <CardContent className="p-6">
+                                    <h3 className="text-lg font-bold mb-4">Téléconsultations du jour</h3>
+                                    <div className="space-y-3">
+                                        <VideoAppointmentCard
+                                            patient={{ id: '1', name: 'Kouassi Aya Marie' }}
+                                            time="14:00"
+                                            onJoin={() => { }}
+                                        />
+                                        <VideoAppointmentCard
+                                            patient={{ id: '2', name: 'Koné Moussa' }}
+                                            time="15:30"
+                                            onJoin={() => { }}
+                                        />
+                                        <VideoAppointmentCard
+                                            patient={{ id: '3', name: 'Bamba Fatou' }}
+                                            time="16:45"
+                                            onJoin={() => { }}
+                                        />
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'aiassist' && (
+                    <div className="p-8 space-y-6">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h2 className="text-2xl font-bold text-slate-900">IA Prescripteur</h2>
+                                <p className="text-sm text-muted-foreground">Recommandations de médicaments basées sur l'IA</p>
+                            </div>
+                        </div>
+
+                        <AIMedicationRecommender diagnosis="Diabète type 2" />
+                    </div>
+                )}
             </main>
         </div>
     )

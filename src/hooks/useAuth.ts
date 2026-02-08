@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { supabase, UserProfile } from '@/lib/supabase'
+import { logger } from '@/utils/logger'
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null)
@@ -51,7 +52,7 @@ export const useAuth = () => {
         } else {
           // Soft repair si meta présent
           if (metadata?.role) {
-            console.log("Tentative de synchronisation manuelle du profil...")
+            logger.log("Tentative de synchronisation manuelle du profil...")
             const { data: syncedProfile } = await supabase
               .from('user_profiles')
               .upsert({
@@ -89,7 +90,7 @@ export const useAuth = () => {
       }
 
       setProfile(finalProfile)
-      console.log('Profil actif chargé:', finalProfile.role)
+      logger.log('Profil actif chargé:', finalProfile.role)
     } catch (error: any) {
       console.error('Auth Profile Error:', error)
       setLastError(error.message || 'Erreur lors du chargement du profil')

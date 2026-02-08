@@ -205,7 +205,7 @@ export const InsurerAuthForm = ({ onSuccess }: InsurerAuthFormProps) => {
                           <FormItem>
                             <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Compagnie *</FormLabel>
                             <FormControl>
-                              <Input placeholder="NSIA Assurances Vie" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
+                              <Input placeholder="NSIA Assurances Vie" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -218,7 +218,7 @@ export const InsurerAuthForm = ({ onSuccess }: InsurerAuthFormProps) => {
                           <FormItem>
                             <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Représentant *</FormLabel>
                             <FormControl>
-                              <Input placeholder="M. Jean Kouassi" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
+                              <Input placeholder="M. Jean Kouassi" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -233,7 +233,7 @@ export const InsurerAuthForm = ({ onSuccess }: InsurerAuthFormProps) => {
                         <FormItem>
                           <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email corporatif *</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="partenariat@assurance.ci" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
+                            <Input type="email" placeholder="partenariat@assurance.ci" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -248,7 +248,7 @@ export const InsurerAuthForm = ({ onSuccess }: InsurerAuthFormProps) => {
                           <FormItem>
                             <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Tel *</FormLabel>
                             <FormControl>
-                              <Input placeholder="+225..." {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
+                              <Input placeholder="+225..." {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -261,7 +261,7 @@ export const InsurerAuthForm = ({ onSuccess }: InsurerAuthFormProps) => {
                           <FormItem>
                             <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">CIMA *</FormLabel>
                             <FormControl>
-                              <Input placeholder="CIMA..." {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
+                              <Input placeholder="CIMA..." {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -275,7 +275,7 @@ export const InsurerAuthForm = ({ onSuccess }: InsurerAuthFormProps) => {
                             <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Type *</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
-                                <SelectTrigger className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold">
+                                <SelectTrigger className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20">
                                   <SelectValue placeholder="Cat." />
                                 </SelectTrigger>
                               </FormControl>
@@ -297,7 +297,7 @@ export const InsurerAuthForm = ({ onSuccess }: InsurerAuthFormProps) => {
                         <FormItem>
                           <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Mot de passe *</FormLabel>
                           <FormControl>
-                            <Input type="password" placeholder="••••••••" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
+                            <Input type="password" placeholder="••••••••" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -321,7 +321,7 @@ export const InsurerAuthForm = ({ onSuccess }: InsurerAuthFormProps) => {
                       <FormItem>
                         <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="partenariat@assurance.ci" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
+                          <Input type="email" placeholder="partenariat@assurance.ci" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -340,7 +340,7 @@ export const InsurerAuthForm = ({ onSuccess }: InsurerAuthFormProps) => {
                           </button>
                         </div>
                         <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
+                          <Input type="password" placeholder="••••••••" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
 import { ECarnetProvider } from "@/contexts/ECarnetContext";
 import { ReloadPrompt } from "@/components/ReloadPrompt";
-import { Chatbot } from "@/components/chatbot/Chatbot";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import IndexV2 from "./pages/IndexV2";
 import Auth from "./pages/Auth";
@@ -55,6 +55,8 @@ import { initializeMockData } from "@/data/ecarnetMockData";
 
 const queryClient = new QueryClient();
 
+import { UnifiedSupport } from "./components/UnifiedSupport";
+
 const App = () => {
   const [loading, setLoading] = useState(true);
 
@@ -96,25 +98,25 @@ const App = () => {
                 <Route path="/auth/driver" element={<DriverAuth />} />
                 <Route path="/auth/doctor" element={<DoctorAuth />} />
                 <Route path="/auth/insurer" element={<InsurerAuth />} />
-                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 {/* <Route path="/login" element={<Login />} /> 
                 <Route path="/connexion" element={<Login />} /> Redundant, Auth handles this */}
                 <Route path="/pharmacies" element={<PharmaciesPage />} />
                 <Route path="/pharmacies-garde" element={<PharmaciesGardePage />} />
                 <Route path="/suivi" element={<TrackingPage />} />
                 <Route path="/livraison/suivi" element={<DeliveryTracking />} />
-                <Route path="/pharmacien/dashboard" element={<PharmacistDashboard />} />
-                <Route path="/paiement" element={<PaymentPage />} />
+                <Route path="/pharmacien/dashboard" element={<ProtectedRoute allowedRoles={['pharmacy', 'admin']}><PharmacistDashboard /></ProtectedRoute>} />
+                <Route path="/paiement" element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} />
                 <Route path="/parapharmacie" element={<ParapharmacyPage />} />
                 <Route path="/medicaments" element={<MedicinesPage />} />
                 <Route path="/contact" element={<ContactPage />} />
-                <Route path="/contacts-dashboard" element={<ContactsDashboardPage />} />
+                <Route path="/contacts-dashboard" element={<ProtectedRoute allowedRoles={['admin']}><ContactsDashboardPage /></ProtectedRoute>} />
                 <Route path="/patient-mobile" element={<PatientMobilePage />} />
                 <Route path="/ordonnances" element={<PrescriptionsPage />} />
                 <Route path="/consultation" element={<ConsultationPage />} />
                 <Route path="/consultation/:featureId" element={<ConsultationFeaturePage />} />
                 <Route path="/doctor/:doctorId" element={<DoctorProfilePage />} />
-                <Route path="/ecarnet" element={<ECarnetDashboard />} />
+                <Route path="/ecarnet" element={<ProtectedRoute><ECarnetDashboard /></ProtectedRoute>} />
                 <Route path="/ecarnet/profile" element={<PatientProfile />} />
                 <Route path="/ecarnet/new-patient" element={<PatientProfile />} />
                 <Route path="/ecarnet/birth" element={<BirthRecord />} />
@@ -129,7 +131,7 @@ const App = () => {
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
-              <Chatbot />
+              <UnifiedSupport />
             </BrowserRouter>
           </TooltipProvider>
         </CartProvider>

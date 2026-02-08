@@ -232,7 +232,7 @@ export const PharmacyAuthForm = ({ onSuccess }: PharmacyAuthFormProps) => {
                         <FormItem>
                           <FormLabel>Nom de la pharmacie *</FormLabel>
                           <FormControl>
-                            <Input placeholder="Pharmacie Centrale d'Abidjan" {...field} />
+                            <Input placeholder="Pharmacie Centrale d'Abidjan" {...field} className="relative z-20" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -246,7 +246,7 @@ export const PharmacyAuthForm = ({ onSuccess }: PharmacyAuthFormProps) => {
                         <FormItem>
                           <FormLabel>Nom du propriétaire *</FormLabel>
                           <FormControl>
-                            <Input placeholder="Dr. Jean Kouassi" {...field} />
+                            <Input placeholder="Dr. Jean Kouassi" {...field} className="relative z-20" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -260,7 +260,7 @@ export const PharmacyAuthForm = ({ onSuccess }: PharmacyAuthFormProps) => {
                         <FormItem>
                           <FormLabel>Email professionnel *</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="contact@pharmacie.com" {...field} />
+                            <Input type="email" placeholder="contact@pharmacie.com" {...field} className="relative z-20" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -275,7 +275,7 @@ export const PharmacyAuthForm = ({ onSuccess }: PharmacyAuthFormProps) => {
                           <FormItem>
                             <FormLabel>Téléphone *</FormLabel>
                             <FormControl>
-                              <Input placeholder="+225 XX XX XX XX" {...field} />
+                              <Input placeholder="+225 XX XX XX XX" {...field} className="relative z-20" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -289,7 +289,7 @@ export const PharmacyAuthForm = ({ onSuccess }: PharmacyAuthFormProps) => {
                           <FormItem>
                             <FormLabel>N° Licence *</FormLabel>
                             <FormControl>
-                              <Input placeholder="PH2024XXXX" {...field} />
+                              <Input placeholder="PH2024XXXX" {...field} className="relative z-20" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -304,7 +304,7 @@ export const PharmacyAuthForm = ({ onSuccess }: PharmacyAuthFormProps) => {
                         <FormItem>
                           <FormLabel>Adresse complète *</FormLabel>
                           <FormControl>
-                            <Input placeholder="Rue, Quartier, Commune, Ville" {...field} />
+                            <Input placeholder="Rue, Quartier, Commune, Ville" {...field} className="relative z-20" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -318,7 +318,7 @@ export const PharmacyAuthForm = ({ onSuccess }: PharmacyAuthFormProps) => {
                         <FormItem>
                           <FormLabel>N° Contribuable (optionnel)</FormLabel>
                           <FormControl>
-                            <Input placeholder="CC20240XXXXX" {...field} />
+                            <Input placeholder="CC20240XXXXX" {...field} className="relative z-20" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -369,6 +369,7 @@ export const PharmacyAuthForm = ({ onSuccess }: PharmacyAuthFormProps) => {
                               type="password"
                               placeholder="••••••••"
                               {...field}
+                              className="relative z-20"
                             />
                           </FormControl>
                           <FormMessage />
@@ -392,7 +393,7 @@ export const PharmacyAuthForm = ({ onSuccess }: PharmacyAuthFormProps) => {
                         <FormItem>
                           <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="contact@pharmacie.com" {...field} />
+                            <Input type="email" placeholder="contact@pharmacie.com" {...field} className="relative z-20" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

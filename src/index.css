@@ -316,4 +316,16 @@ All colors MUST be HSL.
       margin-left: 1rem;
     }
   }
+
+  /* Data Saver Mode */
+  .data-saver-mode img, 
+  .data-saver-mode video {
+    filter: blur(2px) grayscale(50%);
+    transition: filter 0.3s ease;
+  }
+  
+  .data-saver-mode img:hover, 
+  .data-saver-mode video:hover {
+    filter: none;
+  }
 }

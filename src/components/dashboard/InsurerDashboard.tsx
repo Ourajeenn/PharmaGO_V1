@@ -28,6 +28,10 @@ import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { EditableInsurerProfile } from './profiles/EditableInsurerProfile'
 import { PremiumDashboardLayout } from './PremiumDashboardLayout'
+import { PrescriptionValidationSection } from '@/components/insurance/PrescriptionValidationSection'
+import { ReimbursementRatesSection } from '@/components/insurance/ReimbursementRatesSection'
+import { CMUIntegration } from '@/components/insurance/CMUIntegration'
+import { CoverageVerificationAPI } from '@/components/insurance/CoverageVerificationAPI'
 
 export const InsurerDashboard = () => {
   const { user, profile } = useAuth()
@@ -224,9 +228,12 @@ export const InsurerDashboard = () => {
         </div>
 
         <Tabs defaultValue="claims" className="space-y-8">
-          <TabsList className="bg-white/40 backdrop-blur-md p-1.5 rounded-[1.5rem] border border-white/40 flex w-full max-w-2xl mb-4 overflow-x-auto">
+          <TabsList className="bg-white/40 backdrop-blur-md p-1.5 rounded-[1.5rem] border border-white/40 flex flex-wrap w-full max-w-4xl mb-4 gap-1">
             <TabsTrigger value="claims" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Demandes</TabsTrigger>
+            <TabsTrigger value="validation" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Validation</TabsTrigger>
+            <TabsTrigger value="rates" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Barèmes</TabsTrigger>
             <TabsTrigger value="cmu" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Gestion CMU</TabsTrigger>
+            <TabsTrigger value="verification" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Vérification</TabsTrigger>
             <TabsTrigger value="patients" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Assurés</TabsTrigger>
             <TabsTrigger value="reports" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Rapports</TabsTrigger>
             <TabsTrigger value="profile" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Profil</TabsTrigger>
@@ -325,6 +332,22 @@ export const InsurerDashboard = () => {
                 </div>
               ))}
             </div>
+          </TabsContent>
+
+          <TabsContent value="validation" className="outline-none">
+            <PrescriptionValidationSection />
+          </TabsContent>
+
+          <TabsContent value="rates" className="outline-none">
+            <ReimbursementRatesSection />
+          </TabsContent>
+
+          <TabsContent value="cmu" className="outline-none">
+            <CMUIntegration />
+          </TabsContent>
+
+          <TabsContent value="verification" className="outline-none">
+            <CoverageVerificationAPI />
           </TabsContent>
 
           <TabsContent value="profile" className="outline-none">

@@ -23,8 +23,29 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-export const Chatbot: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
+interface ChatbotProps {
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  isEmbedded?: boolean;
+}
+
+export const Chatbot: React.FC<ChatbotProps> = ({
+  isOpen: controlledIsOpen,
+  onOpenChange,
+  isEmbedded = false
+}) => {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isControlled = controlledIsOpen !== undefined;
+  const isOpen = isControlled ? controlledIsOpen : internalIsOpen;
+
+  const setIsOpen = (value: boolean) => {
+    if (isControlled && onOpenChange) {
+      onOpenChange(value);
+    } else {
+      setInternalIsOpen(value);
+    }
+  };
+
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -101,7 +122,7 @@ export const Chatbot: React.FC = () => {
     }
   };
 
-  if (!isOpen) {
+  if (!isOpen && !isEmbedded && !isControlled) {
     return (
       <Button
         onClick={() => setIsOpen(true)}
@@ -113,8 +134,13 @@ export const Chatbot: React.FC = () => {
     );
   }
 
+  // If closed and embedded/controlled, return null (parent controls visibility)
+  if (!isOpen && (isEmbedded || isControlled)) {
+    return null;
+  }
+
   return (
-    <Card className={`fixed bottom-6 right-6 w-80 shadow-xl z-50 transition-all duration-300 ${isMinimized ? 'h-14' : 'h-96'
+    <Card className={`${isEmbedded ? 'w-full h-full border-none shadow-none' : 'fixed bottom-6 right-6 w-80 shadow-xl z-50'} transition-all duration-300 ${!isEmbedded && isMinimized ? 'h-14' : (!isEmbedded ? 'h-96' : 'flex-1')
       }`}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
@@ -126,14 +152,16 @@ export const Chatbot: React.FC = () => {
             <Badge variant="secondary" className="text-xs">En ligne</Badge>
           </CardTitle>
           <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={() => setIsMinimized(!isMinimized)}
-            >
-              {isMinimized ? <Maximize2 className="h-3 w-3" /> : <Minimize2 className="h-3 w-3" />}
-            </Button>
+            {!isEmbedded && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => setIsMinimized(!isMinimized)}
+              >
+                {isMinimized ? <Maximize2 className="h-3 w-3" /> : <Minimize2 className="h-3 w-3" />}
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"

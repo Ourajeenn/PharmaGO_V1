@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Filter, Star, AlertCircle, Plus, Scale, Search, ShieldCheck, Zap, Sparkles } from "lucide-react";
+import { ArrowLeft, Filter, Star, AlertCircle, Plus, Scale, Search, ShieldCheck, Zap, Sparkles, Bell } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/contexts/CartContext";
 import { useComparison } from "@/contexts/ComparisonContext";
@@ -19,6 +19,9 @@ import MedicineSearchWithSuggestions from "@/components/medicine/MedicineSearchW
 import PrescriptionUpload from "@/components/medicine/PrescriptionUpload";
 import { MedicineDetailDialog } from "@/components/medicine/MedicineDetailDialog";
 import { MedicineComparisonDialog } from "@/components/medicine/MedicineComparisonDialog";
+import { PharmacyPriceComparison } from "@/components/medicine/PharmacyPriceComparison";
+import { StockAlertDialog } from "@/components/medicine/StockAlertDialog";
+import { RecommendationEngine } from "@/components/medicine/RecommendationEngine";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import dolipraneImg from "@/assets/medicines/doliprane.jpg";
 import amoxicillineImg from "@/assets/medicines/amoxicilline.jpg";
@@ -92,6 +95,8 @@ const MedicinesPage = () => {
   const [selectedMedicine, setSelectedMedicine] = useState<Medicine | any | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isComparisonOpen, setIsComparisonOpen] = useState(false);
+  const [comparisonMedicine, setComparisonMedicine] = useState<any>(null); // For price comparison
+  const [alertMedicine, setAlertMedicine] = useState<any>(null); // For stock alert
   const [parapharmacieCategory, setParapharmacieCategory] = useState("all");
 
   const [medicines, setMedicines] = useState<any[]>([]);
@@ -116,11 +121,11 @@ const MedicinesPage = () => {
           category: item.category || "Médicaments",
           price: Math.floor(Math.random() * 8000) + 500,
           rating: (4 + Math.random()).toFixed(1),
-          inStock: true,
+          inStock: Math.random() > 0.2, // 20% chance out of stock
           prescription: item.requires_prescription,
           image: dolipraneImg,
           images: [dolipraneImg],
-          description: item.description || `DCI: ${item.dci || 'N/A'}. Origine: ${item.country_of_origin || 'Non spécifié'}.`,
+          description: item.description || `DCI: ${item.dci || 'N/A'}.`,
           composition: item.dci || item.generic_name || "N/A",
           dosage: item.dosage || "Selon avis médical",
           sideEffects: ["Consultez la notice pour plus d'informations"],
@@ -161,7 +166,7 @@ const MedicinesPage = () => {
           prescription: false,
           image: vitaminCImg,
           images: [vitaminCImg],
-          description: item.description || `Bio et naturel. Origine: ${item.country_of_origin || 'Non spécifié'}.`,
+          description: item.description || `Bio et naturel.`,
           composition: item.generic_name || "Plantes et actifs naturels",
           dosage: item.dosage || "1 à 2 fois par jour",
           sideEffects: ["Pas d'effets secondaires notoires"],
@@ -213,7 +218,7 @@ const MedicinesPage = () => {
   return (
     <>
       <SEO {...pagesSEO.medicines} />
-      <div className="min-h-screen mesh-gradient bg-slate-50 selection:bg-primary selection:text-white">
+      <div className="min-h-screen mesh-gradient bg-slate-50 selection:bg-primary selection:text-white font-jakarta">
         <Header />
 
         {/* Floating comparison button */}
@@ -290,15 +295,7 @@ const MedicinesPage = () => {
                       />
                     </div>
 
-                    <div className="lg:col-span-4 h-16 rounded-2xl bg-primary/5 border border-primary/20 p-2 flex items-center gap-4">
-                      <div className="w-12 h-full rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600">
-                        <AlertCircle className="h-6 w-6" />
-                      </div>
-                      <div className="flex-1 overflow-hidden">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-700">Avis Important</p>
-                        <p className="text-xs font-bold text-amber-900 truncate">Ordonnance requise pour les produits RX</p>
-                      </div>
-                    </div>
+
 
                     <div className="lg:col-span-3">
                       <PrescriptionUpload onUpload={(file) => {
@@ -390,6 +387,12 @@ const MedicinesPage = () => {
                               Ordonnance RX
                             </div>
                           )}
+                          {!product.inStock && (
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/80 backdrop-blur-sm text-white px-4 py-2 rounded-xl text-center transform -rotate-12 border border-white/20 shadow-2xl z-10">
+                              <p className="text-xl font-black uppercase tracking-widest">Rupture</p>
+                              <p className="text-[10px] font-medium text-white/80">Momentanée</p>
+                            </div>
+                          )}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -424,25 +427,55 @@ const MedicinesPage = () => {
 
                         <div className="mt-8 pt-6 border-t border-white/40 flex items-center justify-between">
                           <div className="space-y-0.5">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Prix Unitaire</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">À partir de</p>
                             <p className="text-2xl font-black tracking-tighter text-primary">
-                              {product.price.toLocaleString()} <span className="text-sm tracking-normal">FCFA</span>
+                              {(product.price * 0.95).toFixed(0).toLocaleString()} <span className="text-sm tracking-normal">FCFA</span>
                             </p>
                           </div>
-                          <Button
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              addToCart({
-                                medicine: { id: product.id.toString(), name: product.name, description: product.category, category: product.category, requires_prescription: product.prescription, manufacturer: product.manufacturer || '', generic_name: product.genericName || '', dosage: product.dosage || '', form: '', created_at: '', updated_at: '' },
-                                quantity: 1, pharmacy_id: 'mock-pharmacy', pharmacy_name: 'PharmaGo Prime', price: product.price
-                              });
-                              toast.success(`${product.name} ajouté au panier`);
-                            }}
-                            className="h-14 w-14 rounded-2xl bg-foreground text-background hover:bg-primary hover:text-white transition-all shadow-xl hover:shadow-primary/40 group-hover:rotate-6"
-                          >
-                            <Plus className="h-6 w-6" />
-                          </Button>
+
+                          <div className="flex gap-2">
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setComparisonMedicine(product);
+                              }}
+                              className="h-14 w-14 rounded-2xl border-2 border-primary/20 text-primary hover:bg-primary/10 transition-all font-bold"
+                              title="Comparer les prix"
+                            >
+                              <Scale className="h-5 w-5" />
+                            </Button>
+
+                            {product.inStock ? (
+                              <Button
+                                size="icon"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  addToCart({
+                                    medicine: { id: product.id.toString(), name: product.name, description: product.category, category: product.category, requires_prescription: product.prescription, manufacturer: product.manufacturer || '', generic_name: product.genericName || '', dosage: product.dosage || '', form: '', created_at: '', updated_at: '' },
+                                    quantity: 1, pharmacy_id: 'mock-pharmacy', pharmacy_name: 'PharmaGo Prime', price: product.price
+                                  });
+                                  toast.success(`${product.name} ajouté au panier`);
+                                }}
+                                className="h-14 w-14 rounded-2xl bg-foreground text-background hover:bg-primary hover:text-white transition-all shadow-xl hover:shadow-primary/40 group-hover:rotate-6"
+                              >
+                                <Plus className="h-6 w-6" />
+                              </Button>
+                            ) : (
+                              <Button
+                                size="icon"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setAlertMedicine(product);
+                                }}
+                                className="h-14 w-14 rounded-2xl bg-amber-100 text-amber-600 hover:bg-amber-500 hover:text-white transition-all shadow-xl hover:shadow-amber-500/40"
+                                title="M'alerter du retour en stock"
+                              >
+                                <Bell className="h-6 w-6" />
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -450,14 +483,16 @@ const MedicinesPage = () => {
                 </div>
 
                 {/* Empty State */}
-                {filteredProducts.length === 0 && (
-                  <div className="text-center py-20 glass-card bg-white/20 backdrop-blur-md rounded-[3rem] border border-white/40 max-w-2xl mx-auto">
-                    <Search className="h-16 w-16 text-muted-foreground mx-auto mb-6 opacity-20" />
-                    <h3 className="text-2xl font-black uppercase tracking-tighter text-foreground mb-2">Aucun Résultat Alpha</h3>
-                    <p className="text-sm font-medium text-muted-foreground max-w-xs mx-auto">Modifiez vos filtres ou effectuez une nouvelle recherche pour affiner le catalogue.</p>
-                    <Button variant="outline" onClick={() => { setSearchTerm(""); setSelectedCategory("all"); setPrescriptionFilter("all"); }} className="mt-8 rounded-xl font-black uppercase tracking-widest text-[10px]">Réinitialiser Tout</Button>
-                  </div>
-                )}
+                {
+                  filteredProducts.length === 0 && (
+                    <div className="text-center py-20 glass-card bg-white/20 backdrop-blur-md rounded-[3rem] border border-white/40 max-w-2xl mx-auto">
+                      <Search className="h-16 w-16 text-muted-foreground mx-auto mb-6 opacity-20" />
+                      <h3 className="text-2xl font-black uppercase tracking-tighter text-foreground mb-2">Aucun Résultat Alpha</h3>
+                      <p className="text-sm font-medium text-muted-foreground max-w-xs mx-auto">Modifiez vos filtres ou effectuez une nouvelle recherche pour affiner le catalogue.</p>
+                      <Button variant="outline" onClick={() => { setSearchTerm(""); setSelectedCategory("all"); setPrescriptionFilter("all"); }} className="mt-8 rounded-xl font-black uppercase tracking-widest text-[10px]">Réinitialiser Tout</Button>
+                    </div>
+                  )
+                }
 
                 {/* Dashboard Pagination */}
                 {medTotal > pageSize && (
@@ -483,6 +518,20 @@ const MedicinesPage = () => {
                     </Button>
                   </div>
                 )}
+
+                {/* Recommendation Engine */}
+                <div className="mt-16 animate-in slide-in-from-bottom-8 duration-700 delay-300">
+                  <RecommendationEngine
+                    userId="current-user"
+                    onAddToCart={(med) => {
+                      addToCart({
+                        medicine: { id: med.id, name: med.name, description: med.category, category: med.category, requires_prescription: false, manufacturer: '', generic_name: '', dosage: '', form: '', created_at: '', updated_at: '' },
+                        quantity: 1, pharmacy_id: 'mock-pharmacy', pharmacy_name: 'PharmaGo Prime', price: med.price
+                      });
+                      toast.success(`${med.name} ajouté au panier`);
+                    }}
+                  />
+                </div>
               </TabsContent>
 
               <TabsContent value="parapharmacie" className="space-y-12 outline-none">
@@ -582,7 +631,7 @@ const MedicinesPage = () => {
               </TabsContent>
             </Tabs>
           </div>
-        </main>
+        </main >
 
         <Footer />
         <CartDrawer />
@@ -595,7 +644,17 @@ const MedicinesPage = () => {
           open={isComparisonOpen}
           onOpenChange={setIsComparisonOpen}
         />
-      </div>
+        <PharmacyPriceComparison
+          open={!!comparisonMedicine}
+          onOpenChange={(open) => !open && setComparisonMedicine(null)}
+          medicine={comparisonMedicine}
+        />
+        <StockAlertDialog
+          open={!!alertMedicine}
+          onOpenChange={(open) => !open && setAlertMedicine(null)}
+          medicineName={alertMedicine?.name || ""}
+        />
+      </div >
     </>
   );
 };

@@ -33,12 +33,21 @@ import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { EditableDriverProfile } from './profiles/EditableDriverProfile'
 import { PremiumDashboardLayout } from './PremiumDashboardLayout'
+import { DeliveryProofModal } from './DeliveryProofModal'
+import { RouteOptimizationSection } from '@/components/driver/RouteOptimizationSection'
+import { DriverCompensationModal } from '@/components/driver/DriverCompensationModal'
+import { ColdChainTracker } from '@/components/delivery/ColdChainTracker'
+import { WeatherIntegration } from '@/components/weather/WeatherIntegration'
+import { DeliveryZoneManager } from '@/components/driver/DeliveryZoneManager'
 
 export const DriverDashboard = () => {
   const { user, profile } = useAuth()
   const [loading, setLoading] = useState(true)
   const [isAvailable, setIsAvailable] = useState(true)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [selectedDeliveryForProof, setSelectedDeliveryForProof] = useState<any>(null)
+  const [isCompensationOpen, setIsCompensationOpen] = useState(false)
+  const [dataSaverMode, setDataSaverMode] = useState(false)
 
   // Fetch initial availability
   useEffect(() => {
@@ -259,6 +268,14 @@ export const DriverDashboard = () => {
           </div>
         </div>
 
+        {/* Data Saver Mode (P2 Feature) */}
+        {dataSaverMode && (
+          <div className="bg-blue-50 text-blue-800 px-4 py-2 rounded-lg flex items-center justify-between text-xs font-bold border border-blue-100">
+            <span className="flex items-center gap-2"><Zap className="h-4 w-4" /> Mode Économie de Données : ACTIF</span>
+            <Button size="sm" variant="ghost" onClick={() => setDataSaverMode(false)} className="h-6 hover:bg-blue-100">Désactiver</Button>
+          </div>
+        )}
+
         {/* Bento Performance Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="glass-card p-6 flex flex-col justify-between h-40 border-primary/20 bg-primary/5">
@@ -276,14 +293,20 @@ export const DriverDashboard = () => {
             </div>
           </div>
 
-          <div className="glass-card p-6 flex flex-col justify-between h-40">
-            <div className="flex justify-between items-start">
+
+
+          <div
+            className="glass-card p-6 flex flex-col justify-between h-40 cursor-pointer hover:border-green-400 transition-colors group relative overflow-hidden"
+            onClick={() => setIsCompensationOpen(true)}
+          >
+            <div className="absolute inset-0 bg-green-500/5 group-hover:bg-green-500/10 transition-colors" />
+            <div className="flex justify-between items-start relative z-10">
               <div className="p-3 bg-green-500/10 rounded-xl">
                 <DollarSign className="h-6 w-6 text-green-600" />
               </div>
-              <TrendingUp className="h-4 w-4 text-green-500" />
+              <Badge className="bg-green-100 text-green-700 hover:bg-green-200 border-green-200 text-[10px]">DÉTAILS &rsaquo;</Badge>
             </div>
-            <div>
+            <div className="relative z-10">
               <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Gains (FCFA)</p>
               <h3 className="text-3xl font-black">{stats.earnings.toLocaleString()} <span className="text-sm text-green-600">F</span></h3>
             </div>
@@ -317,8 +340,12 @@ export const DriverDashboard = () => {
         </div>
 
         <Tabs defaultValue="active" className="space-y-8">
-          <TabsList className="bg-white/40 backdrop-blur-md p-1.5 rounded-[1.5rem] border border-white/40 flex w-full max-w-sm mb-4">
+          <TabsList className="bg-white/40 backdrop-blur-md p-1.5 rounded-[1.5rem] border border-white/40 flex flex-wrap w-full max-w-2xl mb-4 gap-1">
             <TabsTrigger value="active" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Missions</TabsTrigger>
+            <TabsTrigger value="route" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Itinéraire</TabsTrigger>
+            <TabsTrigger value="coldchain" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold text-cyan-700 bg-cyan-50/50">❄️ Froid</TabsTrigger>
+            <TabsTrigger value="weather" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold text-sky-700 bg-sky-50/50">🌤️ Météo</TabsTrigger>
+            <TabsTrigger value="zones" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold text-orange-700 bg-orange-50/50">📍 Zones</TabsTrigger>
             <TabsTrigger value="history" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Historique</TabsTrigger>
           </TabsList>
 
@@ -390,7 +417,7 @@ export const DriverDashboard = () => {
                         {delivery.status === 'en_livraison' && (
                           <Button
                             className="flex-1 rounded-xl bg-green-600 shadow-xl shadow-green-200 font-bold group-hover:translate-y-[-2px] transition-all"
-                            onClick={() => handleStatusUpdate(delivery.id, 'livre', delivery.phone, delivery.customer)}
+                            onClick={() => setSelectedDeliveryForProof(delivery)}
                           >
                             <Zap className="h-4 w-4 mr-2" /> Valider Livraison
                           </Button>
@@ -413,6 +440,10 @@ export const DriverDashboard = () => {
                 <p className="text-sm text-muted-foreground mt-2">Dès qu'une commande sera prête, elle apparaîtra ici.</p>
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="route" className="outline-none">
+            <RouteOptimizationSection />
           </TabsContent>
 
           <TabsContent value="history" className="outline-none">
@@ -439,6 +470,18 @@ export const DriverDashboard = () => {
               </Table>
             </div>
           </TabsContent>
+
+          <TabsContent value="coldchain" className="outline-none">
+            <ColdChainTracker role="driver" />
+          </TabsContent>
+
+          <TabsContent value="weather" className="outline-none">
+            <WeatherIntegration />
+          </TabsContent>
+
+          <TabsContent value="zones" className="outline-none">
+            <DeliveryZoneManager driverId={user?.id} />
+          </TabsContent>
         </Tabs>
       </div>
 
@@ -454,6 +497,35 @@ export const DriverDashboard = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </PremiumDashboardLayout>
+
+      {/* Delivery Proof Modal */}
+      {
+        selectedDeliveryForProof && (
+          <DeliveryProofModal
+            orderId={selectedDeliveryForProof.id}
+            customerName={selectedDeliveryForProof.customer}
+            customerPhone={selectedDeliveryForProof.phone || ''}
+            customerAddress={selectedDeliveryForProof.dropoff}
+            items={[{ name: 'Commande médicaments', quantity: 1 }]}
+            onComplete={async (proofData) => {
+              // Update order status
+              await handleStatusUpdate(
+                selectedDeliveryForProof.id,
+                'livre',
+                selectedDeliveryForProof.phone,
+                selectedDeliveryForProof.customer
+              )
+              setSelectedDeliveryForProof(null)
+            }}
+            onCancel={() => setSelectedDeliveryForProof(null)}
+          />
+        )
+      }
+      <DriverCompensationModal
+        isOpen={isCompensationOpen}
+        onClose={() => setIsCompensationOpen(false)}
+        weeklyEarnings={stats.weeklyEarnings}
+      />
+    </PremiumDashboardLayout >
   )
 }

@@ -12,6 +12,7 @@ export interface UserProfile {
   phone?: string
   verified: boolean
   created_at: string
+  avatar_url?: string
 }
 
 export interface Patient {

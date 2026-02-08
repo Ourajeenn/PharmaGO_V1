@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, FileText, Clock, CheckCircle, XCircle, Package, Truck, Calendar } from "lucide-react";
 import PrescriptionUpload from "@/components/medicine/PrescriptionUpload";
+import { PrescriptionPhotoGuide } from "@/components/medicine/PrescriptionPhotoGuide";
 import { mockPrescriptions, Prescription } from "@/data/prescriptionMockData";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
@@ -74,10 +75,20 @@ const PrescriptionsPage = () => {
             </div>
 
             <div className="container mx-auto px-4 -mt-8">
-                <Card className="mb-8 shadow-lg border-0">
+                <PrescriptionPhotoGuide />
+
+                <Card className="mb-8 shadow-lg border-0 bg-white/50 backdrop-blur-sm border-primary/10">
                     <CardHeader>
-                        <CardTitle>Nouvelle Ordonnance</CardTitle>
-                        <CardDescription>Téléversez une photo ou un PDF de votre ordonnance pour vérification.</CardDescription>
+                        <CardTitle className="flex items-center gap-2">
+                            <span>📄</span>
+                            Téléversez votre ordonnance
+                        </CardTitle>
+                        <CardDescription>
+                            Formats acceptés : JPG, PNG, PDF (max 5MB).
+                            <span className="block mt-1 text-green-600 font-medium flex items-center gap-1">
+                                <span className="text-xs">🔒</span> Validation sécurisée • Chiffrement AES-256
+                            </span>
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <PrescriptionUpload onUpload={handleUpload} />

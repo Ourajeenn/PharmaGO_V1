@@ -40,6 +40,11 @@ import { EditablePharmacyProfile } from './profiles/EditablePharmacyProfile'
 import { AddMedicineDialog } from './AddMedicineDialog'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { PremiumDashboardLayout } from './PremiumDashboardLayout'
+import { TiersPayantSection } from '@/components/pharmacy/TiersPayantSection'
+import { GenericSubstitutionSection } from '@/components/pharmacy/GenericSubstitutionSection'
+import { ExpiryManagementSection } from '@/components/pharmacy/ExpiryManagementSection'
+import { PharmacyRedistribution } from '@/components/pharmacy/PharmacyRedistribution'
+import { StockAlertsEnhanced } from '@/components/pharmacy/StockAlertsEnhanced'
 
 export const PharmacyDashboard = () => {
   const { user } = useAuth()
@@ -337,9 +342,14 @@ export const PharmacyDashboard = () => {
         </div>
 
         <Tabs defaultValue="orders" className="space-y-8">
-          <TabsList className="bg-white/40 backdrop-blur-md p-1.5 rounded-[1.5rem] border border-white/40 flex w-full max-w-lg mb-4">
+          <TabsList className="bg-white/40 backdrop-blur-md p-1.5 rounded-[1.5rem] border border-white/40 flex flex-wrap w-full max-w-4xl mb-4 gap-1">
             <TabsTrigger value="orders" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Monitor</TabsTrigger>
             <TabsTrigger value="inventory" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Inventory</TabsTrigger>
+            <TabsTrigger value="tiersPayant" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Tiers Payant</TabsTrigger>
+            <TabsTrigger value="generics" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Génériques</TabsTrigger>
+            <TabsTrigger value="expiry" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Péremptions</TabsTrigger>
+            <TabsTrigger value="redistribution" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Transferts</TabsTrigger>
+            <TabsTrigger value="stockAlerts" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Alertes Stock</TabsTrigger>
             <TabsTrigger value="patients" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Patients</TabsTrigger>
             <TabsTrigger value="profile" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Compte</TabsTrigger>
           </TabsList>
@@ -480,8 +490,28 @@ export const PharmacyDashboard = () => {
             </div>
           </TabsContent>
 
+          <TabsContent value="tiersPayant" className="outline-none">
+            <TiersPayantSection />
+          </TabsContent>
+
+          <TabsContent value="generics" className="outline-none">
+            <GenericSubstitutionSection />
+          </TabsContent>
+
+          <TabsContent value="expiry" className="outline-none">
+            <ExpiryManagementSection />
+          </TabsContent>
+
           <TabsContent value="profile" className="outline-none">
             <EditablePharmacyProfile />
+          </TabsContent>
+
+          <TabsContent value="redistribution" className="outline-none">
+            <PharmacyRedistribution />
+          </TabsContent>
+
+          <TabsContent value="stockAlerts" className="outline-none">
+            <StockAlertsEnhanced />
           </TabsContent>
         </Tabs>
       </div>

@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 
 import GetStartedSection from "@/components/GetStartedSection";
+import MobileAppShowcase from "@/components/MobileAppShowcase";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -64,6 +65,7 @@ const Index = () => {
           <Testimonials />
         </div>
 
+        <MobileAppShowcase />
         <BecomeDelivery />
         <GetStartedSection />
       </main>

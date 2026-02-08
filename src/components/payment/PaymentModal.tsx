@@ -23,6 +23,12 @@ const PaymentModal = ({ isOpen, onClose, totalAmount }: PaymentModalProps) => {
     const [isSuccess, setIsSuccess] = useState(false);
 
     // Form State (Epic 2 - ORDER-02)
+    const [deliveryMode, setDeliveryMode] = useState<'delivery' | 'pickup'>('delivery');
+    const { items, clearCart } = useCart();
+
+    // Get unique pharmacies from items
+    const pharmacies = Array.from(new Set(items.map(item => item.pharmacy_name || "Pharmacie Principale")));
+
     const [deliveryInfo, setDeliveryInfo] = useState({
         name: "",
         phone: "",
@@ -30,12 +36,16 @@ const PaymentModal = ({ isOpen, onClose, totalAmount }: PaymentModalProps) => {
     });
 
     const navigate = useNavigate();
-    const { clearCart } = useCart();
+    // const { clearCart } = useCart(); // Already destructured above
 
     const handleNextStep = () => {
         if (step === 1) {
-            if (!deliveryInfo.name || !deliveryInfo.phone || !deliveryInfo.address) {
-                toast.error("Veuillez remplir toutes les informations de livraison");
+            if (!deliveryInfo.name || !deliveryInfo.phone) {
+                toast.error("Veuillez remplir votre nom et téléphone");
+                return;
+            }
+            if (deliveryMode === 'delivery' && !deliveryInfo.address) {
+                toast.error("Veuillez remplir l'adresse de livraison");
                 return;
             }
             setStep(2);
@@ -86,9 +96,25 @@ const PaymentModal = ({ isOpen, onClose, totalAmount }: PaymentModalProps) => {
                     </div>
                     <DialogTitle className="text-2xl font-bold text-green-700 mb-2">Commande Confirmée !</DialogTitle>
                     <DialogDescription className="text-lg">
-                        Votre commande a été transmise à la pharmacie.
+                        {deliveryMode === 'delivery'
+                            ? "Votre commande a été transmise à la pharmacie."
+                            : "Votre commande est prête à être préparée."}
                     </DialogDescription>
-                    <p className="text-muted-foreground mt-2">Un livreur va vous être assigné sous peu.</p>
+
+                    {deliveryMode === 'delivery' ? (
+                        <p className="text-muted-foreground mt-2">Un livreur va vous être assigné sous peu.</p>
+                    ) : (
+                        <div className="mt-6 p-4 bg-white border-2 border-dashed border-gray-300 rounded-xl">
+                            <p className="text-sm font-bold text-gray-500 mb-2 uppercase tracking-wide">Code de Retrait</p>
+                            <div className="bg-black p-2 w-32 h-32 mx-auto rounded-lg mb-2">
+                                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=ORDER-${Date.now()}`} alt="QR Code" className="w-full h-full" />
+                            </div>
+                            <p className="text-xs text-muted-foreground">Présentez ce code à la pharmacie pour récupérer votre commande.</p>
+                            <div className="mt-2 text-primary font-mono font-bold text-xl tracking-widest">
+                                #{Math.floor(1000 + Math.random() * 9000)}
+                            </div>
+                        </div>
+                    )}
                 </DialogContent>
             </Dialog>
         )
@@ -109,6 +135,26 @@ const PaymentModal = ({ isOpen, onClose, totalAmount }: PaymentModalProps) => {
                 <div className="py-4">
                     {step === 1 && (
                         <div className="space-y-4">
+                            {/* Delivery Mode Toggle */}
+                            <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-lg">
+                                <Button
+                                    variant={deliveryMode === 'delivery' ? 'default' : 'ghost'}
+                                    onClick={() => setDeliveryMode('delivery')}
+                                    className="rounded-md"
+                                >
+                                    <MapPin className="h-4 w-4 mr-2" />
+                                    Livraison
+                                </Button>
+                                <Button
+                                    variant={deliveryMode === 'pickup' ? 'default' : 'ghost'}
+                                    onClick={() => setDeliveryMode('pickup')}
+                                    className="rounded-md"
+                                >
+                                    <Smartphone className="h-4 w-4 mr-2" />
+                                    Click & Collect
+                                </Button>
+                            </div>
+
                             <div className="space-y-2">
                                 <Label htmlFor="name">Nom complet</Label>
                                 <div className="relative">
@@ -135,19 +181,39 @@ const PaymentModal = ({ isOpen, onClose, totalAmount }: PaymentModalProps) => {
                                     />
                                 </div>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="address">Adresse de livraison</Label>
-                                <div className="relative">
-                                    <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        id="address"
-                                        placeholder="Quartier, Rue, Repère..."
-                                        className="pl-9"
-                                        value={deliveryInfo.address}
-                                        onChange={(e) => setDeliveryInfo({ ...deliveryInfo, address: e.target.value })}
-                                    />
+
+                            {deliveryMode === 'delivery' ? (
+                                <div className="space-y-2 animate-in slide-in-from-top-2">
+                                    <Label htmlFor="address">Adresse de livraison</Label>
+                                    <div className="relative">
+                                        <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            id="address"
+                                            placeholder="Quartier, Rue, Repère..."
+                                            className="pl-9"
+                                            value={deliveryInfo.address}
+                                            onChange={(e) => setDeliveryInfo({ ...deliveryInfo, address: e.target.value })}
+                                        />
+                                    </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="space-y-2 animate-in slide-in-from-top-2">
+                                    <Label>Point de retrait</Label>
+                                    <div className="p-3 border rounded-lg bg-gray-50 space-y-2">
+                                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Vos articles seront disponibles ici :</p>
+                                        {pharmacies.map((pharmacy, idx) => (
+                                            <div key={idx} className="flex items-center gap-2 text-sm font-bold text-gray-800">
+                                                <MapPin className="h-4 w-4 text-primary" />
+                                                {pharmacy}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <p className="text-[10px] text-amber-600 bg-amber-50 p-2 rounded border border-amber-100 flex gap-2">
+                                        <CheckCircle className="h-3 w-3 mt-0.5" />
+                                        Présentez votre QR code à la pharmacie pour récupérer votre commande sans attendre.
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     )}
 

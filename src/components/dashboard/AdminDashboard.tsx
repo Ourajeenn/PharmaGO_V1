@@ -23,6 +23,8 @@ import {
 import { UserManagement } from '@/components/admin/UserManagement'
 import { PremiumDashboardLayout } from './PremiumDashboardLayout'
 import { toast } from 'sonner'
+import { EnhancedAnalytics } from '@/components/analytics/EnhancedAnalytics'
+import { AuditTrail } from '@/components/audit/AuditTrail'
 
 export const AdminDashboard = () => {
   const [loading, setLoading] = useState(true)
@@ -271,11 +273,12 @@ export const AdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-8">
-          <TabsList className="bg-white/40 backdrop-blur-md p-1.5 rounded-[1.5rem] border border-white/40 flex w-full max-w-2xl mb-4 overflow-x-auto">
+          <TabsList className="bg-white/40 backdrop-blur-md p-1.5 rounded-[1.5rem] border border-white/40 flex w-full max-w-3xl mb-4 overflow-x-auto gap-1">
             <TabsTrigger value="overview" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Health</TabsTrigger>
             <TabsTrigger value="users" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Accounts</TabsTrigger>
             <TabsTrigger value="orders" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Orders</TabsTrigger>
-            <TabsTrigger value="analytics" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Metrics</TabsTrigger>
+            <TabsTrigger value="analytics" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Analytics</TabsTrigger>
+            <TabsTrigger value="audit" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Audit</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6 outline-none">
@@ -369,29 +372,11 @@ export const AdminDashboard = () => {
           </TabsContent>
 
           <TabsContent value="analytics" className="outline-none">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="glass-card p-8 text-center space-y-4 glow-border">
-                <div className="bg-red-500/10 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto text-red-600">
-                  <BarChart className="h-8 w-8" />
-                </div>
-                <div>
-                  <h4 className="text-3xl font-black">{(stats.monthlyRevenue / 1000000).toFixed(1)}M</h4>
-                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Revenus Mensuels</p>
-                </div>
-                <Badge className="bg-green-500/10 text-green-600 border-none font-bold text-[9px]">Global Metrics</Badge>
-              </div>
+            <EnhancedAnalytics />
+          </TabsContent>
 
-              <div className="glass-card p-8 text-center space-y-4 glow-border">
-                <div className="bg-primary/10 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto text-primary">
-                  <TrendingUp className="h-8 w-8" />
-                </div>
-                <div>
-                  <h4 className="text-3xl font-black">{(stats.totalUsers / 1000).toFixed(1)}k</h4>
-                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Utilisateurs Actifs</p>
-                </div>
-                <Badge className="bg-blue-500/10 text-blue-600 border-none font-bold text-[9px]">Scale</Badge>
-              </div>
-            </div>
+          <TabsContent value="audit" className="outline-none">
+            <AuditTrail />
           </TabsContent>
         </Tabs>
       </div>

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Video, MessageCircle, FileText, Calendar, Clock, Shield, CheckCircle } from "lucide-react";
+import { ArrowLeft, Video, MessageCircle, FileText, Calendar, Clock, Shield, CheckCircle, Home } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import MedicalChatDialog from "@/components/consultation/MedicalChatDialog";
 import AppointmentBookingDialog from "@/components/consultation/AppointmentBookingDialog";
@@ -75,17 +75,17 @@ const ConsultationFeaturePage = () => {
             ],
             action: "Accéder à mon carnet"
         },
-        "privacy": {
-            title: "Confidentialité garantie",
-            icon: Shield,
-            description: "Vos données médicales sont sécurisées",
+        "home": {
+            title: "Visite à Domicile",
+            icon: Home,
+            description: "Un médecin se déplace chez vous pour une consultation",
             details: [
-                "Chiffrement de bout en bout",
-                "Hébergement de données de santé certifié",
-                "Respect strict du secret médical",
-                "Contrôle total sur vos données"
+                "Disponible 24h/24 et 7j/7",
+                "Arrivée du médecin en moins d'une heure",
+                "Équipement complet pour les premiers soins",
+                "Couverture sur tout le grand Abidjan"
             ],
-            action: "En savoir plus sur la sécurité"
+            action: "Commander une visite"
         }
     };
 

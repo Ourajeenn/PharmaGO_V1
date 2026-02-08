@@ -135,7 +135,7 @@ export const AuthForm = ({ onSuccess }: AuthFormProps) => {
                   <FormItem>
                     <FormLabel>Nom complet</FormLabel>
                     <FormControl>
-                      <Input placeholder="Votre nom complet" {...field} />
+                      <Input placeholder="Votre nom complet" {...field} className="relative z-10" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -260,7 +260,7 @@ export const AuthForm = ({ onSuccess }: AuthFormProps) => {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="votre@email.com" {...field} />
+                      <Input type="email" placeholder="votre@email.com" {...field} className="relative z-10" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

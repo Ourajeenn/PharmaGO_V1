@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
 
 /**
  * Service gérant les intégrations externes (3.4)
@@ -11,7 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 export const PaymentService = {
     async initiateMobileMoneyPayment(amount: number, phone: string, provider: 'orange' | 'mtn' | 'moov') {
         // Simulation d'appel API sécurisé vers le fournisseur
-        console.log(`Initiating ${provider} payment for ${amount} to ${phone}`);
+        logger.log(`Initiating ${provider} payment for ${amount} to ${phone}`);
 
         // Dans une implémentation réelle :
         // return await supabase.functions.invoke('process-payment', { body: { amount, phone, provider } })
@@ -35,7 +36,7 @@ export const NotificationService = {
 
     async sendPushNotification(userId: string, title: string, body: string) {
         // Via OneSignal ou Firebase Cloud Messaging
-        console.log(`Push to ${userId}: ${title}`);
+        logger.log(`Push to ${userId}: ${title}`);
         return { sent: true };
     }
 };
@@ -44,7 +45,7 @@ export const NotificationService = {
 export const ComplianceService = {
     async verifyPharmacyLicense(licenseNumber: string) {
         // Appel vers l'API de l'ordre des pharmaciens ou ministère
-        console.log(`Verifying license ${licenseNumber}`);
+        logger.log(`Verifying license ${licenseNumber}`);
         return { valid: true, expiration: '2026-12-31' };
     }
 };

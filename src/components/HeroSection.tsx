@@ -128,12 +128,27 @@ const HeroSection = ({
                 className="relative max-w-lg w-full"
               >
                 <div className="relative flex items-center">
-                  <Search className="absolute left-4 h-5 w-5 text-muted-foreground z-10" />
+                  <Search className="absolute left-6 h-6 w-6 text-muted-foreground z-10" />
                   <Input
                     name="search"
-                    placeholder="Rechercher un médicament, une pharmacie..."
-                    className="pl-12 pr-4 h-12 text-base shadow-lg border border-white/20 focus:border-primary rounded-full bg-white/40 backdrop-blur-md"
+                    placeholder="Doliprane, Amoxicilline, Paracétamol, Ciprofloxacine..."
+                    className="pl-14 pr-6 h-16 text-lg shadow-xl border-2 border-primary/20 focus:border-primary rounded-full bg-white/60 backdrop-blur-xl transition-all hover:bg-white/80 hover:shadow-2xl"
                   />
+                </div>
+
+                {/* Popular Searches */}
+                <div className="flex flex-wrap gap-2 text-sm mt-4 ml-4 animate-in fade-in slide-in-from-bottom-2 duration-700 delay-300">
+                  <span className="text-muted-foreground font-medium text-xs uppercase tracking-wider self-center mr-1">Populaire:</span>
+                  {["Doliprane", "Amoxicilline", "Vitamine C", "Efferalgan"].map(term => (
+                    <Badge
+                      key={term}
+                      variant="secondary"
+                      className="cursor-pointer hover:bg-primary hover:text-white transition-colors bg-white/80 text-slate-700 backdrop-blur-sm border-slate-200/50 shadow-sm"
+                      onClick={() => navigate(`/medicaments?q=${term}`)}
+                    >
+                      {term}
+                    </Badge>
+                  ))}
                 </div>
               </form>
 
@@ -168,6 +183,15 @@ const HeroSection = ({
                     <Truck className="h-4 w-4 text-secondary" />
                     Suivre ma commande
                   </Button>
+
+                  <Button
+                    variant="default"
+                    onClick={() => window.open('https://wa.me/22501402712217', '_blank')}
+                    className="bg-[#25D366] hover:bg-[#128C7E] text-white border-none rounded-full px-5 py-2 h-auto text-sm hover:shadow-md transition-all flex items-center gap-2"
+                  >
+                    <span className="text-lg">💬</span>
+                    Commander par WhatsApp
+                  </Button>
                 </div>
               </div>
             </div>
@@ -180,8 +204,8 @@ const HeroSection = ({
                 <div className="text-sm text-muted-foreground font-medium">Service continu</div>
               </div>
               <div className="text-center p-4 rounded-2xl border border-secondary/20 bg-secondary/5 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300">
-                <div className="text-2xl md:text-3xl font-bold text-secondary">30min</div>
-                <div className="text-sm text-muted-foreground font-medium">Livraison rapide</div>
+                <div className="text-2xl md:text-3xl font-bold text-secondary">45m-2h</div>
+                <div className="text-sm text-muted-foreground font-medium">Livraison selon trafic</div>
               </div>
               <div className="text-center p-4 rounded-2xl border border-accent/20 bg-accent/5 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300">
                 <div className="text-2xl md:text-3xl font-bold text-accent">150+</div>

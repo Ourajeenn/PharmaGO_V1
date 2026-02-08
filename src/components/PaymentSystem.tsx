@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCart } from "@/contexts/CartContext";
+import ClickCollectQR from "@/components/cart/ClickCollectQR";
 import {
   ArrowLeft,
   CreditCard,
@@ -99,8 +100,12 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
   const [useCurrentLocation, setUseCurrentLocation] = useState(false);
   const [orderNotes, setOrderNotes] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentStep, setPaymentStep] = useState<'details' | 'payment' | 'confirmation'>('details');
+  const [paymentStep, setPaymentStep] = useState<'details' | 'payment' | 'confirmation' | 'pickup_ready'>('details');
   const [orderId, setOrderId] = useState<string>('');
+
+  // Click & Collect mode
+  const [deliveryMode, setDeliveryMode] = useState<'delivery' | 'pickup'>('delivery');
+  const [selectedPharmacy, setSelectedPharmacy] = useState<{ name: string; address: string } | null>(null);
 
   const pharmacyGroups = groupByPharmacy();
   const totalAmount = getTotalPrice();
@@ -132,7 +137,7 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
     calculateFee();
   }, [pharmacyGroups, deliveryUrgency]);
 
-  const deliveryFee = deliveryFeeBreakdown?.total || Object.keys(pharmacyGroups).length * 500;
+  const deliveryFee = deliveryMode === 'pickup' ? 0 : (deliveryFeeBreakdown?.total || Object.keys(pharmacyGroups).length * 500);
   const finalTotal = totalAmount + deliveryFee;
 
   useEffect(() => {
@@ -160,7 +165,14 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
     setTimeout(() => {
       const newOrderId = `ORD-${Date.now()}`;
       setOrderId(newOrderId);
-      setPaymentStep('confirmation');
+
+      // Route to pickup_ready for Click & Collect, confirmation for delivery
+      if (deliveryMode === 'pickup') {
+        setPaymentStep('pickup_ready');
+      } else {
+        setPaymentStep('confirmation');
+      }
+
       setIsProcessing(false);
 
       // Vider le panier après paiement réussi
@@ -245,7 +257,47 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Left Column - Order Details */}
             <div className="lg:col-span-2 space-y-6">
-              <Tabs defaultValue="delivery" className="space-y-6">
+              {/* Delivery Mode Toggle */}
+              <Card className="border-2 border-primary/20">
+                <CardContent className="pt-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      onClick={() => setDeliveryMode('delivery')}
+                      className={`p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2 ${deliveryMode === 'delivery'
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                    >
+                      <Truck className="h-8 w-8" />
+                      <span className="font-medium">Livraison</span>
+                      <span className="text-xs text-muted-foreground">30-45 min</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setDeliveryMode('pickup');
+                        // Auto-select first pharmacy
+                        const firstPharmacy = Object.values(pharmacyGroups)[0]?.[0];
+                        if (firstPharmacy) {
+                          setSelectedPharmacy({
+                            name: firstPharmacy.pharmacy_name,
+                            address: 'Cocody, Abidjan' // Default address
+                          });
+                        }
+                      }}
+                      className={`p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2 ${deliveryMode === 'pickup'
+                        ? 'border-green-500 bg-green-50 text-green-700'
+                        : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                    >
+                      <MapPin className="h-8 w-8" />
+                      <span className="font-medium">Click & Collect</span>
+                      <span className="text-xs text-muted-foreground">Gratuit • 15 min</span>
+                    </button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Tabs defaultValue={deliveryMode === 'delivery' ? 'delivery' : 'payment'} className="space-y-6">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="delivery">Livraison</TabsTrigger>
                   <TabsTrigger value="payment">Paiement</TabsTrigger>
@@ -416,8 +468,8 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
                         <div className="space-y-4">
                           {paymentMethods.map(method => (
                             <div key={method.id} className={`flex items-center space-x-4 p-4 rounded-lg border ${method.available
-                                ? 'hover:bg-muted/50 cursor-pointer'
-                                : 'opacity-50 cursor-not-allowed bg-muted/20'
+                              ? 'hover:bg-muted/50 cursor-pointer'
+                              : 'opacity-50 cursor-not-allowed bg-muted/20'
                               } ${selectedPaymentMethod === method.id ? 'bg-primary/5 border-primary' : ''}`}>
                               <RadioGroupItem
                                 value={method.id}
@@ -465,6 +517,8 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
                           </p>
                         </div>
                       )}
+
+
 
                       <div className="mt-6 bg-green-50 rounded-lg p-4 border border-green-200">
                         <div className="flex items-center gap-2 mb-2">
@@ -643,6 +697,27 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        )}
+
+        {/* Click & Collect Pickup Ready */}
+        {paymentStep === 'pickup_ready' && selectedPharmacy && (
+          <div className="max-w-md mx-auto space-y-6">
+            <ClickCollectQR
+              orderId={orderId}
+              pharmacyName={selectedPharmacy.name}
+              pharmacyAddress={selectedPharmacy.address}
+              preparationTime={15}
+              items={items.map(item => ({
+                name: item.medicine.name,
+                quantity: item.quantity
+              }))}
+              totalAmount={finalTotal}
+            />
+            <Button variant="outline" className="w-full" onClick={onBackToHome}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Retour à l'accueil
+            </Button>
           </div>
         )}
       </div>

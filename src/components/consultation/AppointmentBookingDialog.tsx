@@ -11,9 +11,10 @@ import { useNavigate } from "react-router-dom";
 interface AppointmentBookingDialogProps {
     isOpen: boolean;
     onClose: () => void;
+    specialty?: string;
 }
 
-const AppointmentBookingDialog = ({ isOpen, onClose }: AppointmentBookingDialogProps) => {
+const AppointmentBookingDialog = ({ isOpen, onClose, specialty = "Généraliste" }: AppointmentBookingDialogProps) => {
     const navigate = useNavigate();
     const [date, setDate] = useState<Date | undefined>(new Date());
     const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
@@ -24,11 +25,23 @@ const AppointmentBookingDialog = ({ isOpen, onClose }: AppointmentBookingDialogP
         "14:00", "14:30", "15:00", "15:30", "16:00", "16:30"
     ];
 
+    // Mock doctor based on specialty
+    const getDoctor = (spec: string) => {
+        switch (spec) {
+            case "Pédiatre": return { name: "Dr. Traoré Aminata", title: "Pédiatre Certifié" };
+            case "Gynécologue": return { name: "Dr. Bamba Salimata", title: "Gynécologue Obstétricien" };
+            case "Dermatologue": return { name: "Dr. Diop Oumar", title: "Dermatologue" };
+            default: return { name: "Dr. Kouassi Jean", title: "Médecin Généraliste" };
+        }
+    };
+
+    const doctor = getDoctor(specialty);
+
     const handleConfirm = () => {
         if (date && selectedSlot) {
             // Navigate to doctor profile with appointment details
             // In a real app, we would pass these details via state or context
-            navigate("/doctor/dr-kouassi");
+            navigate("/doctor/dr-kouassi"); // Keeping this hardcoded for now or could be dynamic
             onClose();
         }
     };
@@ -37,7 +50,7 @@ const AppointmentBookingDialog = ({ isOpen, onClose }: AppointmentBookingDialogP
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>
-                    <DialogTitle>Prendre rendez-vous</DialogTitle>
+                    <DialogTitle>Prendre rendez-vous - {specialty}</DialogTitle>
                 </DialogHeader>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -84,8 +97,8 @@ const AppointmentBookingDialog = ({ isOpen, onClose }: AppointmentBookingDialogP
                             <User className="h-6 w-6 text-primary" />
                         </div>
                         <div>
-                            <p className="font-medium">Dr. Kouassi Jean</p>
-                            <p className="text-sm text-muted-foreground">Médecin Généraliste</p>
+                            <p className="font-medium">{doctor.name}</p>
+                            <p className="text-sm text-muted-foreground">{doctor.title}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">

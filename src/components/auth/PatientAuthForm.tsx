@@ -130,7 +130,7 @@ export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
                 Espace <span className="text-primary tracking-normal italic">Patient</span>
               </h2>
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">
-                {isSignUp ? 'Rejoignez l\'excellence logistique' : 'Authentification sécurisée'}
+                {isSignUp ? '' : 'Authentification sécurisée'}
               </p>
             </div>
 
@@ -146,7 +146,7 @@ export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
                         <FormControl>
                           <div className="relative">
                             <User className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
-                            <Input placeholder="Jean Kouassi" {...field} className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-0" />
+                            <Input placeholder="Jean Kouassi" {...field} className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20" />
                           </div>
                         </FormControl>
                         <FormMessage />
@@ -168,7 +168,7 @@ export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
                               placeholder="nom@exemple.com"
                               {...field}
                               autoComplete="username webauthn"
-                              className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-0"
+                              className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20"
                             />
                           </div>
                         </FormControl>
@@ -186,7 +186,7 @@ export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
                         <FormControl>
                           <div className="relative">
                             <Phone className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
-                            <Input type="tel" placeholder="+225 07..." {...field} className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-0" />
+                            <Input type="tel" placeholder="+225 07..." {...field} className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20" />
                           </div>
                         </FormControl>
                         <FormMessage />
@@ -208,7 +208,7 @@ export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
                               placeholder="••••••••"
                               {...field}
                               autoComplete="new-password webauthn"
-                              className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-0"
+                              className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20"
                             />
                             <button
                               type="button"
@@ -237,7 +237,7 @@ export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
                               type={showPassword ? "text" : "password"}
                               placeholder="••••••••"
                               {...field}
-                              className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-0"
+                              className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20"
                             />
                           </div>
                         </FormControl>
@@ -269,7 +269,7 @@ export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
                               placeholder="nom@exemple.com"
                               {...field}
                               autoComplete="username webauthn"
-                              className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold"
+                              className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20"
                             />
                           </div>
                         </FormControl>
@@ -297,7 +297,7 @@ export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
                               placeholder="••••••••"
                               {...field}
                               autoComplete="current-password webauthn"
-                              className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold"
+                              className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20"
                             />
                             <button
                               type="button"

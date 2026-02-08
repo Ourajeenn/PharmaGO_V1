@@ -172,7 +172,7 @@ export const DoctorAuthForm = ({ onSuccess }: DoctorAuthFormProps) => {
                       <FormItem>
                         <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nom complet *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Dr. Jean Kouassi" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
+                          <Input placeholder="Dr. Jean Kouassi" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -186,7 +186,7 @@ export const DoctorAuthForm = ({ onSuccess }: DoctorAuthFormProps) => {
                       <FormItem>
                         <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email professionnel *</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="dr.kouassi@hopital.ci" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
+                          <Input type="email" placeholder="dr.kouassi@hopital.ci" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -201,7 +201,7 @@ export const DoctorAuthForm = ({ onSuccess }: DoctorAuthFormProps) => {
                         <FormItem>
                           <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Téléphone *</FormLabel>
                           <FormControl>
-                            <Input placeholder="+225 XX XX XX XX" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
+                            <Input placeholder="+225 XX XX XX XX" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -215,7 +215,7 @@ export const DoctorAuthForm = ({ onSuccess }: DoctorAuthFormProps) => {
                         <FormItem>
                           <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">N° Ordre *</FormLabel>
                           <FormControl>
-                            <Input placeholder="OM2024XXXX" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
+                            <Input placeholder="OM2024XXXX" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -231,7 +231,7 @@ export const DoctorAuthForm = ({ onSuccess }: DoctorAuthFormProps) => {
                         <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Spécialité *</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
-                            <SelectTrigger className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold">
+                            <SelectTrigger className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20">
                               <SelectValue placeholder="Sélectionnez votre spécialité" />
                             </SelectTrigger>
                           </FormControl>
@@ -262,7 +262,7 @@ export const DoctorAuthForm = ({ onSuccess }: DoctorAuthFormProps) => {
                               type={showPassword ? 'text' : 'password'}
                               placeholder="••••••••"
                               {...field}
-                              className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold"
+                              className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20"
                             />
                           </div>
                         </FormControl>
@@ -287,7 +287,7 @@ export const DoctorAuthForm = ({ onSuccess }: DoctorAuthFormProps) => {
                       <FormItem>
                         <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="dr.kouassi@hopital.ci" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
+                          <Input type="email" placeholder="dr.kouassi@hopital.ci" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -311,7 +311,7 @@ export const DoctorAuthForm = ({ onSuccess }: DoctorAuthFormProps) => {
                               type={showPassword ? 'text' : 'password'}
                               placeholder="••••••••"
                               {...field}
-                              className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold"
+                              className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20"
                             />
                           </div>
                         </FormControl>

@@ -75,8 +75,33 @@ const DeliveryTracking = () => {
 
                     {/* Info Section */}
                     <div className="space-y-6">
+                        {/* Traffic Alert - Mocked */}
+                        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 animate-in slide-in-from-top-4 duration-700">
+                            <div className="flex items-start gap-3">
+                                <div className="bg-orange-100 p-2 rounded-full text-orange-600">
+                                    <Clock className="h-5 w-5" />
+                                </div>
+                                <div className="flex-1">
+                                    <h4 className="font-bold text-orange-900 text-sm mb-1">Trafic dense détecté</h4>
+                                    <p className="text-xs text-orange-800 mb-3">
+                                        Ralentissement sur Boulevard Latrille. Retard estimé : <span className="font-bold">+15 min</span>.
+                                    </p>
+                                    {status < 2 && (
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="bg-white border-orange-200 text-orange-700 hover:bg-orange-100 text-xs h-8"
+                                            onClick={() => alert("Changement de mode : Votre commande sera préparée pour le retrait au comptoir de garde.")}
+                                        >
+                                            Switch to Click & Collect (Free)
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Driver Card */}
-                        <Card className="border-none shadow-md rounded-2xl overflow-hidden">
+                        <Card className="border-none shadow-md rounded-2xl overflow-hidden mt-6">
                             <CardHeader className="bg-primary/5 pb-4">
                                 <CardTitle className="text-lg flex items-center gap-2">
                                     <Navigation className="h-5 w-5 text-primary" />
@@ -101,9 +126,13 @@ const DeliveryTracking = () => {
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-3">
-                                    <Button className="w-full" variant="outline">
+                                    <Button
+                                        className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white border-none"
+                                        variant="outline"
+                                        onClick={() => window.open("https://wa.me/22507070707?text=Bonjour, je suis le client de la commande...", "_blank")}
+                                    >
                                         <MessageSquare className="h-4 w-4 mr-2" />
-                                        Message
+                                        WhatsApp
                                     </Button>
                                     <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
                                         <Phone className="h-4 w-4 mr-2" />

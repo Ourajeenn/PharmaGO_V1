@@ -3,9 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Menu, X, MapPin, Phone, Clock, User, ShoppingCart, Eye, Building2, Truck, Stethoscope, Shield, ArrowLeft, LogOut, ChevronDown } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { CartDrawer } from "./cart/CartDrawer"
+import { NotificationsPopover } from "./NotificationsPopover"
 import { ThemeToggle } from "./ThemeToggle"
 import { useAuth } from "@/hooks/useAuth"
 import { supabase } from "@/integrations/supabase/client"
+import { useDataSaver } from "@/contexts/DataSaverContext"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
@@ -17,6 +19,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+
+import orangeMoneyLogo from "@/assets/logos/orange-money.svg";
+import mtnMoneyLogo from "@/assets/logos/mtn-money.svg";
+import waveLogo from "@/assets/logos/wave.svg";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -68,7 +74,17 @@ const Header = () => {
               </div>
               <div className="flex items-center space-x-2">
                 <Clock className="h-4 w-4 text-primary" />
-                <span>24h/24 - Livraison express</span>
+                <span>24h/24 - Livraison 45min-2h</span>
+              </div>
+
+              {/* Payment Methods Badge */}
+              <div className="flex items-center space-x-2 border-l border-white/10 pl-6">
+                <span className="text-xs font-medium opacity-80">Paiement :</span>
+                <div className="flex gap-1.5 grayscale hover:grayscale-0 transition-all opacity-80 hover:opacity-100">
+                  <img src={orangeMoneyLogo} alt="Orange Money" className="h-4 w-4 object-contain" />
+                  <img src={mtnMoneyLogo} alt="MTN Money" className="h-4 w-4 object-contain" />
+                  <img src={waveLogo} alt="Wave" className="h-4 w-4 object-contain" />
+                </div>
               </div>
             </div>
           </div>
@@ -76,18 +92,21 @@ const Header = () => {
           {/* Main navigation */}
           <div className="flex items-center justify-between py-4 relative">
             {/* Left: Cart and Commander */}
-            <div className="flex items-center space-x-2 md:space-x-4">
+            <div className="flex items-center space-x-1 md:space-x-2">
+              <NotificationsPopover />
               <CartDrawer />
-              <Button
-                variant="outline"
-                size="sm"
-                className="hidden md:inline-flex shadow-sm hover:shadow-md transition-all h-[40px] rounded-lg border-2 border-slate-200"
-                onClick={() => navigate('/paiement')}
-              >
-                Commander
-              </Button>
               <div className="hidden sm:block">
-                <ThemeToggle />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="hidden md:inline-flex shadow-sm hover:shadow-md transition-all h-[40px] rounded-lg border-2 border-slate-200"
+                  onClick={() => navigate('/paiement')}
+                >
+                  Commander
+                </Button>
+                <div className="hidden sm:block">
+                  <ThemeToggle />
+                </div>
               </div>
             </div>
 
@@ -240,6 +259,21 @@ const Header = () => {
                   <ThemeToggle />
                 </div>
 
+                <div className="flex items-center justify-between py-2 border-t border-white/10">
+                  <span className="text-sm font-medium">Éco. Données</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-muted-foreground">{useDataSaver().isDataSaverEnabled ? 'ON' : 'OFF'}</span>
+                    <Button
+                      variant={useDataSaver().isDataSaverEnabled ? "default" : "outline"}
+                      size="sm"
+                      className="h-6 w-10 px-0 rounded-full"
+                      onClick={useDataSaver().toggleDataSaver}
+                    >
+                      <div className={`h-4 w-4 rounded-full bg-white transition-transform ${useDataSaver().isDataSaverEnabled ? 'translate-x-3' : '-translate-x-3'}`} />
+                    </Button>
+                  </div>
+                </div>
+
                 <div className="pt-2 border-t border-white/10">
                   <p className="text-xs font-bold text-muted-foreground uppercase mb-3 px-2">Espaces Utilisateurs</p>
                   <Button
@@ -272,8 +306,8 @@ const Header = () => {
             </div>
           )}
         </div>
-      </header>
-    </div>
+      </header >
+    </div >
   );
 };
 

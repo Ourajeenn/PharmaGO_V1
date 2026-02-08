@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { realPharmacies, Pharmacy } from '../data/pharmacyData';
+import { logger } from "@/utils/logger";
 
 // Simulating Google Maps Place Result Interface
 export interface GooglePlaceResult {
@@ -118,7 +119,7 @@ export const PharmacyService = {
      * Search nearby pharmacies (Mock/Simulation)
      */
     searchNearby: async (lat: number, lng: number, radius: number = 5000): Promise<Pharmacy[]> => {
-        console.log(`Searching near ${lat}, ${lng} within ${radius}m`);
+        logger.log(`Searching near ${lat}, ${lng} within ${radius}m`);
         return PharmacyService.getAllPharmacies();
     }
 };

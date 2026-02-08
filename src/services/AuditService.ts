@@ -2,6 +2,7 @@
  * Audit Service for PharmaGo
  * Handles logging of critical user actions for security and compliance (SEC-02).
  */
+import { logger } from "@/utils/logger";
 
 export type AuditAction =
     | 'USER_LOGIN'
@@ -39,9 +40,9 @@ class AuditService {
 
         // In a real app, this would send to a secure backend endpoint (e.g., /api/audit)
         console.groupCollapsed(`[AUDIT] ${action}`);
-        console.log('User:', userId);
-        console.log('Time:', logEntry.timestamp);
-        console.log('Details:', details);
+        logger.log('User:', userId);
+        logger.log('Time:', logEntry.timestamp);
+        logger.log('Details:', details);
         console.groupEnd();
 
         // Persist to local storage for demo purposes

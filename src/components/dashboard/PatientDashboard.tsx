@@ -10,6 +10,18 @@ import { EditablePatientProfile } from './profiles/EditablePatientProfile'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { OrderHistory } from '@/components/orders/OrderHistory'
 import { PremiumDashboardLayout } from './PremiumDashboardLayout'
+import { WeatherWidget } from './widgets/WeatherWidget'
+import { EWalletWidget } from './widgets/EWalletWidget'
+import { MedicalRecordSection } from '@/components/patient/MedicalRecordSection'
+import { MedicationRemindersSection } from '@/components/patient/MedicationRemindersSection'
+import { HelpSupportSection } from '@/components/patient/HelpSupportSection'
+import { PharmacyMapSection } from '@/components/maps/PharmacyMapSection'
+import { LoyaltySection } from '@/components/dashboard/LoyaltySection'
+import { AIHealthAssistant } from '@/components/assistant/AIHealthAssistant'
+import { VoiceCommandControl } from '@/components/assistant/VoiceCommandControl'
+import { EWallet } from '@/components/wallet/EWallet'
+import { PrescriptionRenewal } from '@/components/prescription/PrescriptionRenewal'
+import { PatientRiskScore } from '@/components/health/PatientRiskScore'
 import {
   ShoppingCart,
   MessageCircle,
@@ -26,7 +38,9 @@ import {
   Clock,
   User,
   MapPin,
-  Shield
+  Shield,
+  Sparkles,
+  Zap
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
@@ -214,10 +228,19 @@ export const PatientDashboard = () => {
           {/* Main Dashboard Content */}
           <div className="lg:col-span-2 space-y-8">
             <Tabs defaultValue="orders" className="w-full">
-              <TabsList className="bg-white/40 backdrop-blur-md p-1 rounded-2xl border border-white/40 mb-6 flex w-full max-w-sm">
-                <TabsTrigger value="orders" className="flex-1 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Suivi</TabsTrigger>
-                <TabsTrigger value="history" className="flex-1 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Historique</TabsTrigger>
-                <TabsTrigger value="prescriptions" className="flex-1 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Docs</TabsTrigger>
+              <TabsList className="bg-white/40 backdrop-blur-md p-1 rounded-2xl border border-white/40 mb-6 flex flex-wrap gap-1">
+                <TabsTrigger value="orders" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Suivi</TabsTrigger>
+                <TabsTrigger value="pharmacies" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Pharmacies</TabsTrigger>
+                <TabsTrigger value="history" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Historique</TabsTrigger>
+                <TabsTrigger value="prescriptions" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Docs</TabsTrigger>
+                <TabsTrigger value="medical" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Dossier</TabsTrigger>
+                <TabsTrigger value="reminders" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Rappels</TabsTrigger>
+                <TabsTrigger value="ewallet" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm bg-green-50/50 text-green-700">💳 Portefeuille</TabsTrigger>
+                <TabsTrigger value="renewals" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm bg-purple-50/50 text-purple-700">🔄 Renouvellement</TabsTrigger>
+                <TabsTrigger value="riskscore" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm bg-indigo-50/50 text-indigo-700">🧠 Score IA</TabsTrigger>
+                <TabsTrigger value="loyalty" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm text-amber-700 data-[state=active]:text-amber-700 bg-amber-50/50">Fidélité</TabsTrigger>
+                <TabsTrigger value="assistant" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm bg-blue-50/50 text-blue-700 data-[state=active]:text-blue-700 font-bold"><Sparkles className="h-3 w-3 mr-1" /> IA Assistant</TabsTrigger>
+                <TabsTrigger value="help" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Aide</TabsTrigger>
               </TabsList>
 
               <TabsContent value="orders" className="space-y-4 outline-none">
@@ -294,6 +317,10 @@ export const PatientDashboard = () => {
                 )}
               </TabsContent>
 
+              <TabsContent value="pharmacies" className="outline-none">
+                <PharmacyMapSection />
+              </TabsContent>
+
               <TabsContent value="history" className="outline-none">
                 <OrderHistory
                   userId={user?.id || ''}
@@ -320,11 +347,104 @@ export const PatientDashboard = () => {
                   </CardContent>
                 </Card>
               </TabsContent>
+
+              <TabsContent value="appointments" className="outline-none">
+                <Card className="glass-morphism border-white/20">
+                  <CardHeader>
+                    <CardTitle>Mes Rendez-vous</CardTitle>
+                    <CardDescription>Gérez vos consultations médicales</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-4">
+                      {/* Mock Appointment */}
+                      <div className="flex items-center justify-between p-4 bg-white/40 rounded-xl border border-white/20">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center font-bold text-blue-600">DK</div>
+                          <div>
+                            <h4 className="font-bold">Dr. Konan Yves</h4>
+                            <p className="text-xs text-muted-foreground">Cardiologue • Clinique Farah</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant="outline" className="text-[10px] bg-green-100 text-green-700 border-green-200">Confirmé</Badge>
+                              <span className="text-xs font-medium">Demain, 14:30</span>
+                            </div>
+                          </div>
+                        </div>
+                        <Button variant="outline" size="sm" className="rounded-lg">Détails</Button>
+                      </div>
+
+                      <Button className="w-full py-6 rounded-xl border-dashed border-2 border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary font-bold">
+                        <Plus className="h-4 w-4 mr-2" /> Prendre un rendez-vous
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="wallet" className="outline-none">
+                <EWalletWidget />
+                <div className="mt-6">
+                  <h3 className="text-lg font-bold mb-4">Historique des transactions</h3>
+                  <div className="bg-white/40 rounded-xl border border-white/20 p-1">
+                    <div className="p-4 flex justify-between items-center border-b border-white/10 last:border-0">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-red-100 rounded-lg text-red-600"><Pill className="h-4 w-4" /></div>
+                        <div>
+                          <p className="font-bold text-sm">Achat Médicaments</p>
+                          <p className="text-xs text-muted-foreground">Pharmacie Centrale</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-red-600">- 12 500 F</p>
+                        <p className="text-[10px] text-muted-foreground">Hier</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="medical" className="outline-none">
+                <MedicalRecordSection />
+              </TabsContent>
+
+              <TabsContent value="reminders" className="outline-none">
+                <MedicationRemindersSection />
+              </TabsContent>
+
+              <TabsContent value="help" className="outline-none">
+                <HelpSupportSection />
+              </TabsContent>
+
+              <TabsContent value="loyalty" className="outline-none">
+                <LoyaltySection />
+              </TabsContent>
+
+              <TabsContent value="assistant" className="outline-none">
+                <AIHealthAssistant />
+              </TabsContent>
+
+              <TabsContent value="ewallet" className="outline-none">
+                <EWallet userId={user?.id} />
+              </TabsContent>
+
+              <TabsContent value="renewals" className="outline-none">
+                <PrescriptionRenewal patientId={user?.id} />
+              </TabsContent>
+
+              <TabsContent value="riskscore" className="outline-none">
+                <PatientRiskScore patientId={user?.id} />
+              </TabsContent>
             </Tabs>
           </div>
 
+          <VoiceCommandControl />
+
+          {/* Bottom Space for mobile navigation */}
+          <div className="h-20 md:hidden" />
+
           {/* Sidebar Widgets */}
           <div className="space-y-8">
+            <WeatherWidget />
+
             {/* Insurance Card - Premium Style */}
             <div className="relative group overflow-hidden rounded-[2rem] p-[1px]">
               <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800" />

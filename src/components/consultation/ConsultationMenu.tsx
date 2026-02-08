@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Video, MessageCircle, FileText, Calendar, Shield, Activity, Stethoscope } from "lucide-react";
+import { Video, MessageCircle, FileText, Calendar, Activity, Stethoscope, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ConsultationMenu = () => {
@@ -42,11 +42,11 @@ const ConsultationMenu = () => {
             description: "Votre carnet de santé électronique accessible partout"
         },
         {
-            icon: Shield,
-            title: "Confidentialité",
-            id: "privacy",
+            icon: Home,
+            title: "Domicile",
+            id: "home",
             color: "text-cyan-400",
-            description: "Vos données médicales sont sécurisées"
+            description: "Un médecin se déplace chez vous (Urgences/Soins)"
         }
     ];
 

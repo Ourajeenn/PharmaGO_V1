@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { EditableDoctorProfile } from './profiles/EditableDoctorProfile'
 import { PrescriptionForm } from './PrescriptionForm'
+import { EPrescriptionForm } from './EPrescriptionForm'
 import {
   Table,
   TableHeader,
@@ -40,6 +41,8 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { PremiumDashboardLayout } from './PremiumDashboardLayout'
+import { DrugDatabaseSection } from '@/components/doctor/DrugDatabaseSection'
+import { SecureMessagingSection } from '@/components/doctor/SecureMessagingSection'
 
 export const DoctorDashboard = () => {
   const { user, profile } = useAuth()
@@ -286,9 +289,12 @@ export const DoctorDashboard = () => {
         </div>
 
         <Tabs defaultValue="patients" className="space-y-8">
-          <TabsList className="bg-white/40 backdrop-blur-md p-1.5 rounded-[1.5rem] border border-white/40 flex w-full max-w-lg mb-4">
+          <TabsList className="bg-white/40 backdrop-blur-md p-1.5 rounded-[1.5rem] border border-white/40 flex flex-wrap w-full max-w-4xl mb-4 gap-1">
             <TabsTrigger value="patients" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Patients</TabsTrigger>
+            <TabsTrigger value="drugdb" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Base Médicaments</TabsTrigger>
+            <TabsTrigger value="messaging" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Messagerie</TabsTrigger>
             <TabsTrigger value="history" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Historique</TabsTrigger>
+            <TabsTrigger value="eprescription" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold text-primary">E-Prescription</TabsTrigger>
             <TabsTrigger value="create" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Prescrire</TabsTrigger>
             <TabsTrigger value="appointments" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Agenda</TabsTrigger>
           </TabsList>
@@ -335,6 +341,14 @@ export const DoctorDashboard = () => {
             </div>
           </TabsContent>
 
+          <TabsContent value="drugdb" className="outline-none">
+            <DrugDatabaseSection />
+          </TabsContent>
+
+          <TabsContent value="messaging" className="outline-none">
+            <SecureMessagingSection />
+          </TabsContent>
+
           <TabsContent value="history" className="outline-none">
             <div className="glass-card overflow-hidden">
               <Table>
@@ -358,6 +372,13 @@ export const DoctorDashboard = () => {
                 </TableBody>
               </Table>
             </div>
+          </TabsContent>
+
+          {/* NEW: E-Prescription Tab */}
+          <TabsContent value="eprescription" className="outline-none">
+            <EPrescriptionForm onSuccess={() => {
+              fetchDashboardData()
+            }} />
           </TabsContent>
 
           <TabsContent value="create" className="outline-none">
