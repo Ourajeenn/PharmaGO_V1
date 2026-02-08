@@ -166,6 +166,7 @@ export function ColdChainTracker({ deliveryId, role = 'driver' }: ColdChainTrack
                             size="sm"
                             onClick={refreshData}
                             disabled={isRefreshing}
+                            aria-label="Rafraîchir les données de température"
                         >
                             <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                         </Button>
@@ -264,10 +265,10 @@ export function ColdChainTracker({ deliveryId, role = 'driver' }: ColdChainTrack
                                         <div
                                             key={i}
                                             className={`flex-1 rounded-t ${h.temp >= item.maxTemp * 0.9
-                                                    ? 'bg-amber-400'
-                                                    : h.temp <= item.minTemp * 1.1
-                                                        ? 'bg-blue-400'
-                                                        : 'bg-green-400'
+                                                ? 'bg-amber-400'
+                                                : h.temp <= item.minTemp * 1.1
+                                                    ? 'bg-blue-400'
+                                                    : 'bg-green-400'
                                                 } transition-all`}
                                             style={{ height: `${Math.max(10, height)}%` }}
                                             title={`${h.time}: ${h.temp}°C`}

@@ -101,7 +101,7 @@ export function EWallet({ userId }: EWalletProps) {
                     <div className="flex items-center gap-3 mt-4">
                         <Dialog open={isTopUpOpen} onOpenChange={setIsTopUpOpen}>
                             <DialogTrigger asChild>
-                                <Button size="sm" variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-0">
+                                <Button size="sm" variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-0" aria-label="Recharger le portefeuille">
                                     <Plus className="h-4 w-4 mr-1" />
                                     Recharger
                                 </Button>
@@ -172,7 +172,7 @@ export function EWallet({ userId }: EWalletProps) {
                             </DialogContent>
                         </Dialog>
 
-                        <Button size="sm" variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-0">
+                        <Button size="sm" variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-0" aria-label="Afficher mon code QR">
                             <QrCode className="h-4 w-4 mr-1" />
                             Mon QR
                         </Button>
@@ -181,15 +181,15 @@ export function EWallet({ userId }: EWalletProps) {
 
                 {/* Quick Actions */}
                 <div className="grid grid-cols-3 gap-2">
-                    <Button variant="outline" size="sm" className="flex-col h-auto py-3">
+                    <Button variant="outline" size="sm" className="flex-col h-auto py-3" aria-label="Envoyer de l'argent">
                         <ArrowUpRight className="h-4 w-4 text-green-600 mb-1" />
                         <span className="text-xs">Envoyer</span>
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-col h-auto py-3">
+                    <Button variant="outline" size="sm" className="flex-col h-auto py-3" aria-label="Recevoir de l'argent">
                         <ArrowDownLeft className="h-4 w-4 text-blue-600 mb-1" />
                         <span className="text-xs">Recevoir</span>
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-col h-auto py-3">
+                    <Button variant="outline" size="sm" className="flex-col h-auto py-3" aria-label="Voir l'historique des transactions">
                         <History className="h-4 w-4 text-purple-600 mb-1" />
                         <span className="text-xs">Historique</span>
                     </Button>
