@@ -145,8 +145,8 @@ export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
                         <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nom complet</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <User className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
-                            <Input placeholder="Jean Kouassi" {...field} className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20" />
+                            <User className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                            <Input placeholder="Jean Kouassi" {...field} className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
                           </div>
                         </FormControl>
                         <FormMessage />
@@ -162,13 +162,13 @@ export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
                         <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+                            <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                             <Input
                               type="email"
                               placeholder="nom@exemple.com"
                               {...field}
                               autoComplete="username webauthn"
-                              className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20"
+                              className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold"
                             />
                           </div>
                         </FormControl>

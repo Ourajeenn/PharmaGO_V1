@@ -245,7 +245,7 @@ export const DriverAuthForm = ({ onSuccess }: DriverAuthFormProps) => {
                         <FormItem>
                           <FormLabel>Nom complet *</FormLabel>
                           <FormControl>
-                            <Input placeholder="Votre nom complet" {...field} className="relative z-20" />
+                            <Input placeholder="Votre nom complet" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -259,7 +259,7 @@ export const DriverAuthForm = ({ onSuccess }: DriverAuthFormProps) => {
                         <FormItem>
                           <FormLabel>Email *</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="votre@email.com" {...field} className="relative z-20" />
+                            <Input type="email" placeholder="votre@email.com" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -274,7 +274,7 @@ export const DriverAuthForm = ({ onSuccess }: DriverAuthFormProps) => {
                           <FormItem>
                             <FormLabel>Téléphone *</FormLabel>
                             <FormControl>
-                              <Input placeholder="+225 XX XX XX XX" {...field} className="relative z-20" />
+                              <Input placeholder="+225 XX XX XX XX" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -288,7 +288,7 @@ export const DriverAuthForm = ({ onSuccess }: DriverAuthFormProps) => {
                           <FormItem>
                             <FormLabel>N° CNI/Passeport *</FormLabel>
                             <FormControl>
-                              <Input placeholder="CI2024XXXXXXXX" {...field} className="relative z-20" />
+                              <Input placeholder="CI2024XXXXXXXX" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -304,7 +304,7 @@ export const DriverAuthForm = ({ onSuccess }: DriverAuthFormProps) => {
                           <FormItem>
                             <FormLabel>N° Permis de conduire *</FormLabel>
                             <FormControl>
-                              <Input placeholder="A2024XXXXXXX" {...field} className="relative z-20" />
+                              <Input placeholder="A2024XXXXXXX" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -318,7 +318,7 @@ export const DriverAuthForm = ({ onSuccess }: DriverAuthFormProps) => {
                           <FormItem>
                             <FormLabel>Type véhicule *</FormLabel>
                             <FormControl>
-                              <Input placeholder="Moto 125cc, Scooter..." {...field} className="relative z-20" />
+                              <Input placeholder="Moto 125cc, Scooter..." {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -333,7 +333,7 @@ export const DriverAuthForm = ({ onSuccess }: DriverAuthFormProps) => {
                         <FormItem>
                           <FormLabel>Expérience livraison (optionnel)</FormLabel>
                           <FormControl>
-                            <Input placeholder="Ex: 2 ans chez Glovo, 1 an coursier..." {...field} className="relative z-20" />
+                            <Input placeholder="Ex: 2 ans chez Glovo, 1 an coursier..." {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -408,7 +408,7 @@ export const DriverAuthForm = ({ onSuccess }: DriverAuthFormProps) => {
                         <FormItem>
                           <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="votre@email.com" {...field} className="relative z-20" />
+                            <Input type="email" placeholder="votre@email.com" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

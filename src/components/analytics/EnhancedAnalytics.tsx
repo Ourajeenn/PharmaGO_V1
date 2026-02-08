@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -26,76 +26,19 @@ import {
     ArrowUpRight,
     ArrowDownRight,
     RefreshCw,
-    Download,
-    Filter
+    Download
 } from 'lucide-react'
+import { useAnalytics } from '@/hooks/useAnalytics'
 
 interface MetricCard {
     title: string
     value: string
     change: number
-    changeType: 'increase' | 'decrease'
+    changeType: 'increase' | 'decrease' | 'neutral'
     icon: React.ElementType
     color: string
     trend: number[]
 }
-
-const mockMetrics: MetricCard[] = [
-    {
-        title: 'Commandes Totales',
-        value: '2,847',
-        change: 12.5,
-        changeType: 'increase',
-        icon: ShoppingCart,
-        color: 'blue',
-        trend: [45, 52, 48, 61, 55, 67, 72]
-    },
-    {
-        title: 'Revenus (FCFA)',
-        value: '47.2M',
-        change: 8.3,
-        changeType: 'increase',
-        icon: DollarSign,
-        color: 'green',
-        trend: [32, 38, 35, 42, 48, 52, 58]
-    },
-    {
-        title: 'Nouveaux Patients',
-        value: '384',
-        change: 15.2,
-        changeType: 'increase',
-        icon: Users,
-        color: 'purple',
-        trend: [18, 22, 25, 28, 32, 38, 42]
-    },
-    {
-        title: 'Ordonnances',
-        value: '1,256',
-        change: 3.8,
-        changeType: 'decrease',
-        icon: FileText,
-        color: 'orange',
-        trend: [85, 82, 78, 80, 75, 72, 70]
-    },
-    {
-        title: 'Livraisons',
-        value: '2,134',
-        change: 18.7,
-        changeType: 'increase',
-        icon: Truck,
-        color: 'cyan',
-        trend: [120, 135, 142, 158, 165, 178, 190]
-    },
-    {
-        title: 'Stock Critique',
-        value: '12',
-        change: 25.0,
-        changeType: 'decrease',
-        icon: Package,
-        color: 'red',
-        trend: [28, 24, 22, 18, 16, 14, 12]
-    }
-]
 
 interface TopItem {
     name: string
@@ -104,6 +47,7 @@ interface TopItem {
     trend: 'up' | 'down' | 'stable'
 }
 
+// Keep these for now as placeholders until we implement aggressive aggregations
 const topMedications: TopItem[] = [
     { name: 'Doliprane 1000mg', value: 2450, percentage: 18.5, trend: 'up' },
     { name: 'Amoxicilline 500mg', value: 1820, percentage: 13.7, trend: 'up' },
@@ -121,8 +65,76 @@ const topPharmacies: TopItem[] = [
 ]
 
 export const EnhancedAnalytics = () => {
+    const { metrics, loading, fetchAnalytics } = useAnalytics()
     const [timeRange, setTimeRange] = useState('7d')
     const [isRefreshing, setIsRefreshing] = useState(false)
+
+    useEffect(() => {
+        fetchAnalytics(timeRange)
+    }, [timeRange, fetchAnalytics])
+
+    const handleRefresh = async () => {
+        setIsRefreshing(true)
+        await fetchAnalytics(timeRange)
+        setIsRefreshing(false)
+    }
+
+    const metricsData: MetricCard[] = [
+        {
+            title: 'Commandes Totales',
+            value: metrics?.totalOrders.toString() || '0',
+            change: 0, // Todo: Calculate change
+            changeType: 'neutral',
+            icon: ShoppingCart,
+            color: 'blue',
+            trend: [45, 52, 48, 61, 55, 67, 72] // Mock trend
+        },
+        {
+            title: 'Revenus (FCFA)',
+            value: metrics?.revenue.toLocaleString() || '0',
+            change: 0,
+            changeType: 'neutral',
+            icon: DollarSign,
+            color: 'green',
+            trend: [32, 38, 35, 42, 48, 52, 58]
+        },
+        {
+            title: 'Nouveaux Patients',
+            value: metrics?.newPatients.toString() || '0',
+            change: 0,
+            changeType: 'neutral',
+            icon: Users,
+            color: 'purple',
+            trend: [18, 22, 25, 28, 32, 38, 42]
+        },
+        {
+            title: 'Ordonnances',
+            value: metrics?.prescriptions.toString() || '0',
+            change: 0,
+            changeType: 'neutral',
+            icon: FileText,
+            color: 'orange',
+            trend: [85, 82, 78, 80, 75, 72, 70]
+        },
+        {
+            title: 'Livraisons',
+            value: metrics?.deliveries.toString() || '0',
+            change: 0,
+            changeType: 'neutral',
+            icon: Truck,
+            color: 'cyan',
+            trend: [120, 135, 142, 158, 165, 178, 190]
+        },
+        {
+            title: 'Stock Critique',
+            value: metrics?.criticalStock.toString() || '0',
+            change: 0,
+            changeType: 'neutral',
+            icon: Package,
+            color: 'red',
+            trend: [28, 24, 22, 18, 16, 14, 12]
+        }
+    ]
 
     const getColorClasses = (color: string) => {
         const colors: Record<string, { bg: string; text: string; border: string }> = {
@@ -159,12 +171,6 @@ export const EnhancedAnalytics = () => {
         )
     }
 
-    const handleRefresh = async () => {
-        setIsRefreshing(true)
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        setIsRefreshing(false)
-    }
-
     return (
         <div className="space-y-6">
             {/* Header Controls */}
@@ -187,8 +193,8 @@ export const EnhancedAnalytics = () => {
                             <SelectItem value="1y">1 an</SelectItem>
                         </SelectContent>
                     </Select>
-                    <Button variant="outline" className="rounded-xl" onClick={handleRefresh} disabled={isRefreshing}>
-                        <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    <Button variant="outline" className="rounded-xl" onClick={handleRefresh} disabled={loading || isRefreshing}>
+                        <RefreshCw className={`h-4 w-4 mr-2 ${loading || isRefreshing ? 'animate-spin' : ''}`} />
                         Actualiser
                     </Button>
                     <Button variant="outline" className="rounded-xl">
@@ -200,7 +206,7 @@ export const EnhancedAnalytics = () => {
 
             {/* Metrics Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {mockMetrics.map((metric) => {
+                {metricsData.map((metric) => {
                     const Icon = metric.icon
                     const colors = getColorClasses(metric.color)
 
@@ -221,15 +227,17 @@ export const EnhancedAnalytics = () => {
                                             <span className="text-3xl font-black">{metric.value}</span>
                                             <Badge
                                                 className={`mb-1 ${metric.changeType === 'increase'
-                                                        ? 'bg-green-100 text-green-700'
-                                                        : 'bg-red-100 text-red-700'
+                                                    ? 'bg-green-100 text-green-700'
+                                                    : metric.changeType === 'decrease'
+                                                        ? 'bg-red-100 text-red-700'
+                                                        : 'bg-gray-100 text-gray-700'
                                                     }`}
                                             >
                                                 {metric.changeType === 'increase' ? (
                                                     <ArrowUpRight className="h-3 w-3 mr-1" />
-                                                ) : (
+                                                ) : metric.changeType === 'decrease' ? (
                                                     <ArrowDownRight className="h-3 w-3 mr-1" />
-                                                )}
+                                                ) : null}
                                                 {metric.change}%
                                             </Badge>
                                         </div>
@@ -242,7 +250,7 @@ export const EnhancedAnalytics = () => {
                 })}
             </div>
 
-            {/* Top Lists */}
+            {/* Top Lists - Keeping Static for now as placeholder for future aggregation implementation */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Top Medications */}
                 <Card className="glass-morphism border-white/20">
@@ -328,3 +336,5 @@ export const EnhancedAnalytics = () => {
         </div>
     )
 }
+
+

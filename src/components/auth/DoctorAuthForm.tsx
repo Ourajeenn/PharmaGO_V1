@@ -172,7 +172,7 @@ export const DoctorAuthForm = ({ onSuccess }: DoctorAuthFormProps) => {
                       <FormItem>
                         <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nom complet *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Dr. Jean Kouassi" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20" />
+                          <Input placeholder="Dr. Jean Kouassi" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -186,7 +186,7 @@ export const DoctorAuthForm = ({ onSuccess }: DoctorAuthFormProps) => {
                       <FormItem>
                         <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email professionnel *</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="dr.kouassi@hopital.ci" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20" />
+                          <Input type="email" placeholder="dr.kouassi@hopital.ci" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -201,7 +201,7 @@ export const DoctorAuthForm = ({ onSuccess }: DoctorAuthFormProps) => {
                         <FormItem>
                           <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Téléphone *</FormLabel>
                           <FormControl>
-                            <Input placeholder="+225 XX XX XX XX" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20" />
+                            <Input placeholder="+225 XX XX XX XX" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -215,7 +215,7 @@ export const DoctorAuthForm = ({ onSuccess }: DoctorAuthFormProps) => {
                         <FormItem>
                           <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">N° Ordre *</FormLabel>
                           <FormControl>
-                            <Input placeholder="OM2024XXXX" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20" />
+                            <Input placeholder="OM2024XXXX" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -287,7 +287,7 @@ export const DoctorAuthForm = ({ onSuccess }: DoctorAuthFormProps) => {
                       <FormItem>
                         <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="dr.kouassi@hopital.ci" {...field} className="h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20" />
+                          <Input type="email" placeholder="dr.kouassi@hopital.ci" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
