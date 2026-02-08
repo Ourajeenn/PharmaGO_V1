@@ -1,5 +1,5 @@
 import { Patient, BirthRecord, Vaccination, GrowthRecord, MedicalVisit, Allergy } from '@/types/ecarnet';
-
+import { logger } from '@/utils/logger';
 // ============================================
 // PATIENTS DE DÉMONSTRATION
 // ============================================
@@ -287,6 +287,6 @@ export const initializeMockData = () => {
         };
 
         localStorage.setItem('ecarnet_data', JSON.stringify(mockData));
-        console.log('✅ Données de démonstration E-Carnet initialisées');
+        logger.log('✅ Données de démonstration E-Carnet initialisées');
     }
 };

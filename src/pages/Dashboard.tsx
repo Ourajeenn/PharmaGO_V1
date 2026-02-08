@@ -1,5 +1,6 @@
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/integrations/supabase/client'
+import { logger } from '@/utils/logger'
 import { Navigate } from 'react-router-dom'
 import { PatientDashboard } from '@/components/dashboard/PatientDashboard'
 import { PharmacyDashboardNew } from '@/components/dashboard/PharmacyDashboardNew'
@@ -27,7 +28,7 @@ export default function Dashboard() {
   useEffect(() => {
     const autoRetry = async () => {
       if (!loading && user && !profile && !isRetrying && !hasRetried) {
-        console.log('Dashboard: profile missing on mount, attempting auto-retry...')
+        logger.log('Dashboard: profile missing on mount, attempting auto-retry...')
         setIsRetrying(true)
         setHasRetried(true)
         await new Promise(resolve => setTimeout(resolve, 1500))

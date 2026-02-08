@@ -1,5 +1,5 @@
 // Offline Synchronization Library for PharmaGo Express
-
+import { logger } from '@/utils/logger';
 interface QueuedAction {
     id: string;
     type: 'order' | 'update' | 'delete';
@@ -67,7 +67,7 @@ class OfflineSyncManager {
             const request = store.add(queuedAction);
 
             request.onsuccess = () => {
-                console.log('[OfflineSync] Action queued:', queuedAction);
+                logger.log('[OfflineSync] Action queued:', queuedAction);
                 resolve();
             };
             request.onerror = () => reject(request.error);
@@ -105,13 +105,13 @@ class OfflineSyncManager {
     // Synchronize all queued actions
     async syncAll(): Promise<void> {
         const actions = await this.getQueuedActions();
-        console.log(`[OfflineSync] Syncing ${actions.length} actions...`);
+        logger.log(`[OfflineSync] Syncing ${actions.length} actions...`);
 
         for (const action of actions) {
             try {
                 await this.syncAction(action);
                 await this.removeAction(action.id);
-                console.log('[OfflineSync] Action synced:', action.id);
+                logger.log('[OfflineSync] Action synced:', action.id);
             } catch (error) {
                 console.error('[OfflineSync] Failed to sync action:', action.id, error);
 
@@ -121,7 +121,7 @@ class OfflineSyncManager {
                 // Remove if too many retries
                 if (action.retryCount > 3) {
                     await this.removeAction(action.id);
-                    console.log('[OfflineSync] Action removed after max retries:', action.id);
+                    logger.log('[OfflineSync] Action removed after max retries:', action.id);
                 }
             }
         }
@@ -297,18 +297,18 @@ export const setupOfflineSync = () => {
 
     // Sync when coming back online
     window.addEventListener('online', async () => {
-        console.log('[OfflineSync] Online - starting sync...');
+        logger.log('[OfflineSync] Online - starting sync...');
         try {
             await syncManager.syncAll();
-            console.log('[OfflineSync] Sync completed');
+            logger.log('[OfflineSync] Sync completed');
         } catch (error) {
-            console.error('[OfflineSync] Sync failed:', error);
+            logger.error('[OfflineSync] Sync failed:', error);
         }
     });
 
     // Log offline status
     window.addEventListener('offline', () => {
-        console.log('[OfflineSync] Offline mode activated');
+        logger.log('[OfflineSync] Offline mode activated');
     });
 
     return syncManager;

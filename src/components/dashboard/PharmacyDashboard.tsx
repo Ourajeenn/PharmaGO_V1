@@ -45,6 +45,7 @@ import { GenericSubstitutionSection } from '@/components/pharmacy/GenericSubstit
 import { ExpiryManagementSection } from '@/components/pharmacy/ExpiryManagementSection'
 import { PharmacyRedistribution } from '@/components/pharmacy/PharmacyRedistribution'
 import { StockAlertsEnhanced } from '@/components/pharmacy/StockAlertsEnhanced'
+import { Order, InventoryItem } from '@/types/dashboard'
 
 export const PharmacyDashboard = () => {
   const { user } = useAuth()
@@ -55,8 +56,8 @@ export const PharmacyDashboard = () => {
   const [isAddMedicineOpen, setIsAddMedicineOpen] = useState(false)
 
   // Data States
-  const [orders, setOrders] = useState<any[]>([])
-  const [inventory, setInventory] = useState<any[]>([])
+  const [orders, setOrders] = useState<Order[]>([])
+  const [inventory, setInventory] = useState<InventoryItem[]>([])
   const [stats, setStats] = useState({
     todayOrders: 0,
     weeklyRevenue: 0,

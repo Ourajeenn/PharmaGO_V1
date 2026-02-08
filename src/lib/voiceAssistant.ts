@@ -1,5 +1,6 @@
 // Voice Assistant for PharmaGo Express
 import { useState, useEffect, useCallback } from 'react';
+import { logger } from '@/utils/logger';
 
 interface VoiceCommand {
     command: string;
@@ -61,13 +62,13 @@ export class VoiceAssistant {
 
         this.recognition.onresult = (event) => {
             const transcript = event.results[0][0].transcript.toLowerCase();
-            console.log('[Voice] Recognized:', transcript);
+            logger.log('[Voice] Recognized:', transcript);
             onResult(transcript);
             this.processCommand(transcript);
         };
 
         this.recognition.onerror = (event) => {
-            console.error('[Voice] Recognition error:', event.error);
+            logger.error('[Voice] Recognition error:', event.error);
             this.isListening = false;
             onError?.(event.error);
         };
@@ -95,7 +96,7 @@ export class VoiceAssistant {
             );
 
             if (matches) {
-                console.log('[Voice] Executing command:', cmd.command);
+                logger.log('[Voice] Executing command:', cmd.command);
                 cmd.action();
                 break;
             }
@@ -105,7 +106,7 @@ export class VoiceAssistant {
     // Speak text
     speak(text: string, lang: string = 'fr-FR'): void {
         if (!this.synthesis) {
-            console.error('[Voice] Speech synthesis not supported');
+            logger.error('[Voice] Speech synthesis not supported');
             return;
         }
 

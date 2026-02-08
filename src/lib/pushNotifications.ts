@@ -1,5 +1,5 @@
 // Push Notifications Library for PharmaGo Express
-
+import { logger } from '@/utils/logger';
 interface PushSubscriptionOptions {
     userVisibleOnly: boolean;
     applicationServerKey: string;
@@ -21,9 +21,9 @@ class PushNotificationManager {
 
         try {
             this.swRegistration = await navigator.serviceWorker.ready;
-            console.log('[Push] Service Worker ready');
+            logger.log('[Push] Service Worker ready');
         } catch (error) {
-            console.error('[Push] Service Worker initialization failed:', error);
+            logger.error('[Push] Service Worker initialization failed:', error);
             throw error;
         }
     }
@@ -35,7 +35,7 @@ class PushNotificationManager {
         }
 
         const permission = await Notification.requestPermission();
-        console.log('[Push] Notification permission:', permission);
+        logger.log('[Push] Notification permission:', permission);
         return permission;
     }
 
@@ -57,7 +57,7 @@ class PushNotificationManager {
         let subscription = await this.swRegistration.pushManager.getSubscription();
 
         if (subscription) {
-            console.log('[Push] Already subscribed');
+            logger.log('[Push] Already subscribed');
             return subscription;
         }
 
@@ -68,7 +68,7 @@ class PushNotificationManager {
         };
 
         subscription = await this.swRegistration.pushManager.subscribe(options);
-        console.log('[Push] New subscription created');
+        logger.log('[Push] New subscription created');
 
         return subscription;
     }
@@ -82,12 +82,12 @@ class PushNotificationManager {
         const subscription = await this.swRegistration.pushManager.getSubscription();
 
         if (!subscription) {
-            console.log('[Push] No subscription found');
+            logger.log('[Push] No subscription found');
             return false;
         }
 
         const result = await subscription.unsubscribe();
-        console.log('[Push] Unsubscribed:', result);
+        logger.log('[Push] Unsubscribed:', result);
         return result;
     }
 
@@ -114,7 +114,7 @@ class PushNotificationManager {
             throw new Error('Failed to send subscription to server');
         }
 
-        console.log('[Push] Subscription sent to server');
+        logger.log('[Push] Subscription sent to server');
     }
 
     // Helper to convert VAPID key

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { Loader2, UserCheck, Zap } from 'lucide-react'
+import { logger } from '@/utils/logger'
 
 interface ProfileFormData {
     name?: string
@@ -65,7 +66,7 @@ export const ProfileCompletion = ({ onComplete }: { onComplete: () => void }) =>
                     requiredFields = ['company_name', 'license_number']
                     break
                 default:
-                    console.log('ProfileCompletion: role exempt or unhandled:', profile.role)
+                    logger.log('ProfileCompletion: role exempt or unhandled:', profile.role)
                     onComplete()
                     return
             }
@@ -77,7 +78,7 @@ export const ProfileCompletion = ({ onComplete }: { onComplete: () => void }) =>
                 .single()
 
             if (error && error.code !== 'PGRST116') {
-                console.error('ProfileCompletion: error fetching role data:', error)
+                logger.error('ProfileCompletion: error fetching role data:', error)
                 // On technical error, allow entry to dashboard anyway
                 onComplete()
                 return
@@ -111,7 +112,7 @@ export const ProfileCompletion = ({ onComplete }: { onComplete: () => void }) =>
                 onComplete()
             }
         } catch (error) {
-            console.error('ProfileCompletion: critical error in checkCompletion:', error)
+            logger.error('ProfileCompletion: critical error in checkCompletion:', error)
             onComplete()
         } finally {
             setChecking(false)
@@ -157,7 +158,7 @@ export const ProfileCompletion = ({ onComplete }: { onComplete: () => void }) =>
             toast.success('Profil ancré avec succès')
             onComplete()
         } catch (error: any) {
-            console.error('ProfileCompletion: error updating profile:', error)
+            logger.error('ProfileCompletion: error updating profile:', error)
             toast.error(error.message || 'Erreur lors de la mise à jour')
         } finally {
             setLoading(false)

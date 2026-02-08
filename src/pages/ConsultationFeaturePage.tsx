@@ -7,6 +7,7 @@ import { ArrowLeft, Video, MessageCircle, FileText, Calendar, Clock, Shield, Che
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import MedicalChatDialog from "@/components/consultation/MedicalChatDialog";
 import AppointmentBookingDialog from "@/components/consultation/AppointmentBookingDialog";
+import { logger } from "@/utils/logger";
 
 const ConsultationFeaturePage = () => {
     const { featureId } = useParams();
@@ -113,7 +114,7 @@ const ConsultationFeaturePage = () => {
             setIsAppointmentOpen(true);
         } else {
             // Handle other actions or show a toast
-            console.log(`Action triggered for ${featureId}`);
+            logger.log(`Action triggered for ${featureId}`);
         }
     };
 

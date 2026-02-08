@@ -25,13 +25,14 @@ import { PremiumDashboardLayout } from './PremiumDashboardLayout'
 import { toast } from 'sonner'
 import { EnhancedAnalytics } from '@/components/analytics/EnhancedAnalytics'
 import { AuditTrail } from '@/components/audit/AuditTrail'
+import { UserProfile, Order } from '@/types/dashboard'
 
 export const AdminDashboard = () => {
   const [loading, setLoading] = useState(true)
 
   // Data States
-  const [recentUsers, setRecentUsers] = useState<any[]>([])
-  const [recentOrders, setRecentOrders] = useState<any[]>([])
+  const [recentUsers, setRecentUsers] = useState<UserProfile[]>([])
+  const [recentOrders, setRecentOrders] = useState<Order[]>([])
 
   // Stats State
   const [stats, setStats] = useState({

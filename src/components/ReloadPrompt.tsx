@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Toast } from '@/components/ui/toast'
 import { useToast } from '@/hooks/use-toast'
 import { useEffect } from 'react'
+import { logger } from '@/utils/logger'
 
 export function ReloadPrompt() {
     const {
@@ -11,10 +12,10 @@ export function ReloadPrompt() {
         updateServiceWorker,
     } = useRegisterSW({
         onRegistered(r) {
-            console.log('SW Registered:', r)
+            logger.log('SW Registered:', r)
         },
         onRegisterError(error) {
-            console.log('SW registration error', error)
+            logger.log('SW registration error', error)
         },
     })
 
