@@ -20,9 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-import orangeMoneyLogo from "@/assets/logos/orange-money.svg";
-import mtnMoneyLogo from "@/assets/logos/mtn-money.svg";
-import waveLogo from "@/assets/logos/wave.svg";
+
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -77,15 +75,7 @@ const Header = () => {
                 <span>24h/24 - Livraison 45min-2h</span>
               </div>
 
-              {/* Payment Methods Badge */}
-              <div className="flex items-center space-x-2 border-l border-white/10 pl-6">
-                <span className="text-xs font-medium opacity-80">Paiement :</span>
-                <div className="flex gap-1.5 grayscale hover:grayscale-0 transition-all opacity-80 hover:opacity-100">
-                  <img src={orangeMoneyLogo} alt="Orange Money" className="h-4 w-4 object-contain" />
-                  <img src={mtnMoneyLogo} alt="MTN Money" className="h-4 w-4 object-contain" />
-                  <img src={waveLogo} alt="Wave" className="h-4 w-4 object-contain" />
-                </div>
-              </div>
+
             </div>
           </div>
 
@@ -104,9 +94,6 @@ const Header = () => {
                 >
                   Commander
                 </Button>
-                <div className="hidden sm:block">
-                  <ThemeToggle />
-                </div>
               </div>
             </div>
 
@@ -146,6 +133,9 @@ const Header = () => {
 
             {/* Right: User Profile or Login */}
             <div className="flex items-center space-x-3 md:space-x-6">
+              <div className="hidden md:block">
+                <ThemeToggle />
+              </div>
               {user && profile ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
