@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, ArrowLeft, User, Mail, Phone, Lock, HeartPulse, Zap, Eye, EyeOff } from 'lucide-react'
+import { Loader2, ArrowLeft, User, Mail, Phone, Lock, HeartPulse, Zap, Eye, EyeOff, Fingerprint } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 const signInSchema = z.object({
@@ -109,116 +109,164 @@ export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
   }
 
   return (
-    <div className="min-h-screen mesh-gradient flex items-center justify-center p-6 relative overflow-hidden bg-slate-50">
-      <div className="w-full max-w-lg relative z-10 animate-in zoom-in-95 duration-700">
-        <Button
-          variant="ghost"
-          onClick={() => navigate('/profile-selection')}
-          className="mb-8 flex items-center gap-2 hover:bg-white/40 transition-all rounded-xl px-4 font-bold border border-transparent hover:border-white/40 text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span className="text-xs uppercase tracking-widest">Retour au sélecteur</span>
-        </Button>
+    <div className="min-h-screen w-full flex overflow-hidden bg-slate-50">
 
-        <div className="glass-card p-1 shadow-2xl rounded-[2.5rem] overflow-hidden">
-          <div className="bg-white/40 backdrop-blur-xl p-8 lg:p-10 rounded-[2.2rem] border border-white/40">
-            <div className="space-y-2 text-center mb-10">
-              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 border border-primary/20">
-                <HeartPulse className="h-8 w-8 text-primary" />
-              </div>
-              <h2 className="text-4xl font-black tracking-tighter text-foreground uppercase leading-[0.9]">
-                Espace <span className="text-primary tracking-normal italic">Patient</span>
-              </h2>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">
-                {isSignUp ? '' : 'Authentification sécurisée'}
-              </p>
+      {/* Left Side - Image/Branding (Hidden on mobile) */}
+      <div className="hidden lg:flex w-1/2 relative bg-blue-900 text-white overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/90 to-blue-900/90 mix-blend-multiply z-10" />
+        <img
+          src="/pharmacy-login.jpg"
+          alt="Santé Patient"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 z-20 opacity-30">
+          <div className="absolute top-10 left-10 w-64 h-64 bg-blue-400 rounded-full mix-blend-overlay filter blur-3xl animate-blob" />
+          <div className="absolute top-1/2 right-10 w-64 h-64 bg-cyan-400 rounded-full mix-blend-overlay filter blur-3xl animate-blob animation-delay-2000" />
+          <div className="absolute bottom-10 left-1/3 w-64 h-64 bg-purple-400 rounded-full mix-blend-overlay filter blur-3xl animate-blob animation-delay-4000" />
+        </div>
+
+        <div className="relative z-30 flex flex-col justify-between p-12 h-full w-full">
+          <div>
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 mb-8">
+              <HeartPulse className="h-5 w-5 text-blue-200" />
+              <span className="text-sm font-bold tracking-wider uppercase">Espace Santé</span>
             </div>
+            <h1 className="text-5xl font-black tracking-tighter leading-tight mb-6">
+              Votre Santé,<br />
+              Notre <span className="text-blue-300 italic">Priorité.</span>
+            </h1>
+            <p className="text-lg text-blue-100/80 max-w-md leading-relaxed">
+              Accédez à vos ordonnances, suivez vos commandes et gérez votre dossier médical en toute simplicité.
+            </p>
+          </div>
 
-            {isSignUp ? (
-              <Form {...signUpForm}>
-                <form onSubmit={signUpForm.handleSubmit(onSignUp)} className="space-y-5">
-                  <FormField
-                    control={signUpForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nom complet</FormLabel>
+          <div className="space-y-6">
+            <div className="flex gap-4">
+              <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/10 flex-1">
+                <h3 className="font-bold text-2xl mb-1">24/7</h3>
+                <p className="text-xs text-blue-200 uppercase tracking-wider">Support Client</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/10 flex-1">
+                <h3 className="font-bold text-2xl mb-1">100%</h3>
+                <p className="text-xs text-blue-200 uppercase tracking-wider">Sécurisé</p>
+              </div>
+            </div>
+            <p className="text-xs text-blue-200/60 uppercase tracking-widest font-bold">
+              © 2024 PharmaGo Inc. • Elite Health Logistics
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Side - Form */}
+      <div className="w-full lg:w-1/2 relative flex flex-col items-center justify-center p-6 lg:p-12 overflow-y-auto">
+        <div className="w-full max-w-md space-y-8 animate-in slide-in-from-right-8 duration-700">
+
+          {/* Header */}
+          <div className="text-center space-y-2">
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/profile-selection')}
+              className="absolute top-6 right-6 lg:top-12 lg:right-12 text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" /> Retour
+            </Button>
+
+            <div className="inline-flex justify-center items-center w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 mb-4 shadow-sm">
+              <User className="h-8 w-8" />
+            </div>
+            <h2 className="text-3xl font-black tracking-tight text-foreground">
+              {isSignUp ? 'Créer un Compte' : 'Bon retour parmi nous'}
+            </h2>
+            <p className="text-muted-foreground font-medium">
+              {isSignUp
+                ? 'Rejoignez la communauté PharmaGo dès aujourd\'hui.'
+                : 'Entrez vos identifiants pour accéder à votre compte.'}
+            </p>
+          </div>
+
+          {/* Form */}
+          {isSignUp ? (
+            <Form {...signUpForm}>
+              <form onSubmit={signUpForm.handleSubmit(onSignUp)} className="space-y-5">
+                <FormField
+                  control={signUpForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Nom complet</FormLabel>
+                      <div className="relative group">
+                        <User className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground/50 group-focus-within:text-blue-500 transition-colors pointer-events-none z-10" />
                         <FormControl>
-                          <div className="relative">
-                            <User className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-                            <Input placeholder="Jean Kouassi" {...field} className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold" />
-                          </div>
+                          <Input placeholder="Jean Kouassi" {...field} className="pl-10 h-12 rounded-xl bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium relative z-20" />
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                  <FormField
-                    control={signUpForm.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email</FormLabel>
+                <FormField
+                  control={signUpForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Email</FormLabel>
+                      <div className="relative group">
+                        <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground/50 group-focus-within:text-blue-500 transition-colors pointer-events-none z-10" />
                         <FormControl>
-                          <div className="relative">
-                            <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-                            <Input
-                              type="email"
-                              placeholder="nom@exemple.com"
-                              {...field}
-                              autoComplete="username webauthn"
-                              className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold"
-                            />
-                          </div>
+                          <Input
+                            type="email"
+                            placeholder="nom@exemple.com"
+                            {...field}
+                            autoComplete="username webauthn"
+                            className="pl-10 h-12 rounded-xl bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium relative z-20"
+                          />
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                  <FormField
-                    control={signUpForm.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Téléphone</FormLabel>
+                <FormField
+                  control={signUpForm.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Téléphone</FormLabel>
+                      <div className="relative group">
+                        <Phone className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground/50 group-focus-within:text-blue-500 transition-colors pointer-events-none z-10" />
                         <FormControl>
-                          <div className="relative">
-                            <Phone className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
-                            <Input type="tel" placeholder="+225 07..." {...field} className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20" />
-                          </div>
+                          <Input type="tel" placeholder="+225 07..." {...field} className="pl-10 h-12 rounded-xl bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium relative z-20" />
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
+                <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={signUpForm.control}
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Mot de passe</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Lock className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Mot de passe</FormLabel>
+                        <div className="relative group">
+                          <Lock className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground/50 group-focus-within:text-blue-500 transition-colors pointer-events-none z-10" />
+                          <FormControl>
                             <Input
                               type={showPassword ? "text" : "password"}
                               placeholder="••••••••"
                               {...field}
                               autoComplete="new-password webauthn"
-                              className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20"
+                              className="pl-10 h-12 rounded-xl bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium relative z-20"
                             />
-                            <button
-                              type="button"
-                              onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-3 top-3.5 text-muted-foreground hover:text-foreground z-20"
-                            >
-                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </button>
-                          </div>
-                        </FormControl>
+                          </FormControl>
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -229,127 +277,153 @@ export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
                     name="confirmPassword"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Confirmer mot de passe</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Lock className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Confirmer</FormLabel>
+                        <div className="relative group">
+                          <Lock className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground/50 group-focus-within:text-blue-500 transition-colors pointer-events-none z-10" />
+                          <FormControl>
                             <Input
                               type={showPassword ? "text" : "password"}
                               placeholder="••••••••"
                               {...field}
-                              className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20"
+                              className="pl-10 h-12 rounded-xl bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium relative z-20"
                             />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <Button type="submit" className="w-full h-14 rounded-xl bg-primary hover:bg-primary-hover text-white font-black uppercase tracking-widest shadow-xl shadow-primary/20 transition-all hover:scale-[1.01]" disabled={loading}>
-                    {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Zap className="mr-2 h-5 w-5" />}
-                    S'inscrire Maintenant
-                  </Button>
-                </form>
-              </Form>
-            ) : (
-              <Form {...signInForm}>
-                <form onSubmit={signInForm.handleSubmit(onSignIn)} className="space-y-5">
-                  <FormField
-                    control={signInForm.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              type="email"
-                              placeholder="nom@exemple.com"
-                              {...field}
-                              autoComplete="username webauthn"
-                              className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20"
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={signInForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="flex items-center justify-between ml-1">
-                          <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Mot de passe</FormLabel>
-                          <button type="button" className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline transition-all" onClick={() => navigate('/forgot-password')}>
-                            Oublié ?
-                          </button>
+                          </FormControl>
                         </div>
-                        <FormControl>
-                          <div className="relative">
-                            <Lock className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              type={showPassword ? "text" : "password"}
-                              placeholder="••••••••"
-                              {...field}
-                              autoComplete="current-password webauthn"
-                              className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-3 top-3.5 text-muted-foreground hover:text-foreground"
-                            >
-                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </button>
-                          </div>
-                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-xs text-muted-foreground hover:text-blue-600 font-medium flex items-center gap-1 ml-auto transition-colors"
+                >
+                  {showPassword ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                  {showPassword ? 'Masquer' : 'Afficher'} mot de passe
+                </button>
 
-                  <Button type="submit" className="w-full h-14 rounded-xl bg-primary hover:bg-primary-hover text-white font-black uppercase tracking-widest shadow-xl shadow-primary/20 transition-all hover:scale-[1.01]" disabled={loading}>
-                    {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Zap className="mr-2 h-5 w-5" />}
-                    Accéder au Dashboard
-                  </Button>
+                <Button type="submit" className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold tracking-wide shadow-lg shadow-blue-600/20 transition-all hover:scale-[1.01]" disabled={loading}>
+                  {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Zap className="mr-2 h-5 w-5 fill-current" />}
+                  Créer mon compte
+                </Button>
+              </form>
+            </Form>
+          ) : (
+            <Form {...signInForm}>
+              <form onSubmit={signInForm.handleSubmit(onSignIn)} className="space-y-5">
+                <FormField
+                  control={signInForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Email</FormLabel>
+                      <div className="relative group">
+                        <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground/50 group-focus-within:text-blue-500 transition-colors pointer-events-none z-10" />
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder="nom@exemple.com"
+                            {...field}
+                            autoComplete="username webauthn"
+                            className="pl-10 h-12 rounded-xl bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium relative z-20"
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                  {/* Biometric Trigger Hint */}
-                  <div className="text-center">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        // Trigger browser credential manager which usually invokes FaceID/TouchID
-                        if ((window as any).PasswordCredential || (window as any).PublicKeyCredential) {
-                          // This is a hint to the browser to show the auth dialog
-                          // In a real PWA, you might use navigator.credentials.get({ password: true })
-                          document.querySelector('form')?.requestSubmit();
-                        }
-                      }}
-                      className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors mt-2"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-fingerprint"><path d="M2.5 12.5a10 10 0 1 1 20 0" /><path d="M12 21a9 9 0 1 0 0-18" /><path d="M12 9a3 3 0 1 0 0 6" /><path d="M9 12a3 3 0 1 0 0 6" /></svg>
-                      Connexion Biométrique (Si disponible)
-                    </button>
-                  </div>
-                </form>
-              </Form>
-            )}
+                <FormField
+                  control={signInForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center justify-between ml-1 mb-1.5">
+                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Mot de passe</FormLabel>
+                        <button type="button" className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline transition-all" onClick={() => navigate('/forgot-password')}>
+                          Mot de passe oublié ?
+                        </button>
+                      </div>
+                      <div className="relative group">
+                        <Lock className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground/50 group-focus-within:text-blue-500 transition-colors pointer-events-none z-10" />
+                        <FormControl>
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="••••••••"
+                            {...field}
+                            autoComplete="current-password webauthn"
+                            className="pl-10 h-12 rounded-xl bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium relative z-20"
+                          />
+                        </FormControl>
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-3.5 text-muted-foreground hover:text-foreground z-30 transition-colors"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <div className="mt-8 text-center pt-6 border-t border-white/20">
-              <button
-                type="button"
-                className="text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
-                onClick={() => setIsSignUp(!isSignUp)}
-              >
-                {isSignUp ? 'Déjà un compte ? Se connecter' : 'Nouveau ? Créer un compte'}
-              </button>
+                <Button type="submit" className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold tracking-wide shadow-lg shadow-blue-600/20 transition-all hover:scale-[1.01]" disabled={loading}>
+                  {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Zap className="mr-2 h-5 w-5 fill-current" />}
+                  Se connecter
+                </Button>
+
+                {/* Biometric Trigger Hint */}
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if ((window as any).PasswordCredential || (window as any).PublicKeyCredential) {
+                        document.querySelector('form')?.requestSubmit();
+                      }
+                    }}
+                    className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-blue-600 transition-colors mt-2"
+                  >
+                    <Fingerprint className="h-4 w-4" />
+                    Connexion Biométrique
+                  </button>
+                </div>
+              </form>
+            </Form>
+          )}
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-slate-200" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-slate-50 px-2 text-muted-foreground font-bold tracking-widest">Ou</span>
             </div>
           </div>
+
+          <div className="text-center">
+            <p className="text-muted-foreground text-sm">
+              {isSignUp ? 'Vous avez déjà un compte ?' : 'Pas encore de compte ?'}
+            </p>
+            <button
+              type="button"
+              className="text-blue-600 hover:text-blue-700 font-black text-sm uppercase tracking-wider mt-1 hover:underline transition-all"
+              onClick={() => setIsSignUp(!isSignUp)}
+            >
+              {isSignUp ? 'Se connecter' : 'Créer un compte gratuitement'}
+            </button>
+          </div>
+        </div>
+
+        {/* Footer Links */}
+        <div className="mt-12 flex gap-4 text-xs text-muted-foreground/60 font-medium bg-slate-100/50 px-4 py-2 rounded-full">
+          <a href="#" className="hover:text-foreground transition-colors">Termes</a>
+          <span>•</span>
+          <a href="#" className="hover:text-foreground transition-colors">Confidentialité</a>
+          <span>•</span>
+          <a href="#" className="hover:text-foreground transition-colors">Aide</a>
         </div>
       </div>
     </div>

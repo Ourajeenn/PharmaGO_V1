@@ -35,7 +35,7 @@ export const NotificationService = {
     },
 
     async sendPushNotification(userId: string, title: string, body: string) {
-        // Via OneSignal ou Firebase Cloud Messaging
+        // Via OneSignal ou service de push notifications
         logger.log(`Push to ${userId}: ${title}`);
         return { sent: true };
     }

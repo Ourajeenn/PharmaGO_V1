@@ -9,7 +9,6 @@ import {
     Settings,
     LogOut,
     Search,
-    Bell,
     User
 } from 'lucide-react'
 import {
@@ -23,6 +22,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { navigationConfig } from '@/config/roleNavigation'
+import { NotificationsPopover } from '@/components/NotificationsPopover'
 
 interface PremiumDashboardLayoutProps {
     children: React.ReactNode
@@ -101,12 +102,9 @@ export const PremiumDashboardLayout = ({ children, activeTab = 'home', role = 'p
 
     const theme = roleThemes[role] || roleThemes['patient']
 
-    const navItems = [
-        { id: 'home', icon: Home, label: 'Tableau de bord', path: '/dashboard' },
-        { id: 'shop', icon: ShoppingBag, label: 'Médicaments', path: '/medicaments' },
-        { id: 'analytics', icon: BarChart2, label: 'Analyses', path: '#' },
-        { id: 'settings', icon: Settings, label: 'Paramètres', path: '#' },
-    ]
+    // Get role-specific navigation from config
+    const navItems = navigationConfig[role] || navigationConfig['visitor']
+
 
     return (
         <div className="flex h-screen overflow-hidden mesh-gradient">
@@ -160,10 +158,7 @@ export const PremiumDashboardLayout = ({ children, activeTab = 'home', role = 'p
                     </div>
 
                     <div className="flex items-center gap-4 ml-auto">
-                        <Button variant="ghost" size="icon" className="relative glass-card w-10 h-10 border-0">
-                            <Bell className="h-5 w-5" />
-                            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-                        </Button>
+                        <NotificationsPopover />
 
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>

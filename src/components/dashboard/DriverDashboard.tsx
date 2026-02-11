@@ -39,6 +39,7 @@ import { DriverCompensationModal } from '@/components/driver/DriverCompensationM
 import { ColdChainTracker } from '@/components/delivery/ColdChainTracker'
 import { WeatherIntegration } from '@/components/weather/WeatherIntegration'
 import { DeliveryZoneManager } from '@/components/driver/DeliveryZoneManager'
+import { useSearchParams } from 'react-router-dom'
 
 export const DriverDashboard = () => {
   const { user, profile } = useAuth()
@@ -48,6 +49,11 @@ export const DriverDashboard = () => {
   const [selectedDeliveryForProof, setSelectedDeliveryForProof] = useState<any>(null)
   const [isCompensationOpen, setIsCompensationOpen] = useState(false)
   const [dataSaverMode, setDataSaverMode] = useState(false)
+
+  // Get tab from URL query params
+  const [searchParams] = useSearchParams()
+  const tabParam = searchParams.get('tab')
+  const [activeTab, setActiveTab] = useState(tabParam || 'active')
 
   // Fetch initial availability
   useEffect(() => {
@@ -339,7 +345,7 @@ export const DriverDashboard = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="active" className="space-y-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <TabsList className="bg-white/40 backdrop-blur-md p-1.5 rounded-[1.5rem] border border-white/40 flex flex-wrap w-full max-w-2xl mb-4 gap-1">
             <TabsTrigger value="active" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Missions</TabsTrigger>
             <TabsTrigger value="route" className="flex-1 rounded-[1.2rem] py-2 data-[state=active]:bg-white data-[state=active]:shadow-xl font-bold">Itinéraire</TabsTrigger>

@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
-import { realPharmacies, Pharmacy } from '../data/pharmacyData';
+import { realPharmacies } from '../data/pharmacyData';
+import { Pharmacy } from "@/types/pharmacy";
 import { logger } from "@/utils/logger";
 
 // Simulating Google Maps Place Result Interface
@@ -21,6 +22,27 @@ export interface GooglePlaceResult {
     formatted_phone_number?: string;
 }
 
+const mapPharmacyData = (item: any): Pharmacy => ({
+    id: item.id ? String(item.id) : Math.random().toString(36).substr(2, 9),
+    name: item.name || item.nom,
+    address: item.address || item.adresse || item.localisation || "Abidjan",
+    commune: item.commune || "Abidjan",
+    phone: item.phone || item.telephone || "Non disponible",
+
+    // Map coordinates to flat lat/long
+    latitude: item.latitude || item.coordinates?.lat || 0,
+    longitude: item.longitude || item.coordinates?.lng || 0,
+
+    // Status
+    isOpen: item.isOpen !== undefined ? item.isOpen : true,
+    isOnDuty: item.isOnDuty !== undefined ? item.isOnDuty : (item.is_on_duty || false),
+
+    // Additional fields
+    rating: item.rating || 4.5,
+    distance: item.distance ? parseFloat(item.distance) : undefined,
+    inventory: item.inventory || [],
+});
+
 export const PharmacyService = {
     /**
      * Fetch all pharmacies from Supabase
@@ -28,40 +50,22 @@ export const PharmacyService = {
      */
     getAllPharmacies: async (): Promise<Pharmacy[]> => {
         try {
-            const { data, error } = await supabase
-                .from('pharmacies')
-                .select('*')
-                .order('name', { ascending: true });
+            // Fetch from local API
+            const response = await fetch('http://localhost:5001/api/pharmacies?limit=1000');
+            if (!response.ok) throw new Error('Network response was not ok');
 
-            if (error) throw error;
+            const data = await response.json();
+            const pharmacies = data.pharmacies || [];
 
-            if (!data || data.length === 0) return realPharmacies;
+            if (!pharmacies || pharmacies.length === 0) {
+                return realPharmacies.map(mapPharmacyData);
+            }
 
-            // Map Supabase data to the UI Pharmacy interface
-            return data.map((item) => ({
-                id: (item as any).id,
-                name: (item as any).name,
-                address: (item as any).address,
-                commune: (item as any).city || (item as any).commune || "Abidjan",
-                phone: (item as any).phone || "+225 00 00 00 00 00",
-                hours: (item as any).opening_hours?.normal || "08h00 - 20h00", // Defaulting if not present
-                distance: "N/A", // Calculated in UI
-                rating: 4.5, // Mocked as not in AIRP
-                reviews: Math.floor(Math.random() * 200) + 50, // Mocked
-                isOpen: item.is_on_duty || true, // Simplified
-                isOnGuard: item.is_on_duty || false,
-                hasDelivery: true, // Default for our platform
-                acceptsCard: true,
-                isPartner: item.airp_source ? false : true,
-                specialties: ["Général"],
-                services: ["Livraison", "Conseil"],
-                estimatedDelivery: "30-45 min",
-                deliveryFee: 1000,
-                coordinates: item.latitude && item.longitude ? { lat: item.latitude, lng: item.longitude } : undefined
-            }));
+            // Map API data to UI structure
+            return pharmacies.map(mapPharmacyData);
         } catch (error) {
-            console.error("Failed to fetch pharmacies from Supabase, falling back to mock data", error);
-            return realPharmacies;
+            console.error("Failed to fetch pharmacies from API, falling back to mock data", error);
+            return realPharmacies.map(mapPharmacyData);
         }
     },
 
@@ -76,42 +80,13 @@ export const PharmacyService = {
         }
 
         try {
-            const { data, error } = await supabase
-                .from('pharmacies')
-                .select('*')
-                .eq('city', commune)
-                .order('name', { ascending: true });
-
-            if (error) throw error;
-
-            if (!data || data.length === 0) {
-                return realPharmacies.filter(p => p.commune === commune);
-            }
-
-            return data.map((item) => ({
-                id: (item as any).id,
-                name: (item as any).name,
-                address: (item as any).address,
-                commune: (item as any).city || (item as any).commune || commune,
-                phone: (item as any).phone || "+225 00 00 00 00 00",
-                hours: (item as any).opening_hours?.normal || "08h00 - 20h00",
-                distance: "N/A",
-                rating: 4.5,
-                reviews: Math.floor(Math.random() * 200) + 50,
-                isOpen: item.is_on_duty || true,
-                isOnGuard: item.is_on_duty || false,
-                hasDelivery: true,
-                acceptsCard: true,
-                isPartner: item.airp_source ? false : true,
-                specialties: ["Général"],
-                services: ["Livraison", "Conseil"],
-                estimatedDelivery: "30-45 min",
-                deliveryFee: 1000,
-                coordinates: item.latitude && item.longitude ? { lat: item.latitude, lng: item.longitude } : undefined
-            }));
+            // Helper to filter valid pharmacies if fetching from Supabase directly (legacy)
+            // But we should probably use getAllPharmacies() and filter locally since API supports filtering
+            const allPharmacies = await PharmacyService.getAllPharmacies();
+            return allPharmacies.filter(p => p.commune === commune);
         } catch (error) {
             console.error("Failed to fetch pharmacies by commune, falling back to mock data", error);
-            return realPharmacies.filter(p => p.commune === commune);
+            return realPharmacies.filter(p => p.commune === commune).map(mapPharmacyData);
         }
     },
 

@@ -118,12 +118,12 @@ export default function PharmacyAuth() {
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nom Pharmacie</Label>
                     <div className="relative">
-                      <Building2 className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                      <Building2 className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground z-10" />
                       <Input
                         placeholder="Pharmacie Centrale"
                         value={pharmacyName}
                         onChange={(e) => setPharmacyName(e.target.value)}
-                        className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold"
+                        className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20"
                         required
                       />
                     </div>
@@ -131,12 +131,12 @@ export default function PharmacyAuth() {
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Propriétaire</Label>
                     <div className="relative">
-                      <User className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                      <User className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground z-10" />
                       <Input
                         placeholder="Dr. Kouassi"
                         value={ownerName}
                         onChange={(e) => setOwnerName(e.target.value)}
-                        className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold"
+                        className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20"
                         required
                       />
                     </div>
@@ -146,13 +146,13 @@ export default function PharmacyAuth() {
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email professionnel</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                    <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground z-10" />
                     <Input
                       type="email"
                       placeholder="contact@pharmacie.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold"
+                      className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20"
                       required
                     />
                   </div>
@@ -162,13 +162,13 @@ export default function PharmacyAuth() {
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Téléphone</Label>
                     <div className="relative">
-                      <Phone className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                      <Phone className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground z-10" />
                       <Input
                         type="tel"
                         placeholder="+225..."
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold"
+                        className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20"
                         required
                       />
                     </div>
@@ -176,12 +176,12 @@ export default function PharmacyAuth() {
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">N° Licence</Label>
                     <div className="relative">
-                      <FileText className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                      <FileText className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground z-10" />
                       <Input
                         placeholder="LIC-12345"
                         value={licenseNumber}
                         onChange={(e) => setLicenseNumber(e.target.value)}
-                        className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold"
+                        className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20"
                         required
                       />
                     </div>
@@ -191,12 +191,12 @@ export default function PharmacyAuth() {
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Adresse complète</Label>
                   <div className="relative">
-                    <MapPin className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                    <MapPin className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground z-10" />
                     <Input
                       placeholder="Commune, Quartier..."
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
-                      className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold"
+                      className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20"
                       required
                     />
                   </div>
@@ -205,13 +205,13 @@ export default function PharmacyAuth() {
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Mot de passe</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                    <Lock className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground z-10" />
                     <Input
                       type="password"
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold"
+                      className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20"
                       required
                       minLength={6}
                     />
@@ -228,13 +228,13 @@ export default function PharmacyAuth() {
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                    <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground z-10" />
                     <Input
                       type="email"
                       placeholder="contact@pharmacie.com"
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
-                      className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold"
+                      className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20"
                       required
                     />
                   </div>
@@ -248,13 +248,13 @@ export default function PharmacyAuth() {
                     </button>
                   </div>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                    <Lock className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground z-10" />
                     <Input
                       type="password"
                       placeholder="••••••••"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
-                      className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold"
+                      className="pl-10 h-12 rounded-xl bg-white/40 border-white/40 focus:bg-white/60 transition-all font-bold relative z-20"
                       required
                     />
                   </div>

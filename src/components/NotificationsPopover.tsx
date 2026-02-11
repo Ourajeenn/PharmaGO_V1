@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Bell, Check, Info, AlertTriangle, X } from "lucide-react";
+import { Bell, Check, Info, AlertTriangle, X, Loader2 } from "lucide-react";
 import {
     Popover,
     PopoverContent,
@@ -9,61 +9,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-
-const MOCK_NOTIFICATIONS = [
-    {
-        id: 1,
-        title: "Commande confirmée",
-        message: "Votre commande #12345 a été confirmée par la pharmacie.",
-        time: "Il y a 2 min",
-        type: "success",
-        read: false,
-    },
-    {
-        id: 2,
-        title: "Rappel de médicament",
-        message: "Il est l'heure de prendre votre Doliprane 1000mg.",
-        time: "Il y a 15 min",
-        type: "info",
-        read: false,
-    },
-    {
-        id: 3,
-        title: "Nouveau message",
-        message: "Le Dr. Kouassi vous a envoyé un message sécurisé.",
-        time: "Il y a 1h",
-        type: "info",
-        read: true,
-    },
-    {
-        id: 4,
-        title: "Stock faible",
-        message: "Votre boîte de Vitamine C est presque vide.",
-        time: "Il y a 3h",
-        type: "warning",
-        read: true,
-    },
-];
+import { useNotifications } from "@/hooks/useNotifications";
 
 export function NotificationsPopover() {
-    const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
+    const {
+        notifications,
+        unreadCount,
+        loading,
+        markAsRead,
+        markAllAsRead,
+        deleteNotification
+    } = useNotifications();
+
     const [isOpen, setIsOpen] = useState(false);
-
-    const unreadCount = notifications.filter((n) => !n.read).length;
-
-    const markAsRead = (id: number) => {
-        setNotifications(
-            notifications.map((n) => (n.id === id ? { ...n, read: true } : n))
-        );
-    };
-
-    const markAllAsRead = () => {
-        setNotifications(notifications.map((n) => ({ ...n, read: true })));
-    };
-
-    const deleteNotification = (id: number) => {
-        setNotifications(notifications.filter((n) => n.id !== id));
-    };
 
     const getIcon = (type: string) => {
         switch (type) {
@@ -71,9 +29,22 @@ export function NotificationsPopover() {
                 return <Check className="h-4 w-4 text-green-500" />;
             case "warning":
                 return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+            case "error":
+                return <AlertTriangle className="h-4 w-4 text-red-500" />;
             default:
                 return <Info className="h-4 w-4 text-blue-500" />;
         }
+    };
+
+    const formatTime = (dateString: string) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+        if (diffInSeconds < 60) return 'À l\'instant';
+        if (diffInSeconds < 3600) return `Il y a ${Math.floor(diffInSeconds / 60)} min`;
+        if (diffInSeconds < 86400) return `Il y a ${Math.floor(diffInSeconds / 3600)}h`;
+        return `Il y a ${Math.floor(diffInSeconds / 86400)}j`;
     };
 
     return (
@@ -87,6 +58,14 @@ export function NotificationsPopover() {
                     <Bell className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
                     {unreadCount > 0 && (
                         <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white animate-pulse" />
+                    )}
+                    {unreadCount > 0 && (
+                        <Badge
+                            variant="destructive"
+                            className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-[10px]"
+                        >
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                        </Badge>
                     )}
                 </Button>
             </PopoverTrigger>
@@ -105,7 +84,12 @@ export function NotificationsPopover() {
                     )}
                 </div>
                 <ScrollArea className="h-[300px]">
-                    {notifications.length === 0 ? (
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center h-full p-8 text-center text-muted-foreground">
+                            <Loader2 className="h-8 w-8 mb-2 opacity-50 animate-spin" />
+                            <p className="text-sm">Chargement...</p>
+                        </div>
+                    ) : notifications.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full p-8 text-center text-muted-foreground">
                             <Bell className="h-8 w-8 mb-2 opacity-20" />
                             <p className="text-sm">Aucune notification</p>
@@ -128,7 +112,9 @@ export function NotificationsPopover() {
                                                 <p className={`text-sm font-medium leading-none ${!notification.read ? "text-foreground" : "text-muted-foreground"}`}>
                                                     {notification.title}
                                                 </p>
-                                                <span className="text-[10px] text-muted-foreground">{notification.time}</span>
+                                                <span className="text-[10px] text-muted-foreground">
+                                                    {formatTime(notification.created_at)}
+                                                </span>
                                             </div>
                                             <p className="text-xs text-muted-foreground line-clamp-2">
                                                 {notification.message}

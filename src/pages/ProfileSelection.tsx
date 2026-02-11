@@ -26,10 +26,10 @@ const ProfileSelection = () => {
       <div className="max-w-7xl w-full space-y-16 relative z-10 animate-in fade-in duration-1000">
         {/* Title Section */}
         <div className="text-center space-y-4">
-          <h2 className="text-5xl lg:text-7xl font-black tracking-tighter uppercase text-foreground/90 leading-[0.9]">
-            Choisissez Votre <span className="text-primary tracking-normal italic">Identité</span>
+          <h2 className="text-5xl lg:text-7xl font-bold tracking-tight text-foreground/90 leading-tight">
+            Choisissez votre <span className="text-primary font-semibold italic">identité</span>
           </h2>
-          <p className="text-sm font-black uppercase tracking-[0.3em] text-muted-foreground/60 max-w-2xl mx-auto">
+          <p className="text-base font-medium tracking-wide text-muted-foreground/70 max-w-2xl mx-auto">
             Sécurisez votre accès à l'écosystème PharmaGo
           </p>
         </div>
@@ -55,10 +55,10 @@ const ProfileSelection = () => {
                   </div>
 
                   <div className="space-y-1">
-                    <h3 className="text-3xl font-black tracking-tighter text-foreground uppercase">
+                    <h3 className="text-3xl font-bold tracking-tight text-foreground">
                       {profile.title}
                     </h3>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-primary opacity-80">
+                    <p className="text-xs font-semibold tracking-wide text-primary opacity-80">
                       {profile.subtitle}
                     </p>
                   </div>
@@ -70,9 +70,9 @@ const ProfileSelection = () => {
 
                 <div className="mt-10">
                   <Button
-                    className="w-full bg-foreground text-background hover:bg-foreground/90 transition-all duration-300 font-black uppercase tracking-[0.1em] h-14 rounded-2xl group-hover:shadow-2xl flex items-center justify-center gap-2"
+                    className="w-full bg-foreground text-background hover:bg-foreground/90 transition-all duration-300 font-semibold tracking-wide h-14 rounded-2xl group-hover:shadow-2xl flex items-center justify-center gap-2"
                   >
-                    Démarrer la Session <Zap className="h-4 w-4 fill-current" />
+                    Démarrer la session <Zap className="h-4 w-4 fill-current" />
                   </Button>
                 </div>
               </div>

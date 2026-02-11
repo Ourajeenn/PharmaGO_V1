@@ -12,7 +12,13 @@ import json
 import time
 from typing import List, Dict, Optional
 import sqlite3
+import os
 from dataclasses import dataclass, asdict
+try:
+    from supabase import create_client, Client
+except ImportError:
+    create_client = None
+    Client = None
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -44,10 +50,34 @@ class PharmacieGardeSync:
         "Songon", "Treichville", "Yopougon"
     ]
     
-    def __init__(self, db_path: str = "pharmacies_garde.db"):
-        self.db_path = db_path
+    def __init__(self, db_path: str = None):
+        if db_path is None:
+            # Use default from env or file
+            env_path = os.environ.get("DB_PATH", "pharmacies_garde.db")
+            # If path is not absolute, make it relative to this script
+            if not os.path.isabs(env_path):
+                base_dir = os.path.dirname(os.path.abspath(__file__))
+                self.db_path = os.path.join(base_dir, env_path)
+            else:
+                self.db_path = env_path
+        else:
+            self.db_path = db_path
+            
         self.url_source = "https://pratik-ci.com/pharmacies-de-garde"
+        self.supabase: Optional[Client] = None
         self.init_database()
+        self.init_supabase()
+
+    def init_supabase(self):
+        """Initialise la connexion Supabase"""
+        url = os.environ.get("SUPABASE_URL")
+        key = os.environ.get("SUPABASE_KEY")
+        if url and key and create_client:
+            try:
+                self.supabase = create_client(url, key)
+                print("✅ Supabase configuré")
+            except Exception as e:
+                print(f"⚠️ Erreur config Supabase: {e}")
     
     def init_database(self):
         """Initialise la base de données SQLite"""
@@ -323,6 +353,26 @@ class PharmacieGardeSync:
         
         print(f"✅ Export JSON: {filepath}")
         return filepath
+
+    def sync_to_supabase(self, pharmacies: List[PharmacieGarde]) -> int:
+        """Synchronise les données vers Supabase"""
+        if not self.supabase or not pharmacies:
+            return 0
+        
+        print("☁️ Sync vers Supabase...")
+        count = 0
+        data = [asdict(p) for p in pharmacies]
+        
+        try:
+            # Upsert données (assurez-vous d'avoir une contrainte unique sur nom+commune+date)
+            response = self.supabase.table('pharmacies_garde').upsert(data).execute()
+            if len(response.data) > 0:
+                count = len(response.data)
+                print(f"✅ {count} pharmacies envoyées à Supabase")
+        except Exception as e:
+            print(f"❌ Erreur sync Supabase: {e}")
+            
+        return count
     
     def sync(self, method: str = "auto") -> int:
         """
@@ -356,6 +406,11 @@ class PharmacieGardeSync:
         
         if pharmacies:
             count = self.save_to_database(pharmacies)
+            
+            # Sync Supabase si activé
+            if os.environ.get("SUPABASE_SYNC_ENABLED", 'false').lower() == 'true':
+                self.sync_to_supabase(pharmacies)
+                
             print(f"\n✅ Synchronisation réussie: {count} pharmacies")
             
             # Afficher un résumé par commune

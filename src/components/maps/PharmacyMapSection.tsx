@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useMemo } from 'react'
+import { PharmacyService } from '@/services/PharmacyService'
 import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
@@ -108,8 +109,23 @@ interface PharmacyMapSectionProps {
 }
 
 export const PharmacyMapSection = ({ showOnlyOnDuty = false }: PharmacyMapSectionProps) => {
-    const [pharmacies, setPharmacies] = useState<Pharmacy[]>(ABIDJAN_PHARMACIES)
+    const [pharmacies, setPharmacies] = useState<Pharmacy[]>([])
     const [selectedPharmacy, setSelectedPharmacy] = useState<Pharmacy | null>(null)
+
+    // Fetch data from API
+    useEffect(() => {
+        const fetchPharmacies = async () => {
+            try {
+                const data = await PharmacyService.getAllPharmacies()
+                setPharmacies(data)
+            } catch (error) {
+                console.error("Failed to load pharmacies", error)
+                // Fallback to hardcoded data if API fails completely
+                setPharmacies(ABIDJAN_PHARMACIES)
+            }
+        }
+        fetchPharmacies()
+    }, [])
     const [searchQuery, setSearchQuery] = useState('')
     const [filterOnDuty, setFilterOnDuty] = useState(showOnlyOnDuty)
     const [filterOpen, setFilterOpen] = useState(false)
@@ -159,11 +175,10 @@ export const PharmacyMapSection = ({ showOnlyOnDuty = false }: PharmacyMapSectio
     // Update pharmacies with distance if user location available
     useEffect(() => {
         if (userLocation) {
-            const updated = ABIDJAN_PHARMACIES.map(p => ({
+            setPharmacies(prev => prev.map(p => ({
                 ...p,
                 distance: calculateDistance(userLocation.lat, userLocation.lng, p.latitude, p.longitude)
-            }))
-            setPharmacies(updated)
+            })))
         }
     }, [userLocation])
 

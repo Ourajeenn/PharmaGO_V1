@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { OrderHistory } from '@/components/orders/OrderHistory'
 import { PremiumDashboardLayout } from './PremiumDashboardLayout'
 import { WeatherWidget } from './widgets/WeatherWidget'
+import { RefillWidget } from './widgets/RefillWidget'
 import { EWalletWidget } from './widgets/EWalletWidget'
 import { MedicalRecordSection } from '@/components/patient/MedicalRecordSection'
 import { MedicationRemindersSection } from '@/components/patient/MedicationRemindersSection'
@@ -443,6 +444,7 @@ export const PatientDashboard = () => {
 
           {/* Sidebar Widgets */}
           <div className="space-y-8">
+            <RefillWidget />
             <WeatherWidget />
 
             {/* Insurance Card - Premium Style */}

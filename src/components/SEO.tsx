@@ -28,15 +28,20 @@ const SEO = ({
 
         // Helper function to update or create meta tag
         const updateMetaTag = (selector: string, content: string, isProperty = false) => {
-            const attribute = isProperty ? 'property' : 'name';
-            let element = document.querySelector(`meta[${attribute}="${selector}"]`) as HTMLMetaElement;
+            try {
+                const attribute = isProperty ? 'property' : 'name';
+                let element = document.querySelector(`meta[${attribute}="${selector}"]`) as HTMLMetaElement;
 
-            if (!element) {
-                element = document.createElement('meta');
-                element.setAttribute(attribute, selector);
-                document.head.appendChild(element);
+                if (!element) {
+                    element = document.createElement('meta');
+                    element.setAttribute(attribute, selector);
+                    document.head.appendChild(element);
+                }
+                element.content = content;
+            } catch (error) {
+                // Silently handle DOM manipulation errors from browser extensions
+                console.warn(`Failed to update meta tag ${selector}:`, error);
             }
-            element.content = content;
         };
 
         // Primary Meta Tags
@@ -69,13 +74,17 @@ const SEO = ({
         updateMetaTag('geo.placename', 'Abidjan');
 
         // Canonical link
-        let canonicalLink = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
-        if (!canonicalLink) {
-            canonicalLink = document.createElement('link');
-            canonicalLink.rel = 'canonical';
-            document.head.appendChild(canonicalLink);
+        try {
+            let canonicalLink = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
+            if (!canonicalLink) {
+                canonicalLink = document.createElement('link');
+                canonicalLink.rel = 'canonical';
+                document.head.appendChild(canonicalLink);
+            }
+            canonicalLink.href = url;
+        } catch (error) {
+            console.warn('Failed to update canonical link:', error);
         }
-        canonicalLink.href = url;
     }, [title, description, keywords, image, url, type, noindex]);
 
     return null; // This component doesn't render anything

@@ -9,7 +9,6 @@ import { ReloadPrompt } from "@/components/ReloadPrompt";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import IndexV2 from "./pages/IndexV2";
-import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import ProfileSelection from "./pages/ProfileSelection";
@@ -89,7 +88,6 @@ const App = () => {
                 <Route path="/" element={<Index />} />
                 <Route path="/home-v2" element={<IndexV2 />} />
                 <Route path="/test-form" element={<TestForm />} />
-                <Route path="/auth" element={<Auth />} />
                 <Route path="/profile-selection" element={<ProfileSelection />} />
                 <Route path="/visitor" element={<VisitorPage />} />
                 <Route path="/visiteur" element={<VisitorPage />} />

@@ -4,6 +4,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Switch } from '@/components/ui/switch'
+import { useAuth } from '@/hooks/useAuth'
+import { supabase } from '@/integrations/supabase/client'
 import {
     AlertTriangle,
     Package,
@@ -36,69 +38,99 @@ interface StockAlert {
     reorderQuantity: number
 }
 
-const mockAlerts: StockAlert[] = [
-    {
-        id: '1',
-        medicationName: 'Insuline Lantus 100UI',
-        currentStock: 5,
-        minStock: 20,
-        maxStock: 100,
-        status: 'critical',
-        lastRestocked: '2024-12-01',
-        dailyConsumption: 3,
-        daysUntilEmpty: 2,
-        autoReorder: true,
-        supplier: 'Pharma Distrib CI',
-        reorderQuantity: 50
-    },
-    {
-        id: '2',
-        medicationName: 'Amoxicilline 500mg',
-        currentStock: 45,
-        minStock: 50,
-        maxStock: 200,
-        status: 'low',
-        lastRestocked: '2024-12-05',
-        dailyConsumption: 8,
-        daysUntilEmpty: 6,
-        autoReorder: true,
-        supplier: 'Pharma Distrib CI',
-        reorderQuantity: 100
-    },
-    {
-        id: '3',
-        medicationName: 'Doliprane 1000mg',
-        currentStock: 180,
-        minStock: 30,
-        maxStock: 150,
-        status: 'excess',
-        lastRestocked: '2024-12-06',
-        dailyConsumption: 5,
-        daysUntilEmpty: 36,
-        autoReorder: false,
-        supplier: 'MediStock Afrique',
-        reorderQuantity: 50
-    },
-    {
-        id: '4',
-        medicationName: 'Paracétamol Sirop',
-        currentStock: 75,
-        minStock: 40,
-        maxStock: 120,
-        status: 'normal',
-        lastRestocked: '2024-12-04',
-        dailyConsumption: 4,
-        daysUntilEmpty: 19,
-        autoReorder: true,
-        supplier: 'Pharma Distrib CI',
-        reorderQuantity: 60
-    }
-]
-
 export const StockAlertsEnhanced = () => {
-    const [alerts, setAlerts] = useState<StockAlert[]>(mockAlerts)
+    const { user } = useAuth()
+    const [alerts, setAlerts] = useState<StockAlert[]>([])
     const [notificationsEnabled, setNotificationsEnabled] = useState(true)
     const [isRefreshing, setIsRefreshing] = useState(false)
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        if (user) {
+            fetchStockAlerts()
+        }
+    }, [user])
+
+    const fetchStockAlerts = async () => {
+        try {
+            setIsRefreshing(true)
+            if (!user) return
+
+            // Get pharmacy ID
+            const { data: pharmacy, error: pharmacyError } = await supabase
+                .from('pharmacies')
+                .select('id')
+                .eq('user_id', user.id)
+                .single()
+
+            if (pharmacyError || !pharmacy) {
+                console.error('Error fetching pharmacy:', pharmacyError)
+                return
+            }
+
+            // Get inventory with medicine details
+            // NOTE: Using any cast to bypass missing type definitions for new columns (min_stock, etc)
+            const { data: inventory, error: invError } = await supabase
+                .from('pharmacy_inventory')
+                .select(`
+                    id,
+                    quantity,
+                    updated_at,
+                    min_stock,
+                    max_stock,
+                    auto_reorder,
+                    medicines (
+                        name,
+                        manufacturer
+                    )
+                `)
+                .eq('pharmacy_id', pharmacy.id) as any
+
+            if (invError) {
+                console.error('Error fetching inventory:', invError)
+                toast.error("Impossible de charger l'inventaire")
+                return
+            }
+
+            if (inventory) {
+                const formattedAlerts: StockAlert[] = inventory.map((item: any) => {
+                    const minStock = item.min_stock || 10
+                    const maxStock = item.max_stock || 100
+                    const currentStock = item.quantity
+
+                    let status: StockAlert['status'] = 'normal'
+                    if (currentStock <= minStock) status = 'critical'
+                    else if (currentStock <= minStock * 1.5) status = 'low'
+                    else if (currentStock >= maxStock) status = 'excess'
+
+                    // Simulation for daily consumption (would need real order history)
+                    const dailyConsumption = Math.floor(Math.random() * 5) + 1
+
+                    return {
+                        id: item.id,
+                        medicationName: item.medicines?.name || 'Médicament inconnu',
+                        currentStock: currentStock,
+                        minStock: minStock,
+                        maxStock: maxStock,
+                        status: status,
+                        lastRestocked: new Date(item.updated_at).toLocaleDateString(),
+                        dailyConsumption: dailyConsumption,
+                        daysUntilEmpty: dailyConsumption > 0 ? Math.floor(currentStock / dailyConsumption) : 99,
+                        autoReorder: item.auto_reorder || false,
+                        supplier: item.medicines?.manufacturer || 'Laboratoire Inconnu',
+                        reorderQuantity: Math.max(0, maxStock - currentStock)
+                    }
+                })
+
+                setAlerts(formattedAlerts)
+            }
+        } catch (error) {
+            console.error('Error in fetchStockAlerts:', error)
+        } finally {
+            setIsRefreshing(false)
+            setLoading(false)
+        }
+    }
 
     const getStatusConfig = (status: StockAlert['status']) => {
         const configs = {
@@ -131,25 +163,39 @@ export const StockAlertsEnhanced = () => {
     }
 
     const handleReorder = (alert: StockAlert) => {
-        toast.success(`Commande de ${alert.reorderQuantity} ${alert.medicationName} envoyée à ${alert.supplier}`)
+        toast.success(`Commande de ${alert.reorderQuantity} ${alert.medicationName} simulée pour ${alert.supplier}`)
     }
 
-    const toggleAutoReorder = (id: string) => {
-        setAlerts(prev => prev.map(a =>
-            a.id === id ? { ...a, autoReorder: !a.autoReorder } : a
-        ))
-        toast.success('Paramètre de réapprovisionnement automatique mis à jour')
+    const toggleAutoReorder = async (id: string, currentValue: boolean) => {
+        try {
+            const { error } = await supabase
+                .from('pharmacy_inventory')
+                .update({ auto_reorder: !currentValue } as any)
+                .eq('id', id)
+
+            if (error) throw error
+
+            setAlerts(prev => prev.map(a =>
+                a.id === id ? { ...a, autoReorder: !a.autoReorder } : a
+            ))
+            toast.success('Paramètre de réapprovisionnement automatique mis à jour')
+        } catch (error) {
+            console.error('Error updating auto_reorder:', error)
+            toast.error("Erreur lors de la mise à jour")
+        }
     }
 
-    const refreshStock = async () => {
-        setIsRefreshing(true)
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        setIsRefreshing(false)
+    const refreshStock = () => {
+        fetchStockAlerts()
         toast.success('Stock actualisé')
     }
 
     const criticalCount = alerts.filter(a => a.status === 'critical').length
     const lowCount = alerts.filter(a => a.status === 'low').length
+
+    if (loading) {
+        return <div className="p-8 text-center text-muted-foreground animate-pulse">Chargement des alertes de stock...</div>
+    }
 
     return (
         <div className="space-y-6">
@@ -261,83 +307,92 @@ export const StockAlertsEnhanced = () => {
 
             {/* Alert List */}
             <div className="space-y-4">
-                {alerts.sort((a, b) => {
-                    const priority = { critical: 0, low: 1, excess: 2, normal: 3 }
-                    return priority[a.status] - priority[b.status]
-                }).map((alert) => {
-                    const config = getStatusConfig(alert.status)
-                    const Icon = config.icon
-                    const stockPercentage = Math.min(100, (alert.currentStock / alert.maxStock) * 100)
+                {alerts.length === 0 ? (
+                    <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed">
+                        <Package className="h-10 w-10 mx-auto text-muted-foreground mb-4 opacity-50" />
+                        <h3 className="text-lg font-bold">Aucune alerte de stock</h3>
+                        <p className="text-sm text-muted-foreground">Tout semble normal dans votre inventaire.</p>
+                    </div>
+                ) : (
+                    alerts.sort((a, b) => {
+                        const priority = { critical: 0, low: 1, excess: 2, normal: 3 }
+                        return priority[a.status] - priority[b.status]
+                    }).map((alert) => {
+                        const config = getStatusConfig(alert.status)
+                        const Icon = config.icon
+                        const stockPercentage = Math.min(100, (alert.currentStock / alert.maxStock) * 100)
 
-                    return (
-                        <Card key={alert.id} className={`glass-card border-l-4 ${alert.status === 'critical' ? 'border-l-red-500' :
+                        return (
+                            <Card key={alert.id} className={`glass-card border-l-4 ${alert.status === 'critical' ? 'border-l-red-500' :
                                 alert.status === 'low' ? 'border-l-orange-500' :
                                     alert.status === 'excess' ? 'border-l-blue-500' :
                                         'border-l-green-500'
-                            }`}>
-                            <CardContent className="p-4">
-                                <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-                                    {/* Info */}
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <Badge className={`${config.color} border text-[10px] font-black`}>
-                                                <Icon className="h-3 w-3 mr-1" />
-                                                {config.label}
-                                            </Badge>
-                                            <h4 className="font-bold">{alert.medicationName}</h4>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <div className="flex items-center gap-2 text-sm">
-                                                <span className="text-muted-foreground">Stock:</span>
-                                                <span className="font-bold">{alert.currentStock}</span>
-                                                <span className="text-muted-foreground">/ {alert.maxStock} (min: {alert.minStock})</span>
+                                }`}>
+                                <CardContent className="p-4">
+                                    <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                                        {/* Info */}
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <Badge className={`${config.color} border text-[10px] font-black`}>
+                                                    <Icon className="h-3 w-3 mr-1" />
+                                                    {config.label}
+                                                </Badge>
+                                                <h4 className="font-bold">{alert.medicationName}</h4>
                                             </div>
-                                            <Progress value={stockPercentage} className={`h-2 ${config.progressColor}`} />
+
+                                            <div className="space-y-2">
+                                                <div className="flex items-center gap-2 text-sm">
+                                                    <span className="text-muted-foreground">Stock:</span>
+                                                    <span className="font-bold">{alert.currentStock}</span>
+                                                    <span className="text-muted-foreground">/ {alert.maxStock} (min: {alert.minStock})</span>
+                                                </div>
+                                                <Progress value={stockPercentage} className={`h-2 ${config.progressColor}`} />
+                                            </div>
+
+                                            <div className="flex flex-wrap gap-4 mt-3 text-xs text-muted-foreground">
+                                                <span className="flex items-center gap-1">
+                                                    <TrendingDown className="h-3 w-3" />
+                                                    {alert.dailyConsumption}/jour
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    <Clock className="h-3 w-3" />
+                                                    {alert.daysUntilEmpty} jours restants
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    <Package className="h-3 w-3" />
+                                                    Dernier: {alert.lastRestocked}
+                                                </span>
+                                            </div>
                                         </div>
 
-                                        <div className="flex flex-wrap gap-4 mt-3 text-xs text-muted-foreground">
-                                            <span className="flex items-center gap-1">
-                                                <TrendingDown className="h-3 w-3" />
-                                                {alert.dailyConsumption}/jour
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <Clock className="h-3 w-3" />
-                                                {alert.daysUntilEmpty} jours restants
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <Package className="h-3 w-3" />
-                                                Dernier: {alert.lastRestocked}
-                                            </span>
+                                        {/* Actions */}
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 border border-white/20">
+                                                <Switch
+                                                    checked={alert.autoReorder}
+                                                    onCheckedChange={() => toggleAutoReorder(alert.id, alert.autoReorder)}
+                                                    className="scale-75"
+                                                />
+                                                <span className="text-xs font-medium">Auto</span>
+                                            </div>
+
+                                            <Button
+                                                onClick={() => handleReorder(alert)}
+                                                className="rounded-xl"
+                                                variant={alert.status === 'critical' ? 'destructive' : 'default'}
+                                            >
+                                                <ShoppingCart className="h-4 w-4 mr-2" />
+                                                Commander {alert.reorderQuantity}
+                                            </Button>
                                         </div>
                                     </div>
-
-                                    {/* Actions */}
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 border border-white/20">
-                                            <Switch
-                                                checked={alert.autoReorder}
-                                                onCheckedChange={() => toggleAutoReorder(alert.id)}
-                                                className="scale-75"
-                                            />
-                                            <span className="text-xs font-medium">Auto</span>
-                                        </div>
-
-                                        <Button
-                                            onClick={() => handleReorder(alert)}
-                                            className="rounded-xl"
-                                            variant={alert.status === 'critical' ? 'destructive' : 'default'}
-                                        >
-                                            <ShoppingCart className="h-4 w-4 mr-2" />
-                                            Commander {alert.reorderQuantity}
-                                        </Button>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )
-                })}
+                                </CardContent>
+                            </Card>
+                        )
+                    })
+                )}
             </div>
         </div>
     )
 }
+
