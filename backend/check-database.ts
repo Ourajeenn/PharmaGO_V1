@@ -1,8 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Configuration Supabase depuis .env.local
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
+// Configuration Supabase depuis .env
+const supabaseUrl = process.env.VITE_SUPABASE_URL
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY
 
 const supabase = createClient(supabaseUrl, supabaseKey)
 
@@ -11,7 +15,7 @@ console.log('URL:', supabaseUrl)
 console.log('')
 
 async function checkDatabase() {
-    const results = {
+    const results: { tables: any[], triggers: any[], functions: any[] } = {
         tables: [],
         triggers: [],
         functions: []

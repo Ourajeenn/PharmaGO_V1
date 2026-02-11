@@ -9,10 +9,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "extract-airp-data": "tsx scripts/extract_airp_medications.ts",
-    "extract-airp-pharmacies": "tsx scripts/extract_airp_abidjan_pharmacies.ts"
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
