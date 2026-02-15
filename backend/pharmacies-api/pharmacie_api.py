@@ -31,6 +31,9 @@ import logging
 from logging.handlers import RotatingFileHandler
 from prometheus_flask_exporter import PrometheusMetrics
 from flask_caching import Cache
+from fido2.webauthn import PublicKeyCredentialRpEntity, PublicKeyCredentialUserEntity
+from fido2.server import Fido2Server
+from fido2.utils import websafe_decode, websafe_encode
 
 # Charger les variables d'environnement
 env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
@@ -167,6 +170,168 @@ AUTO_SYNC_INTERVAL = int(os.getenv('AUTO_SYNC_INTERVAL', '21600'))  # 6 heures p
 
 # Auto-sync thread removed in favor of standalone scheduler.py
 # AUTO_SYNC_ENABLED env var is now used by scheduler.py
+
+
+# ============================================================================
+# FIDO2 Configuration & Storage (In-Memory for demo)
+# ============================================================================
+
+rp = PublicKeyCredentialRpEntity(name="PharmaGo Express", id="localhost")
+server = Fido2Server(rp)
+
+# Stockage temporaire (À remplacer par DB/Redis en prod)
+challenges = {}  # user_id -> challenge
+users = {}       # user_id -> credential_data (bytes)
+
+def to_dict(data):
+    """Helper to convert FIDO2 objects/bytes to JSON-serializable dict"""
+    if isinstance(data, bytes):
+        return websafe_encode(data)
+    if isinstance(data, dict):
+        return {k: to_dict(v) for k, v in data.items()}
+    if hasattr(data, "public_key"): # Credential
+        return to_dict(dict(data))
+    if hasattr(data, "__dict__"):
+        return to_dict(data.__dict__)
+    if isinstance(data, list):
+        return [to_dict(i) for i in data]
+    return data
+
+@app.route('/api/auth/register-challenge', methods=['POST'])
+def register_challenge():
+    """Génère un challenge pour la création de passkey"""
+    try:
+        data = request.json
+        user_id = data.get('userId')
+        username = data.get('username')
+        
+        if not user_id or not username:
+             return jsonify({'status': 'error', 'message': 'Missing userId or username'}), 400
+
+        user = PublicKeyCredentialUserEntity(
+            id=user_id.encode('utf-8'),
+            name=username,
+            display_name=username
+        )
+        
+        options, state = server.register_begin(
+            user,
+            user_verification="preferred",
+            authenticator_attachment="platform"
+        )
+        
+        challenges[user_id] = state
+        
+        return jsonify(to_dict(dict(options)))
+    except Exception as e:
+        logger.error(f"FIDO2 Register Challenge Error: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/auth/register-verify', methods=['POST'])
+def register_verify():
+    """Vérifie la réponse d'attestation et stocke la clé publique"""
+    try:
+        data = request.json
+        user_id = data.get('userId')
+        
+        if not user_id or user_id not in challenges:
+            return jsonify({'status': 'error', 'message': 'Invalid session or challenge expired'}), 400
+            
+        # Decode fields that came back as URL-safe base64
+        credential = data.get('credential')
+        if 'id' in credential:
+            # id is usually base64url string in JSON, fido2 expects bytes? 
+            # Actually fido2.server.register_complete expects the credential dict structure 
+            # similar to what navigator.credentials.create returns but mapped.
+            pass
+
+        # Use helper from fido2 (if available) or just pass data and hope fido2 handles it?
+        # fido2 lib expects the attestation object to be bytes.
+        
+        # Simple fix: We need to reconstruct the credential object or pass specific args.
+        # server.register_complete takes (state, response_data)
+        # response_data should be a dict with clientDataJSON (bytes), attestationObject (bytes), etc.
+        
+        # We need to decode base64 fields from frontend
+        cred_data = {
+            'id': websafe_decode(credential['id']),
+            'rawId': websafe_decode(credential['rawId']),
+            'type': credential['type'],
+            'response': {
+                'clientDataJSON': websafe_decode(credential['response']['clientDataJSON']),
+                'attestationObject': websafe_decode(credential['response']['attestationObject'])
+            }
+        }
+        
+        auth_data = server.register_complete(
+            challenges.pop(user_id),
+            cred_data
+        )
+        
+        users[user_id] = auth_data.credential_data
+        
+        logger.info(f"FIDO2: User {user_id} registered successfully")
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        logger.error(f"FIDO2 Register Verify Error: {e}", exc_info=True)
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/auth/login-challenge', methods=['POST'])
+def login_challenge():
+    """Génère un challenge pour l'authentification"""
+    try:
+        data = request.json
+        user_id = data.get('userId')
+        
+        if not user_id or user_id not in users:
+             return jsonify({'status': 'error', 'message': 'User not found'}), 404
+             
+        credential_data = users[user_id]
+        
+        options, state = server.authenticate_begin([credential_data])
+        challenges[user_id] = state
+        
+        return jsonify(to_dict(dict(options)))
+    except Exception as e:
+        logger.error(f"FIDO2 Login Challenge Error: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/auth/login-verify', methods=['POST'])
+def login_verify():
+    """Vérifie la réponse d'assertion"""
+    try:
+        data = request.json
+        user_id = data.get('userId')
+        
+        if not user_id or user_id not in challenges:
+            return jsonify({'status': 'error', 'message': 'Invalid session'}), 400
+            
+        credential_data = users[user_id]
+        credential = data.get('credential')
+        
+        cred_data = {
+            'id': websafe_decode(credential['id']),
+            'rawId': websafe_decode(credential['rawId']),
+            'type': credential['type'],
+            'response': {
+                'clientDataJSON': websafe_decode(credential['response']['clientDataJSON']),
+                'authenticatorData': websafe_decode(credential['response']['authenticatorData']),
+                'signature': websafe_decode(credential['response']['signature']),
+                'userHandle': websafe_decode(credential['response']['userHandle']) if credential['response'].get('userHandle') else None
+            }
+        }
+
+        server.authenticate_complete(
+            challenges.pop(user_id),
+            [credential_data],
+            cred_data
+        )
+        
+        logger.info(f"FIDO2: User {user_id} authenticated successfully")
+        return jsonify({'status': 'success'})
+    except Exception as e:
+         logger.error(f"FIDO2 Login Verify Error: {e}", exc_info=True)
+         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
 

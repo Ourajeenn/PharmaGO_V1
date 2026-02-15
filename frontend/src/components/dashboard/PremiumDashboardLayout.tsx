@@ -23,7 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { navigationConfig } from '@/config/roleNavigation'
-import { NotificationsPopover } from '@/components/NotificationsPopover'
+import { NotificationCenter } from '@/components/dashboard/NotificationCenter'
 
 interface PremiumDashboardLayoutProps {
     children: React.ReactNode
@@ -109,12 +109,12 @@ export const PremiumDashboardLayout = ({ children, activeTab = 'home', role = 'p
     return (
         <div className="flex h-screen overflow-hidden mesh-gradient">
             {/* Sidebar - Glass Effect */}
-            <aside className="w-20 lg:w-64 glass-sidebar flex flex-col z-50">
+            <aside className="w-20 lg:w-64 flex flex-col z-50 transition-all duration-300 backdrop-blur-2xl bg-white/5 border-r border-white/20 shadow-[8px_0_30px_0_rgba(31,38,135,0.07)]">
                 <div className="p-6 flex items-center gap-3">
-                    <div className={`w-10 h-10 bg-gradient-to-br ${theme.gradient} rounded-xl flex items-center justify-center shadow-lg`}>
-                        <span className="text-white font-bold text-xl">{role.charAt(0).toUpperCase()}</span>
+                    <div className={`w-10 h-10 bg-gradient-to-br ${theme.gradient} rounded-xl flex items-center justify-center shadow-lg ring-2 ring-white/20`}>
+                        <span className="text-white font-bold text-xl drop-shadow-md">{role.charAt(0).toUpperCase()}</span>
                     </div>
-                    <span className="hidden lg:block font-bold text-xl tracking-tight text-foreground/80">PharmaGo</span>
+                    <span className="hidden lg:block font-bold text-xl tracking-tight text-foreground/80 drop-shadow-sm">PharmaGo</span>
                 </div>
 
                 <nav className="flex-1 mt-8 px-4 space-y-2">
@@ -122,33 +122,36 @@ export const PremiumDashboardLayout = ({ children, activeTab = 'home', role = 'p
                         <button
                             key={item.id}
                             onClick={() => item.path !== '#' && navigate(item.path)}
-                            className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-300 group ${activeTab === item.id
-                                ? `${theme.light} ${theme.primary} shadow-sm border ${theme.border}`
-                                : 'text-muted-foreground hover:bg-white/40 hover:text-foreground'
+                            className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-300 group relative overflow-hidden ${activeTab === item.id
+                                ? `${theme.light} ${theme.primary} shadow-md border ${theme.border} ring-1 ring-white/30 backdrop-blur-md`
+                                : 'text-muted-foreground hover:bg-white/10 hover:text-foreground hover:shadow-sm'
                                 }`}
                         >
-                            <item.icon className={`h-6 w-6 transition-transform duration-300 group-hover:scale-110 ${activeTab === item.id ? theme.primary : ''
+                            {activeTab === item.id && (
+                                <div className={`absolute left-0 top-0 bottom-0 w-1 ${theme.bg} rounded-r-full`} />
+                            )}
+                            <item.icon className={`h-5 w-5 transition-transform duration-300 group-hover:scale-110 ${activeTab === item.id ? theme.primary : ''
                                 }`} />
                             <span className="hidden lg:block font-bold text-xs uppercase tracking-widest">{item.label}</span>
                         </button>
                     ))}
                 </nav>
 
-                <div className="p-4 border-t border-white/20">
+                <div className="p-4 border-t border-white/10">
                     <button
                         onClick={handleSignOut}
-                        className="w-full flex items-center gap-3 p-3 text-red-500 hover:bg-red-50/50 rounded-xl transition-all group"
+                        className="w-full flex items-center gap-3 p-3 text-red-500 hover:bg-red-50/10 rounded-xl transition-all group backdrop-blur-sm"
                     >
-                        <LogOut className="h-6 w-6 group-hover:translate-x-1 transition-transform" />
+                        <LogOut className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
                         <span className="hidden lg:block font-medium">Déconnexion</span>
                     </button>
                 </div>
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto p-4 lg:p-8 scroll-smooth">
+            <main className="flex-1 overflow-y-auto p-4 lg:p-8 scroll-smooth bg-gradient-to-br from-gray-50/50 to-gray-100/50">
                 {/* Header - Glass Top Bar */}
-                <header className="flex items-center justify-between mb-8 glass-morphism p-4 rounded-2xl border-white/40">
+                <header className="flex items-center justify-between mb-8 backdrop-blur-xl bg-white/30 p-4 rounded-3xl border border-white/40 shadow-sm sticky top-4 z-40 transition-all duration-300 hover:bg-white/40">
                     <div className="relative flex-1 max-w-md hidden md:block">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -158,7 +161,7 @@ export const PremiumDashboardLayout = ({ children, activeTab = 'home', role = 'p
                     </div>
 
                     <div className="flex items-center gap-4 ml-auto">
-                        <NotificationsPopover />
+                        <NotificationCenter />
 
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>

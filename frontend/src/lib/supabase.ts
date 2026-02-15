@@ -13,6 +13,8 @@ export interface UserProfile {
   verified: boolean
   created_at: string
   avatar_url?: string
+  birth_date?: string
+  gender?: 'male' | 'female' | 'other'
 }
 
 export interface Patient {

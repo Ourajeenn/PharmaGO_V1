@@ -8,8 +8,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, Eye, EyeOff, Shield, CreditCard, ArrowLeft, Zap, ShieldCheck, Lock } from 'lucide-react'
+import { Loader2, Eye, EyeOff, Shield, CreditCard, ArrowLeft, Zap, ShieldCheck, Lock, Upload, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useRef } from 'react'
+import { uploadProfileImage } from '@/utils/upload'
 
 const signInSchema = z.object({
   email: z.string().email('Email invalide'),
@@ -42,6 +44,8 @@ export const InsurerAuthForm = ({ onSuccess }: InsurerAuthFormProps) => {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [insuranceProfileType, setInsuranceProfileType] = useState<'maladie' | 'cmu' | null>(null)
+  const [logoImage, setLogoImage] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const { signIn, signUp } = useAuth()
   const { toast } = useToast()
 
@@ -95,12 +99,18 @@ export const InsurerAuthForm = ({ onSuccess }: InsurerAuthFormProps) => {
   const onSignUp = async (values: z.infer<typeof signUpSchema>) => {
     setLoading(true)
     try {
+      let avatarUrl = null
+      if (logoImage) {
+        avatarUrl = await uploadProfileImage(logoImage, 'avatars')
+      }
+
       const userData = {
         name: values.companyName.trim(),
         role: 'insurer',
         phone: values.phone.trim(),
         license_number: values.licenseNumber.trim(),
-        company_name: values.companyName.trim()
+        company_name: values.companyName.trim(),
+        avatar_url: avatarUrl
       }
 
       const { error } = await signUp(values.email.trim(), values.password, userData)
@@ -180,7 +190,7 @@ export const InsurerAuthForm = ({ onSuccess }: InsurerAuthFormProps) => {
           </div>
 
           <p className="text-xs text-indigo-200/60 uppercase tracking-widest font-bold mt-8">
-            © 2024 PharmaGo Inc. • Insurance Division
+            © 2025 PharmaGo Inc. • Insurance Division
           </p>
         </div>
       </div>
@@ -275,6 +285,63 @@ export const InsurerAuthForm = ({ onSuccess }: InsurerAuthFormProps) => {
                         </FormItem>
                       )}
                     />
+                  </div>
+
+                  {/* Insurer Logo Upload */}
+                  <div className="space-y-2">
+                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Logo de la Compagnie (Optionnel)</FormLabel>
+                    <div className="flex items-center gap-4">
+                      <div
+                        onClick={() => fileInputRef.current?.click()}
+                        className="relative w-16 h-16 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center cursor-pointer hover:border-indigo-500 hover:bg-indigo-50 transition-all overflow-hidden group"
+                      >
+                        {logoImage ? (
+                          <img
+                            src={URL.createObjectURL(logoImage)}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Upload className="h-6 w-6 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <Input
+                          ref={fileInputRef}
+                          type="file"
+                          className="hidden"
+                          accept="image/*"
+                          onChange={(e) => {
+                            if (e.target.files?.[0]) {
+                              setLogoImage(e.target.files[0])
+                            }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-xs"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          {logoImage ? "Changer le logo" : "Ajouter un logo"}
+                        </Button>
+                        {logoImage && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="w-full text-xs text-red-500 hover:text-red-700 hover:bg-red-50 mt-1 h-6"
+                            onClick={() => {
+                              setLogoImage(null)
+                              if (fileInputRef.current) fileInputRef.current.value = ''
+                            }}
+                          >
+                            <X className="h-3 w-3 mr-1" /> Supprimer
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   <FormField

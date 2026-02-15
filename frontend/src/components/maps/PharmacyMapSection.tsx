@@ -23,6 +23,29 @@ import { MEDICATIONS_CATALOG } from '@/data/medications'
 // Components
 import { PharmacyStockSearch } from './PharmacyStockSearch'
 import { PharmacyFilters } from './PharmacyFilters'
+import { useWeather } from '@/hooks/useWeather'
+
+const WeatherOverlay = () => {
+    const { weather, loading } = useWeather('Abidjan')
+
+    if (loading || !weather) return null;
+
+    return (
+        <div className="absolute top-4 right-4 z-[1000] bg-white/90 backdrop-blur-md p-3 rounded-2xl shadow-lg border border-white/50 flex items-center gap-3">
+            <div className="bg-blue-50 p-2 rounded-full">
+                <img
+                    src={`https://openweathermap.org/img/wn/${weather.icon}.png`}
+                    alt={weather.description}
+                    className="w-8 h-8"
+                />
+            </div>
+            <div>
+                <p className="font-black text-lg leading-none">{weather.temperature}°C</p>
+                <p className="text-[10px] text-muted-foreground font-medium capitalize">{weather.description}</p>
+            </div>
+        </div>
+    )
+}
 
 // --- Helper Functions & Constants ---
 
@@ -483,13 +506,47 @@ export const PharmacyMapSection = ({ showOnlyOnDuty = false }: PharmacyMapSectio
                         )}
                     </MapContainer>
 
-                    {/* Status Badge */}
-                    <div className="absolute top-4 left-4 z-[1000]">
-                        <Badge className="bg-white/90 text-primary border-primary/20 shadow-lg backdrop-blur-sm">
+                    {/* Status Badge & Controls */}
+                    <div className="absolute top-4 left-4 z-[1000] flex flex-col gap-2">
+                        <Badge className="bg-white/90 text-primary border-primary/20 shadow-lg backdrop-blur-sm w-fit">
                             <Activity className="h-3 w-3 mr-1 animate-pulse" />
                             {filteredPharmacies.length} pharmacies affichées
                         </Badge>
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            className="bg-white/90 shadow-lg backdrop-blur-sm text-xs font-medium h-7 w-fit hover:bg-white"
+                            onClick={() => {
+                                const fetchP = async () => {
+                                    setIsLoading(true);
+                                    try {
+                                        const data = await PharmacyService.getAllPharmacies();
+                                        setPharmacies(prev => {
+                                            if (userLocation) {
+                                                return data.map(p => ({
+                                                    ...p,
+                                                    distance: calculateDistance(userLocation.lat, userLocation.lng, p.latitude, p.longitude)
+                                                }));
+                                            }
+                                            return data;
+                                        });
+                                        toast.success("Données actualisées");
+                                    } catch (e) {
+                                        toast.error("Erreur d'actualisation");
+                                    } finally {
+                                        setIsLoading(false);
+                                    }
+                                };
+                                fetchP();
+                            }}
+                        >
+                            <RefreshCw className={`h-3 w-3 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
+                            Actualiser
+                        </Button>
                     </div>
+
+                    {/* Weather Overlay */}
+                    <WeatherOverlay />
                 </div>
             </div>
 

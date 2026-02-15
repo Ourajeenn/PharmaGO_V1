@@ -20,3 +20,12 @@ export interface InventoryItem {
     price: number
     inStock: boolean
 }
+
+export interface Medicine {
+    id: string;
+    name: string;
+    price: number;
+    category: string;
+    image?: string;
+    description?: string;
+}

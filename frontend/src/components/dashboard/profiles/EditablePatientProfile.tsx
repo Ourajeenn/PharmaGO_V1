@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { Save, Edit, X, Upload, Loader2, ChevronDown } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import insuranceData from '@/data/insurances.json'
+import { uploadProfileImage } from '@/utils/upload'
 
 interface PatientProfileData {
   name: string
@@ -24,6 +25,7 @@ interface PatientProfileData {
   bloodType?: string
   allergies?: string
   chronicConditions?: string
+  avatarUrl?: string
 }
 
 // Add props interface
@@ -39,6 +41,7 @@ export const EditablePatientProfile = ({ userId }: EditablePatientProfileProps =
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
 
   const [profileData, setProfileData] = useState<PatientProfileData>({
     name: '',
@@ -104,7 +107,8 @@ export const EditablePatientProfile = ({ userId }: EditablePatientProfileProps =
         emergencyContact: patientData?.emergency_contact || '',
         bloodType: patientData?.blood_type || '',
         allergies: patientData?.allergies || '',
-        chronicConditions: patientData?.medical_history || '' // Mapping 'medical_history' to 'chronicConditions' for now
+        chronicConditions: patientData?.medical_history || '', // Mapping 'medical_history' to 'chronicConditions' for now
+        avatarUrl: userProfile?.avatar_url || null
       }
 
       setProfileData(mergedData)
@@ -116,7 +120,33 @@ export const EditablePatientProfile = ({ userId }: EditablePatientProfileProps =
     } finally {
       setLoading(false)
     }
+
+
   }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("L'image est trop volumineuse (max 2MB)");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const publicUrl = await uploadProfileImage(file, 'avatars');
+      if (publicUrl) {
+        setEditedData(prev => ({ ...prev, avatarUrl: publicUrl }));
+        toast.success("Image uploadée (n'oubliez pas d'enregistrer)");
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Erreur lors de l'upload");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSave = async () => {
     try {
@@ -128,7 +158,8 @@ export const EditablePatientProfile = ({ userId }: EditablePatientProfileProps =
         .update({
           name: editedData.name,
           email: editedData.email,
-          phone: editedData.phone
+          phone: editedData.phone,
+          avatar_url: editedData.avatarUrl
         })
         .eq('id', effectiveUserId)
 
@@ -205,18 +236,43 @@ export const EditablePatientProfile = ({ userId }: EditablePatientProfileProps =
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Photo de profil (Placeholder) */}
+        {/* Photo de profil */}
         <div className="flex items-center gap-4 p-4 bg-secondary/10 rounded-lg">
-          <div className="h-20 w-20 bg-primary/20 rounded-full flex items-center justify-center text-3xl">
-            👤
+          <div className="h-20 w-20 bg-primary/20 rounded-full flex items-center justify-center text-3xl overflow-hidden relative border-2 border-primary/20">
+            {profileData.avatarUrl ? (
+              <img src={profileData.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <span>👤</span>
+            )}
+            {uploading && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                <Loader2 className="h-6 w-6 text-white animate-spin" />
+              </div>
+            )}
           </div>
-          {/* Feature not implemented yet */}
-          {/* {isEditing && (
-            <Button variant="outline" size="sm">
-              <Upload className="h-4 w-4 mr-2" />
-              Changer la photo
-            </Button>
-          )} */}
+
+          {isEditing && (
+            <div>
+              <input
+                type="file"
+                id="avatar-upload"
+                className="hidden"
+                accept="image/*"
+                onChange={handleImageUpload}
+                disabled={uploading || saving}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => document.getElementById('avatar-upload')?.click()}
+                disabled={uploading || saving}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                {uploading ? 'Upload...' : 'Changer la photo'}
+              </Button>
+              <p className="text-[10px] text-muted-foreground mt-1">JPG, PNG max 2MB</p>
+            </div>
+          )}
         </div>
 
         {/* Informations personnelles */}

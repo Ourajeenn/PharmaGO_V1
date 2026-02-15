@@ -9,3 +9,4 @@ supabase==2.3.0
 prometheus-flask-exporter==0.23.0
 flask-caching==2.1.0
 requests==2.31.0
+fido2==1.1.2

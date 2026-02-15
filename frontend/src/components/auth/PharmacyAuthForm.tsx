@@ -7,8 +7,10 @@ import { Input } from '@/components/ui/input'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, Eye, EyeOff, Building2, Package, Users, BarChart, ArrowLeft, CheckCircle2 } from 'lucide-react'
+import { Loader2, Eye, EyeOff, Building2, Package, Users, BarChart, ArrowLeft, CheckCircle2, Upload, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useRef } from 'react'
+import { uploadProfileImage } from '@/utils/upload'
 
 const signInSchema = z.object({
   email: z.string().email('Email invalide'),
@@ -39,6 +41,8 @@ export const PharmacyAuthForm = ({ onSuccess }: PharmacyAuthFormProps) => {
   const [isSignUp, setIsSignUp] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [logoImage, setLogoImage] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const { signIn, signUp } = useAuth()
   const { toast } = useToast()
 
@@ -91,12 +95,18 @@ export const PharmacyAuthForm = ({ onSuccess }: PharmacyAuthFormProps) => {
   const onSignUp = async (values: z.infer<typeof signUpSchema>) => {
     setLoading(true)
     try {
+      let avatarUrl = null
+      if (logoImage) {
+        avatarUrl = await uploadProfileImage(logoImage, 'avatars')
+      }
+
       const userData = {
         name: values.pharmacyName.trim(),
         role: 'pharmacy',
         phone: values.phone.trim(),
         license_number: values.licenseNumber.trim(),
-        clinic_address: values.address.trim()
+        clinic_address: values.address.trim(),
+        avatar_url: avatarUrl
       }
 
       const { error } = await signUp(values.email.trim(), values.password, userData)
@@ -241,6 +251,63 @@ export const PharmacyAuthForm = ({ onSuccess }: PharmacyAuthFormProps) => {
                       </FormItem>
                     )}
                   />
+                </div>
+
+                {/* Pharmacy Logo Upload */}
+                <div className="space-y-2">
+                  <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Logo de la Pharmacie (Optionnel)</FormLabel>
+                  <div className="flex items-center gap-4">
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="relative w-16 h-16 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center cursor-pointer hover:border-emerald-500 hover:bg-emerald-50 transition-all overflow-hidden group"
+                    >
+                      {logoImage ? (
+                        <img
+                          src={URL.createObjectURL(logoImage)}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Upload className="h-6 w-6 text-slate-400 group-hover:text-emerald-500 transition-colors" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <Input
+                        ref={fileInputRef}
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={(e) => {
+                          if (e.target.files?.[0]) {
+                            setLogoImage(e.target.files[0])
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-xs"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        {logoImage ? "Changer le logo" : "Ajouter un logo"}
+                      </Button>
+                      {logoImage && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="w-full text-xs text-red-500 hover:text-red-700 hover:bg-red-50 mt-1 h-6"
+                          onClick={() => {
+                            setLogoImage(null)
+                            if (fileInputRef.current) fileInputRef.current.value = ''
+                          }}
+                        >
+                          <X className="h-3 w-3 mr-1" /> Supprimer
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <FormField

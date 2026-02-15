@@ -3,6 +3,23 @@ import { User, Session } from '@supabase/supabase-js'
 import { supabase, UserProfile } from '@/lib/supabase'
 import { logger } from '@/utils/logger'
 
+interface UserRoleData {
+  name: string
+  role: 'patient' | 'pharmacy' | 'driver' | 'doctor' | 'insurer' | 'admin'
+  phone?: string
+  license_number?: string
+  clinic_address?: string
+  clinic_name?: string
+  specialization?: string
+  experience_years?: number
+  vehicle_type?: string
+  license_plate?: string
+  driver_license?: string
+  company_name?: string
+  avatar_url?: string | null
+  [key: string]: any
+}
+
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -137,19 +154,36 @@ export const useAuth = () => {
     }
   }, [fetchProfile]) // fetchProfile is now stable, so this effect runs only once
 
-  const signUp = useCallback(async (email: string, password: string, userData: any) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
-        data: {
-          ...userData,
-          email
+  const signUp = useCallback(async (email: string, password: string, userData: UserRoleData) => {
+    // Basic validation before API call
+    if (!email || !password) {
+      return { data: null, error: new Error('Email et mot de passe requis') }
+    }
+
+    if (password.length < 6) {
+      return { data: null, error: new Error('Le mot de passe doit contenir au moins 6 caractères') }
+    }
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`,
+          data: {
+            ...userData,
+            email,
+          }
         }
-      }
-    })
-    return { data, error }
+      })
+
+      if (error) throw error
+
+      return { data, error: null }
+    } catch (error: any) {
+      console.error('SignUp Error:', error)
+      return { data: null, error }
+    }
   }, [])
 
   const signIn = useCallback(async (email: string, password: string) => {

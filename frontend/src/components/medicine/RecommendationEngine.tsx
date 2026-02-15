@@ -2,14 +2,8 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Star } from 'lucide-react';
-
-interface Medicine {
-    id: string;
-    name: string;
-    price: number;
-    category: string;
-    image?: string;
-}
+import { Medicine } from '@/types/pharmacy';
+import { PharmacyService } from '@/services/PharmacyService';
 
 interface RecommendationEngineProps {
     userId: string;
@@ -31,41 +25,9 @@ export const RecommendationEngine = ({
 
     const fetchRecommendations = async () => {
         setLoading(true);
-
         try {
-            // Simulated recommendations
-            // In production, this would call an AI-powered recommendation API
-            const mockRecommendations: Medicine[] = [
-                {
-                    id: '1',
-                    name: 'Vitamine C 1000mg',
-                    price: 3500,
-                    category: 'Vitamines',
-                },
-                {
-                    id: '2',
-                    name: 'Doliprane 500mg',
-                    price: 2500,
-                    category: 'Antalgiques',
-                },
-                {
-                    id: '3',
-                    name: 'Paracétamol effervescent',
-                    price: 2800,
-                    category: 'Antalgiques',
-                },
-                {
-                    id: '4',
-                    name: 'Sirop toux sèche',
-                    price: 4200,
-                    category: 'Antitussifs',
-                },
-            ];
-
-            // Simulate API delay
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-
-            setRecommendations(mockRecommendations);
+            const data = await PharmacyService.getRecommendations(userId);
+            setRecommendations(data);
         } catch (error) {
             console.error('Failed to fetch recommendations:', error);
         } finally {

@@ -32,7 +32,7 @@ const promoSlides = [
     title: "Suivi en Temps Réel",
     subtitle: "Sachez exactement où est votre commande",
     description: "Suivez votre livraison en direct avec notre système de tracking GPS en temps réel",
-    image: "hero-carousel/delivery-new.jpg",
+    image: "hero-carousel/delivery-v2.png",
     badge: "LIVRAISON",
     cta: "Suivre ma commande",
     gradient: "from-green-500 to-emerald-600",
@@ -48,6 +48,18 @@ const promoSlides = [
     cta: "Télécharger l'app",
     gradient: "from-purple-500 to-violet-600",
     offer: "Disponible sur iOS & Android"
+  },
+  {
+    id: 5,
+    title: "ONLINE PHARMACY",
+    subtitle: "LOREM IPSUM DOLOR SIT AMET",
+    description: "Consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+    image: "hero-carousel/3d-pharmacy_smartphone.png",
+    badge: "NOUVEAU",
+    cta: "Shop Now",
+    gradient: "from-orange-100 to-orange-200",
+    offer: "Livraison Gratuite",
+    customBg: "bg-[#F3E5D8]" // Beige background
   }
 ];
 const ImageSlider = () => {
@@ -100,6 +112,7 @@ const ImageSlider = () => {
               border-radius: 20px;
               pointer-events: none;
               z-index: 10;
+              display: ${currentSlideData.id === 5 ? 'none !important' : 'block'};
             }
 
             .neon-svg {
@@ -164,7 +177,7 @@ const ImageSlider = () => {
           `}</style>
 
           {/* Pronounced Glassmorphism Card */}
-          <Card className="relative min-h-[450px] md:h-[500px] flex items-center transition-all duration-500 border-2 border-white/30 shadow-[0_20px_50px_rgba(0,0,0,0.3)] premium-rounded overflow-hidden bg-white/15 backdrop-blur-3xl">
+          <Card className={`relative min-h-[450px] md:h-[500px] flex items-center transition-all duration-500 border-2 border-white/30 shadow-[0_20px_50px_rgba(0,0,0,0.3)] premium-rounded overflow-hidden ${currentSlideData.customBg || 'bg-white/15 backdrop-blur-3xl'}`}>
             {/* Interior Glossy Gradient */}
             <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent pointer-events-none" />
 
@@ -180,18 +193,18 @@ const ImageSlider = () => {
                 <div className="grid md:grid-cols-2 gap-12 items-center">
                   <div className="text-foreground space-y-4">
                     <div className="space-y-3">
-                      <h3 className="text-xl md:text-2xl font-black leading-tight text-foreground tracking-tighter">
+                      <h3 className={`text-xl md:text-2xl font-black leading-tight tracking-tighter ${currentSlideData.id === 5 ? 'text-white drop-shadow-md text-6xl uppercase' : 'text-foreground'}`}>
                         {currentSlideData.title}
                       </h3>
-                      <p className="text-base md:text-lg font-extrabold text-primary/100">
-                        {currentSlideData.subtitle}
+                      <p className={`text-base md:text-lg font-extrabold ${currentSlideData.id === 5 ? 'text-white/90 text-4xl uppercase tracking-widest' : 'text-primary/100'}`}>
+                        {currentSlideData.id === 5 ? "PHARMA" : currentSlideData.subtitle}
                       </p>
-                      <p className="opacity-95 text-sm md:text-base font-bold leading-relaxed text-foreground/80 max-w-md">
+                      <p className={`opacity-95 text-sm md:text-base font-bold leading-relaxed max-w-md ${currentSlideData.id === 5 ? 'text-white/80' : 'text-foreground/80'}`}>
                         {currentSlideData.description}
                       </p>
                     </div>
 
-                    <div className="bg-white/20 backdrop-blur-md rounded-xl p-4 border border-white/30 shadow-lg max-w-fit">
+                    <div className={`backdrop-blur-md rounded-xl p-4 border shadow-lg max-w-fit ${currentSlideData.id === 5 ? 'bg-white/10 border-white/20 text-white' : 'bg-white/20 border-white/30'}`}>
                       <p className="font-bold text-lg flex items-center gap-2">
                         <span className="text-2xl">🎉</span> {currentSlideData.offer}
                       </p>
@@ -204,7 +217,7 @@ const ImageSlider = () => {
                       <Button
                         variant="outline"
                         size="lg"
-                        className="bg-white/20 border-white/30 text-foreground hover:bg-white/30 shadow-lg font-bold transition-all duration-300 hover:scale-105 px-6 flex items-center gap-2"
+                        className={`border-white/30 shadow-lg font-bold transition-all duration-300 hover:scale-105 px-6 flex items-center gap-2 ${currentSlideData.id === 5 ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-white/20 text-foreground hover:bg-white/30'}`}
                         onClick={() => toggleFavorite(currentSlideData.id)}
                       >
                         <Heart className={`h-5 w-5 ${favorites.includes(currentSlideData.id) ? 'fill-red-500 text-red-500' : ''} transition-colors duration-300`} />
@@ -214,41 +227,41 @@ const ImageSlider = () => {
                   </div>
 
                   <div className="hidden md:flex flex-col items-center justify-center gap-4">
-                    <Badge className="bg-white/10 text-white border-white/10 hover:bg-white/20 text-sm px-4 py-1">
+                    <Badge className={`border-white/10 hover:bg-white/20 text-sm px-4 py-1 ${currentSlideData.id === 5 ? 'bg-white/20 text-white' : 'bg-white/10 text-white'}`}>
                       {currentSlideData.badge}
                     </Badge>
 
                     {/* Neon Border Image Frame */}
-                    <div className="relative w-80 h-80">
-                      <div className="neon-frame">
-                        <svg className="neon-svg" viewBox="0 0 1200 1200" preserveAspectRatio="none">
-                          <path className="path-green" d="M 50,5 L 1150,5 Q 1195,5 1195,50 L 1195,1150 Q 1195,1195 1150,1195 L 50,1195 Q 5,1195 5,1150 L 5,50 Q 5,5 50,5" />
-                          <path className="path-blue" d="M 50,5 L 1150,5 Q 1195,5 1195,50 L 1195,1150 Q 1195,1195 1150,1195 L 50,1195 Q 5,1195 5,1150 L 5,50 Q 5,5 50,5" />
-                          <path className="path-orange" d="M 50,5 L 1150,5 Q 1195,5 1195,50 L 1195,1150 Q 1195,1195 1150,1195 L 50,1195 Q 5,1195 5,1150 L 5,50 Q 5,5 50,5" />
-                          <path className="path-red" d="M 50,5 L 1150,5 Q 1195,5 1195,50 L 1195,1150 Q 1195,1195 1150,1195 L 50,1195 Q 5,1195 5,1150 L 5,50 Q 5,5 50,5" />
-                        </svg>
-                      </div>
-                      <div className="led-inner-frame w-full h-full">
+                    <div className={`relative w-80 h-80 ${currentSlideData.id === 5 ? 'scale-125' : ''}`}>
+                      {currentSlideData.id !== 5 && (
+                        <div className="neon-frame">
+                          <svg className="neon-svg" viewBox="0 0 1200 1200" preserveAspectRatio="none">
+                            <path className="path-green" d="M 50,5 L 1150,5 Q 1195,5 1195,50 L 1195,1150 Q 1195,1195 1150,1195 L 50,1195 Q 5,1195 5,1150 L 5,50 Q 5,5 50,5" />
+                            <path className="path-blue" d="M 50,5 L 1150,5 Q 1195,5 1195,50 L 1195,1150 Q 1195,1195 1150,1195 L 50,1195 Q 5,1195 5,1150 L 5,50 Q 5,5 50,5" />
+                            <path className="path-orange" d="M 50,5 L 1150,5 Q 1195,5 1195,50 L 1195,1150 Q 1195,1195 1150,1195 L 50,1195 Q 5,1195 5,1150 L 5,50 Q 5,5 50,5" />
+                            <path className="path-red" d="M 50,5 L 1150,5 Q 1195,5 1195,50 L 1195,1150 Q 1195,1195 1150,1195 L 50,1195 Q 5,1195 5,1150 L 5,50 Q 5,5 50,5" />
+                          </svg>
+                        </div>
+                      )}
+
+                      {currentSlideData.id === 5 ? (
+                        /* 3D Basket - No Frame for float effect */
                         <img
                           src={`/${currentSlideData.image}`}
                           alt={currentSlideData.title}
-                          className="w-full h-full object-cover"
-                          style={{ borderRadius: '20px' }}
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            const parent = target.parentElement;
-                            if (parent) {
-                              parent.innerHTML = `<div class="w-full h-full flex items-center justify-center text-8xl bg-slate-900 text-white">
-                                ${currentSlideData.id === 1 ? "💊" : ""}
-                                ${currentSlideData.id === 2 ? "👨‍⚕️" : ""}
-                                ${currentSlideData.id === 3 ? "🚀" : ""}
-                                ${currentSlideData.id === 4 ? "📱" : ""}
-                              </div>`;
-                            }
-                          }}
+                          className="w-full h-full object-contain drop-shadow-2xl animate-float rounded-3xl"
+                          style={{ animation: 'float 6s ease-in-out infinite' }}
                         />
-                      </div>
+                      ) : (
+                        <div className="led-inner-frame w-full h-full">
+                          <img
+                            src={`/${currentSlideData.image}`}
+                            alt={currentSlideData.title}
+                            className="w-full h-full object-cover"
+                            style={{ borderRadius: '20px' }}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -285,7 +298,7 @@ const ImageSlider = () => {
 
       {/* Thumbnails */}
       <ScrollReveal animation="fade-up" delay={0.4}>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 max-w-4xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-8 max-w-6xl mx-auto">
           {promoSlides.map((slide, index) => <Card key={slide.id} className={`cursor-pointer transition-all duration-300 hover:scale-105 h-32 ${index === currentSlide ? 'ring-2 ring-primary shadow-lg' : 'hover:shadow-md'}`} onClick={() => goToSlide(index)}>
             <div className={`p-4 bg-gradient-to-br ${slide.gradient} text-white rounded-lg h-full flex items-center justify-center`}>
               <div className="text-center">

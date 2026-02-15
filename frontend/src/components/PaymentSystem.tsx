@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -153,33 +155,69 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
     }
   }, [useCurrentLocation]);
 
+  const { user } = useAuth(); // Add useAuth hook
+
   const handlePayment = async () => {
     if (!deliveryAddress || (selectedPaymentMethod !== 'cash_on_delivery' && !phoneNumber)) {
+      toast.error("Veuillez remplir tous les champs obligatoires");
       return;
     }
 
     setIsProcessing(true);
     setPaymentStep('payment');
 
-    // Simuler le processus de paiement
-    setTimeout(() => {
-      const newOrderId = `ORD-${Date.now()}`;
-      setOrderId(newOrderId);
+    try {
+      // 1. Simulate Payment Gateway Delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Route to pickup_ready for Click & Collect, confirmation for delivery
+      const newOrderId = `CMD-${Math.floor(Math.random() * 1000000)}`;
+
+      // 2. Create Order in Supabase
+      if (user) {
+        const { data, error } = await supabase
+          .from('orders')
+          .insert({
+            patient_id: user.id,
+            status: 'pending',
+            total: finalTotal,
+            payment_method: selectedPaymentMethod,
+            payment_status: selectedPaymentMethod === 'cash_on_delivery' ? 'pending' : 'completed',
+            delivery_address: deliveryAddress,
+            pharmacy_id: Object.keys(pharmacyGroups)[0] || null, // Pick first pharmacy for now
+            items_count: items.reduce((acc, item) => acc + item.quantity, 0),
+            notes: orderNotes
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        setOrderId(data.id.substring(0, 8).toUpperCase());
+      } else {
+        // Fallback for guest checkout (if allowed)
+        setOrderId(newOrderId);
+      }
+
+      // 3. Success State
       if (deliveryMode === 'pickup') {
         setPaymentStep('pickup_ready');
       } else {
         setPaymentStep('confirmation');
       }
 
-      setIsProcessing(false);
+      toast.success("Paiement effectué avec succès !");
 
-      // Vider le panier après paiement réussi
+      // Clear cart
       if (selectedPaymentMethod !== 'cash_on_delivery') {
         clearCart();
       }
-    }, 3000);
+
+    } catch (error) {
+      console.error('Payment Error:', error);
+      toast.error("Erreur lors du traitement de la commande");
+      setPaymentStep('details'); // Go back
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const getPaymentMethodById = (id: string) => {

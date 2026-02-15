@@ -41,13 +41,57 @@ import {
   MapPin,
   Shield,
   Sparkles,
-  Zap
+  Zap,
+  Droplet,
+  Wind,
+  LayoutDashboard
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { PatientProfileWidget } from '@/components/dashboard/widgets/medicore/PatientProfileWidget'
+import { HealthMetricCard } from '@/components/dashboard/widgets/medicore/HealthMetricCard'
+import { BodyMapWidget } from '@/components/dashboard/widgets/medicore/BodyMapWidget'
+import { NeuroActivityWidget } from '@/components/dashboard/widgets/medicore/NeuroActivityWidget'
+import { DoctorListWidget } from '@/components/dashboard/widgets/medicore/DoctorListWidget'
+import { AppointmentsWidget } from '@/components/dashboard/widgets/medicore/AppointmentsWidget'
 
 export const PatientDashboard = () => {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
+  const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking')
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false) // State for settings dialog
+
+  // Check API Health
+  useEffect(() => {
+    const checkApi = async () => {
+      // Dynamic import to avoid circular dependencies if any, though likely fine here
+      const { PharmacyService } = await import('@/services/PharmacyService');
+      const isHealthy = await PharmacyService.checkHealth();
+      setApiStatus(isHealthy ? 'online' : 'offline');
+    };
+    checkApi();
+  }, []);
+
+  interface DashboardOrder {
+    id: string
+    fullId: string
+    status: string
+    total: number
+    pharmacy: string
+    items: number
+    estimatedTime: string
+    driver: string
+  }
+
+  interface Metric {
+    value: string
+    unit: string
+  }
+
+  interface HealthMetrics {
+    glucose: Metric
+    blood_pressure: Metric
+    spO2: Metric
+  }
 
   interface DashboardStats {
     activeOrders: number
@@ -58,71 +102,125 @@ export const PatientDashboard = () => {
 
   const [stats, setStats] = useState<DashboardStats>({
     activeOrders: 0,
-    savings: 45000,
+    savings: 0,
     pendingPrescriptions: 0,
     unreadMessages: 0
   })
 
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-
-  // Mock data for UI preview
-  const [orders] = useState([
-    {
-      id: 'CMD001',
-      status: 'en_cours',
-      total: 25500,
-      pharmacy: 'Pharmacie Centrale',
-      items: 3,
-      estimatedTime: '25 min',
-      driver: 'Kouassi Jean'
-    }
-  ])
-
-  const [insurance] = useState({
-    number: 'ASS123456789',
-    coverage: 85,
-    remaining: 250, // in thousands
-    total: 500,
-    provider: 'Gras Savoye'
+  // Real data state
+  const [orders, setOrders] = useState<DashboardOrder[]>([])
+  const [loadingOrders, setLoadingOrders] = useState(true)
+  const [metrics, setMetrics] = useState<HealthMetrics>({
+    glucose: { value: 'N/A', unit: 'mg/dL' },
+    blood_pressure: { value: 'N/A', unit: 'mmHg' },
+    spO2: { value: 'N/A', unit: '%' }
   })
 
   useEffect(() => {
     if (user?.id) {
-      fetchDashboardStats()
+      fetchDashboardData()
     }
   }, [user])
 
-  const fetchDashboardStats = async () => {
+  const fetchDashboardData = async () => {
     if (!user) return
     try {
-      const supabaseClient = supabase as any
+      setLoadingOrders(true)
 
-      const { count: ordersCount } = await supabaseClient
+      // 1. Fetch Orders (Active)
+      const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
-        .select('*', { count: 'exact', head: true })
+        .select(`
+          *,
+          pharmacy:pharmacies(name),
+          driver:drivers(user_id)
+        `)
         .eq('patient_id', user.id)
-        .not('status', 'in', '("delivered","cancelled")')
+        .order('created_at', { ascending: false })
 
-      const { count: prescriptionsCount } = await supabaseClient
+      if (ordersError) throw ordersError
+
+      // Transform orders for UI
+      const formattedOrders: DashboardOrder[] = (ordersData || []).map((order: any) => ({
+        id: order.id.substring(0, 8).toUpperCase(), // Short ID
+        fullId: order.id,
+        status: order.status,
+        total: order.total || 0,
+        pharmacy: order.pharmacy?.name || 'Pharmacie inconnue',
+        items: 1, // Placeholder as we'd need a join on order_items to get exact count
+        estimatedTime: 'Unknown',
+        driver: order.driver ? 'Livreur assigné' : 'En attente'
+      }))
+
+      setOrders(formattedOrders)
+
+      // 2. Fetch Prescriptions Count
+      const { count: prescriptionsCount } = await supabase
         .from('prescriptions')
         .select('*', { count: 'exact', head: true })
         .eq('patient_id', user.id)
         .eq('status', 'pending')
 
-      const { count: messagesCount } = await supabaseClient
+      // 3. Fetch Unread Messages
+      const { count: messagesCount } = await supabase
         .from('messages')
         .select('*', { count: 'exact', head: true })
-        .eq('receiver_id', user.id)
+        .eq('recipient_id', user.id)
         .eq('is_read', false)
 
+      // 4. Fetch Health Metrics
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: metricsData } = await (supabase as any)
+        .from('health_metrics')
+        .select('*')
+        .eq('patient_id', user.id)
+        .order('measured_at', { ascending: false })
+
+      if (metricsData) {
+        const latestMetrics = { ...metrics }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const glucose = metricsData.find((m: any) => m.metric_type === 'glucose' || m.type === 'glucose')
+        if (glucose) {
+          latestMetrics.glucose = {
+            value: glucose.value.value || glucose.value,
+            unit: glucose.unit
+          }
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const bp = metricsData.find((m: any) => m.metric_type === 'blood_pressure' || m.type === 'blood_pressure')
+        if (bp) {
+          const val = bp.value
+          latestMetrics.blood_pressure = {
+            value: val.systolic && val.diastolic ? `${val.systolic}/${val.diastolic}` : (val.value || 'N/A'),
+            unit: bp.unit || 'mmHg'
+          }
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const spo2 = metricsData.find((m: any) => m.metric_type === 'spO2' || m.type === 'spO2')
+        if (spo2) {
+          latestMetrics.spO2 = {
+            value: spo2.value?.value || spo2.value || 'N/A',
+            unit: spo2.unit || '%'
+          }
+        }
+        setMetrics(latestMetrics)
+      }
+
+
       setStats({
-        activeOrders: ordersCount || 0,
-        savings: 45000,
+        activeOrders: formattedOrders.filter((o: any) => ['pending', 'processing', 'delivering'].includes(o.status)).length,
+        savings: 45000, // Placeholder logic for savings
         pendingPrescriptions: prescriptionsCount || 0,
         unreadMessages: messagesCount || 0
       })
+
     } catch (error) {
-      console.error('Error fetching patient stats:', error)
+      console.error('Error fetching dashboard data:', error)
+    } finally {
+      setLoadingOrders(false)
     }
   }
 
@@ -147,90 +245,25 @@ export const PatientDashboard = () => {
   return (
     <PremiumDashboardLayout activeTab="home" role="patient">
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        {/* Welcome Section */}
-        <div className="flex justify-between items-end">
-          <div className="space-y-1">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground/90">
-              Bonjour, <span className="text-primary font-extrabold">{profile?.name || 'Patient'}</span>
-            </h2>
-            <p className="text-muted-foreground flex items-center gap-2">
-              <Activity className="h-4 w-4 text-green-500" />
-              Votre santé est notre priorité aujourd'hui.
-            </p>
-          </div>
-          <Button
-            className="rounded-xl px-6 py-6 bg-primary hover:bg-primary-hover shadow-lg shadow-primary/20 transition-all hover:scale-105"
-            onClick={() => navigate('/medicaments')}
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            Nouvelle Commande
-          </Button>
-        </div>
-
-        {/* Bento Grid Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="glass-card p-6 flex flex-col justify-between h-40">
-            <div className="flex justify-between items-start">
-              <div className="p-3 bg-blue-500/10 rounded-xl">
-                <Package className="h-6 w-6 text-blue-600" />
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
+          <div className="col-span-1 space-y-8 h-full">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold tracking-tight text-slate-900">Tableau de Bord</h2>
+                <p className="text-slate-500">Bienvenue sur votre espace santé</p>
               </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Commandes Actives</p>
-              <h3 className="text-3xl font-bold">{stats.activeOrders}</h3>
-            </div>
-          </div>
-
-          <div className="glass-card p-6 flex flex-col justify-between h-40">
-            <div className="flex justify-between items-start">
-              <div className="p-3 bg-green-500/10 rounded-xl">
-                <CreditCard className="h-6 w-6 text-green-600" />
+              <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20 shadow-sm">
+                <span className={`h-2.5 w-2.5 rounded-full ${apiStatus === 'online' ? 'bg-green-500' : apiStatus === 'checking' ? 'bg-yellow-500 animate-pulse' : 'bg-orange-500'}`}></span>
+                <span className="text-xs font-medium text-slate-700">
+                  {apiStatus === 'online' ? 'Système Connecté' : apiStatus === 'checking' ? 'Connexion...' : 'Mode Hors Ligne'}
+                </span>
               </div>
-              <span className="text-[10px] font-bold text-green-600 bg-green-100 px-2 py-1 rounded">+12%</span>
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Économies (FCFA)</p>
-              <h3 className="text-3xl font-bold">{stats.savings.toLocaleString()} F</h3>
-            </div>
-          </div>
 
-          <div className="glass-card p-6 flex flex-col justify-between h-40 border-primary/20 bg-primary/5">
-            <div className="flex justify-between items-start">
-              <div className="p-3 bg-primary/10 rounded-xl">
-                <FileText className="h-6 w-6 text-primary" />
-              </div>
-              <ChevronRight className="h-4 w-4 text-primary/50" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-primary uppercase tracking-wider">Ordonnances</p>
-              <h3 className="text-3xl font-bold text-primary">{stats.pendingPrescriptions}</h3>
-            </div>
-          </div>
-
-          <div className="glass-card p-6 flex flex-col justify-between h-40">
-            <div className="flex justify-between items-start">
-              <div className="p-3 bg-purple-500/10 rounded-xl">
-                <MessageCircle className="h-6 w-6 text-purple-600" />
-              </div>
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-purple-500"></span>
-              </span>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Messages</p>
-              <h3 className="text-3xl font-bold">{stats.unreadMessages}</h3>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Dashboard Content */}
-          <div className="lg:col-span-2 space-y-8">
-            <Tabs defaultValue="orders" className="w-full">
-              <TabsList className="bg-white/40 backdrop-blur-md p-1 rounded-2xl border border-white/40 mb-6 flex flex-wrap gap-1">
-                <TabsTrigger value="orders" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Suivi</TabsTrigger>
+            <Tabs defaultValue="overview" className="w-full space-y-6">
+              <TabsList className="bg-white/40 backdrop-blur-md p-1.5 rounded-2xl border border-white/40 mb-6 flex flex-wrap gap-2 h-auto">
+                <TabsTrigger value="overview" className="rounded-xl px-4 py-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all"><LayoutDashboard className="h-4 w-4 mr-2" /> Vue d'ensemble</TabsTrigger>
+                <TabsTrigger value="orders" className="rounded-xl px-4 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">Suivi</TabsTrigger>
                 <TabsTrigger value="pharmacies" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Pharmacies</TabsTrigger>
                 <TabsTrigger value="history" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Historique</TabsTrigger>
                 <TabsTrigger value="prescriptions" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Docs</TabsTrigger>
@@ -244,71 +277,137 @@ export const PatientDashboard = () => {
                 <TabsTrigger value="help" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Aide</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="orders" className="space-y-4 outline-none">
-                {orders.length > 0 ? orders.map((order) => (
-                  <div key={order.id} className="glass-card glow-border overflow-hidden">
-                    <div className="p-6">
-                      <div className="flex justify-between items-center mb-6">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
-                            <Pill className="h-6 w-6" />
-                          </div>
-                          <div>
-                            <h4 className="font-extrabold text-lg flex items-center gap-2">
-                              {order.id}
-                              {getStatusBadge(order.status)}
-                            </h4>
-                            <p className="text-sm text-muted-foreground">{order.pharmacy}</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-black text-foreground/80">{order.total.toLocaleString()} FCFA</p>
-                          <p className="text-xs text-muted-foreground">Paiement : Mobile Money</p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8 p-4 bg-white/30 rounded-2xl border border-white/20">
-                        <div className="space-y-1">
-                          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Articles</p>
-                          <p className="text-sm font-bold flex items-center gap-2"><Pill className="h-3 w-3" /> {order.items}</p>
-                        </div>
-                        <div className="space-y-1 border-l border-white/20 pl-6">
-                          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Estimation</p>
-                          <p className="text-sm font-bold flex items-center gap-2"><Clock className="h-3 w-3 text-orange-500" /> {order.estimatedTime}</p>
-                        </div>
-                        <div className="space-y-1 border-l border-white/20 pl-6">
-                          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Livreur</p>
-                          <p className="text-sm font-bold flex items-center gap-2"><User className="h-3 w-3 text-purple-500" /> {order.driver}</p>
-                        </div>
-                        <div className="space-y-1 border-l border-white/20 pl-6">
-                          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Destination</p>
-                          <p className="text-sm font-bold flex items-center gap-2 truncate"><MapPin className="h-3 w-3 text-red-500" /> Plateau, Abidjan</p>
-                        </div>
-                      </div>
-
-                      {order.status === 'en_cours' && (
-                        <div className="space-y-4 bg-primary/5 p-4 rounded-2xl border border-primary/10">
-                          <div className="flex justify-between items-center text-sm font-bold">
-                            <span className="text-primary flex items-center gap-2">
-                              <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                              Expédition en cours
-                            </span>
-                            <span className="text-primary">75%</span>
-                          </div>
-                          <Progress value={75} className="h-2 bg-blue-100" />
-                          <div className="flex gap-3 pt-2">
-                            <Button className="flex-1 rounded-xl glass-morphism hover:bg-white/60 border-white/40 text-foreground" variant="outline">
-                              <MapPin className="h-4 w-4 mr-2 text-red-500" /> Suivre sur la carte
-                            </Button>
-                            <Button className="flex-1 rounded-xl glass-morphism hover:bg-white/60 border-white/40 text-foreground" variant="outline">
-                              <MessageCircle className="h-4 w-4 mr-2 text-blue-500" /> Contacter
-                            </Button>
-                          </div>
-                        </div>
-                      )}
+              <TabsContent value="overview" className="space-y-6 outline-none animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="grid grid-cols-12 gap-6">
+                  {/* Left Column: Profile & MRI */}
+                  <div className="col-span-12 lg:col-span-4 xl:col-span-3 space-y-6 flex flex-col">
+                    <div className="h-[340px]">
+                      <PatientProfileWidget />
+                    </div>
+                    <div className="h-[320px] flex-1">
+                      <BodyMapWidget />
                     </div>
                   </div>
-                )) : (
+
+                  {/* Center Column: Metrics & Charts */}
+                  <div className="col-span-12 lg:col-span-8 xl:col-span-6 space-y-6">
+                    {/* Metrics Row */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <HealthMetricCard
+                        title="Glycémie"
+                        value={metrics.glucose.value}
+                        unit={metrics.glucose.unit}
+                        icon={Droplet}
+                        chartType="wave"
+                        chartColor="text-blue-400"
+                      />
+                      <HealthMetricCard
+                        title="Tension"
+                        value={metrics.blood_pressure.value}
+                        unit={metrics.blood_pressure.unit}
+                        subtitle="Systolique"
+                        icon={Activity}
+                        chartType="bar"
+                        chartColor="text-indigo-400"
+                      />
+                      <HealthMetricCard
+                        title="Oxygène"
+                        value={metrics.spO2.value}
+                        unit={metrics.spO2.unit}
+                        icon={Wind}
+                        chartType="wave"
+                        chartColor="text-cyan-400"
+                      />
+                    </div>
+
+                    {/* Neuro / Activity Chart */}
+                    <div className="h-[300px]">
+                      <NeuroActivityWidget />
+                    </div>
+
+                    {/* Doctors List */}
+                    <div className="h-auto">
+                      <DoctorListWidget />
+                    </div>
+                  </div>
+
+                  {/* Right Column: Appointments */}
+                  <div className="col-span-12 xl:col-span-3 h-auto xl:h-full">
+                    <AppointmentsWidget />
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="orders" className="space-y-4 outline-none">
+                {loadingOrders ? (
+                  <div className="flex justify-center p-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : orders.length > 0 ? (
+                  orders.map((order) => (
+                    <div key={order.fullId} className="glass-card glow-border overflow-hidden">
+                      <div className="p-6">
+                        <div className="flex justify-between items-center mb-6">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                              <Pill className="h-6 w-6" />
+                            </div>
+                            <div>
+                              <h4 className="font-extrabold text-lg flex items-center gap-2">
+                                {order.id}
+                                {getStatusBadge(order.status)}
+                              </h4>
+                              <p className="text-sm text-muted-foreground">{order.pharmacy}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-2xl font-black text-foreground/80">{order.total.toLocaleString()} FCFA</p>
+                            <p className="text-xs text-muted-foreground">Paiement : Mobile Money</p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8 p-4 bg-white/30 rounded-2xl border border-white/20">
+                          <div className="space-y-1">
+                            <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Articles</p>
+                            <p className="text-sm font-bold flex items-center gap-2"><Pill className="h-3 w-3" /> {order.items}</p>
+                          </div>
+                          <div className="space-y-1 border-l border-white/20 pl-6">
+                            <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Estimation</p>
+                            <p className="text-sm font-bold flex items-center gap-2"><Clock className="h-3 w-3 text-orange-500" /> {order.estimatedTime}</p>
+                          </div>
+                          <div className="space-y-1 border-l border-white/20 pl-6">
+                            <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Livreur</p>
+                            <p className="text-sm font-bold flex items-center gap-2"><User className="h-3 w-3 text-purple-500" /> {order.driver}</p>
+                          </div>
+                          <div className="space-y-1 border-l border-white/20 pl-6">
+                            <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Destination</p>
+                            <p className="text-sm font-bold flex items-center gap-2 truncate"><MapPin className="h-3 w-3 text-red-500" /> Plateau, Abidjan</p>
+                          </div>
+                        </div>
+
+                        {['pending', 'processing', 'delivering'].includes(order.status) && (
+                          <div className="space-y-4 bg-primary/5 p-4 rounded-2xl border border-primary/10">
+                            <div className="flex justify-between items-center text-sm font-bold">
+                              <span className="text-primary flex items-center gap-2">
+                                <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                                Suivi en cours
+                              </span>
+                              <span className="text-primary">--</span>
+                            </div>
+                            <Progress value={30} className="h-2 bg-blue-100" />
+                            <div className="flex gap-3 pt-2">
+                              <Button className="flex-1 rounded-xl glass-morphism hover:bg-white/60 border-white/40 text-foreground" variant="outline">
+                                <MapPin className="h-4 w-4 mr-2 text-red-500" /> Suivre sur la carte
+                              </Button>
+                              <Button className="flex-1 rounded-xl glass-morphism hover:bg-white/60 border-white/40 text-foreground" variant="outline">
+                                <MessageCircle className="h-4 w-4 mr-2 text-blue-500" /> Contacter
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))) : (
                   <div className="glass-card p-12 text-center">
                     <ShoppingCart className="h-16 w-16 mx-auto text-muted-foreground mb-4 opacity-20" />
                     <h3 className="text-xl font-bold mb-2">Aucune commande active</h3>
@@ -436,95 +535,10 @@ export const PatientDashboard = () => {
               </TabsContent>
             </Tabs>
           </div>
-
-          <VoiceCommandControl />
-
-          {/* Bottom Space for mobile navigation */}
-          <div className="h-20 md:hidden" />
-
-          {/* Sidebar Widgets */}
-          <div className="space-y-8">
-            <RefillWidget />
-            <WeatherWidget />
-
-            {/* Insurance Card - Premium Style */}
-            <div className="relative group overflow-hidden rounded-[2rem] p-[1px]">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800" />
-              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20" />
-              <div className="relative p-6 glass-morphism border-0 h-full flex flex-col justify-between min-h-[220px]">
-                <div className="flex justify-between items-start">
-                  <div className="space-y-0.5">
-                    <p className="text-[10px] text-white/60 uppercase font-black tracking-widest">Membre Privilège</p>
-                    <h4 className="text-lg font-bold text-white tracking-tight">{insurance.provider}</h4>
-                  </div>
-                  <Shield className="h-8 w-8 text-white/40" />
-                </div>
-
-                <div className="space-y-4">
-                  <div className="space-y-1">
-                    <p className="text-[10px] text-white/50 uppercase font-bold tracking-widest">N° de police</p>
-                    <p className="text-xl font-mono font-bold text-white tracking-widest">
-                      {insurance.number.substring(0, 3)} {insurance.number.substring(3, 7)} {insurance.number.substring(7)}
-                    </p>
-                  </div>
-
-                  <div className="pt-2">
-                    <div className="flex justify-between text-[10px] text-white/70 font-bold mb-1.5 uppercase">
-                      <span>Plafond restant</span>
-                      <span>{insurance.coverage}%</span>
-                    </div>
-                    <Progress value={insurance.coverage} className="h-2 bg-white/20" />
-                    <p className="text-xs text-white/80 mt-2 font-bold">
-                      {insurance.remaining} 000 / {insurance.total} 000 F
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Health Pulse Card */}
-            <div className="glass-card p-6 border-green-500/20">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center">
-                  <Heart className="h-5 w-5 text-green-600 animate-pulse" />
-                </div>
-                <h4 className="font-bold">Mon Bien-être</h4>
-              </div>
-              <div className="space-y-4">
-                <div className="p-3 bg-white/30 rounded-xl border border-white/20 hover:bg-white/50 transition-colors cursor-pointer group">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Calendar className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium">Prochain rappel</span>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-                  </div>
-                  <p className="text-[10px] text-muted-foreground mt-1 ml-7">Demain à 08:30 - Vitamines</p>
-                </div>
-              </div>
-              <Button className="w-full mt-6 rounded-xl glass-morphism border-white/40 hover:bg-white/60" variant="outline">
-                Gérer les rappels
-              </Button>
-            </div>
-
-            {/* Profile Selection / Correction (as seen in diagnostic) */}
-            <div className="glass-card p-6 bg-orange-500/5 border-orange-500/20">
-              <h4 className="font-bold mb-2 flex items-center gap-2">
-                <Settings className="h-4 w-4 text-orange-600" />
-                Gestion du profil
-              </h4>
-              <p className="text-xs text-muted-foreground mb-4">Besoin de modifier votre statut ou corriger vos informations ?</p>
-              <Button
-                onClick={() => setIsSettingsOpen(true)}
-                variant="outline"
-                className="w-full rounded-xl border-orange-200 text-orange-700 hover:bg-orange-100"
-              >
-                Paramètres complets
-              </Button>
-            </div>
-          </div>
         </div>
       </div>
+
+      <VoiceCommandControl />
 
       <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
         <DialogContent className="max-w-4xl glass-morphism border-white/20 max-h-[90vh] overflow-y-auto rounded-3xl p-0">

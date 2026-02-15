@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, ArrowLeft, User, Mail, Phone, Lock, HeartPulse, Zap, Eye, EyeOff, Fingerprint } from 'lucide-react'
+import { Loader2, ArrowLeft, User, Mail, Phone, Lock, HeartPulse, Zap, Eye, EyeOff, Fingerprint, Upload, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { uploadProfileImage } from '@/utils/upload'
 
 const signInSchema = z.object({
   email: z.string().email('Email invalide'),
@@ -35,6 +36,8 @@ export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
   const [isSignUp, setIsSignUp] = useState(false)
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [profileImage, setProfileImage] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const { signIn, signUp } = useAuth()
   const { toast } = useToast()
 
@@ -82,10 +85,16 @@ export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
   const onSignUp = async (values: z.infer<typeof signUpSchema>) => {
     setLoading(true)
     try {
+      let avatarUrl = null
+      if (profileImage) {
+        avatarUrl = await uploadProfileImage(profileImage, 'avatars')
+      }
+
       const { error } = await signUp(values.email, values.password, {
         name: values.name,
         phone: values.phone,
-        role: 'patient'
+        role: 'patient',
+        avatar_url: avatarUrl
       })
 
       if (error) throw error
@@ -207,6 +216,63 @@ export const PatientAuthForm = ({ onSuccess }: PatientAuthFormProps) => {
                     </FormItem>
                   )}
                 />
+
+                {/* Profile Photo Upload */}
+                <div className="space-y-2">
+                  <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Photo de Profil (Optionnel)</FormLabel>
+                  <div className="flex items-center gap-4">
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="relative w-16 h-16 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all overflow-hidden group"
+                    >
+                      {profileImage ? (
+                        <img
+                          src={URL.createObjectURL(profileImage)}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Upload className="h-6 w-6 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <Input
+                        ref={fileInputRef}
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={(e) => {
+                          if (e.target.files?.[0]) {
+                            setProfileImage(e.target.files[0])
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-xs"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        {profileImage ? "Changer la photo" : "Ajouter une photo"}
+                      </Button>
+                      {profileImage && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="w-full text-xs text-red-500 hover:text-red-700 hover:bg-red-50 mt-1 h-6"
+                          onClick={() => {
+                            setProfileImage(null)
+                            if (fileInputRef.current) fileInputRef.current.value = ''
+                          }}
+                        >
+                          <X className="h-3 w-3 mr-1" /> Supprimer
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
 
                 <FormField
                   control={signUpForm.control}
