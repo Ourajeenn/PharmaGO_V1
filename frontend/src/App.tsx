@@ -7,54 +7,63 @@ import { CartProvider } from "@/contexts/CartContext";
 import { ECarnetProvider } from "@/contexts/ECarnetContext";
 import { ReloadPrompt } from "@/components/ReloadPrompt";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import Index from "./pages/Index";
-import IndexV2 from "./pages/IndexV2";
-import Dashboard from "./pages/Dashboard";
-import NotFound from "./pages/NotFound";
-import ProfileSelection from "./pages/ProfileSelection";
-import VisitorPage from "./pages/VisitorPage";
-import TermsPage from "./pages/TermsPage";
-import PatientAuth from "./pages/auth/PatientAuth";
-import PharmacyAuth from "./pages/auth/PharmacyAuth";
-import DriverAuth from "./pages/auth/DriverAuth";
-import DoctorAuth from "./pages/auth/DoctorAuth";
-import InsurerAuth from "./pages/auth/InsurerAuth";
-import PharmaciesPage from "./pages/PharmaciesPage";
-import TrackingPage from "./pages/TrackingPage";
-import PaymentPage from "./pages/PaymentPage";
-import ParapharmacyPage from "./pages/ParapharmacyPage";
-import MedicinesPage from "./pages/MedicinesPage";
-import ContactPage from "./pages/ContactPage";
-import ConsultationPage from "./pages/ConsultationPage";
-import PrescriptionsPage from "./pages/PrescriptionsPage";
-import ConsultationFeaturePage from "./pages/ConsultationFeaturePage";
-import DoctorProfilePage from "./pages/DoctorProfilePage";
-import ECarnetDashboard from "./pages/ECarnetDashboard";
-import VaccinationTracker from "./components/ecarnet/VaccinationTracker";
-import AllergyManager from "./components/ecarnet/AllergyManager";
-import MedicalVisits from "./components/ecarnet/MedicalVisits";
-import DocumentManager from "./components/ecarnet/DocumentManager";
-import GrowthCharts from "./components/ecarnet/GrowthCharts";
-import PatientProfile from "./components/ecarnet/PatientProfile";
-import BirthRecord from "./components/ecarnet/BirthRecord";
-import AlertsPanel from "./components/ecarnet/AlertsPanel";
-import DeliveryTracking from "./pages/DeliveryTracking";
-import PharmacistDashboard from "./pages/PharmacistDashboard";
-import ContactsDashboardPage from "./pages/ContactsDashboardPage";
-import PatientMobilePage from "./pages/PatientMobilePage";
-import PharmaciesGardePage from "./pages/PharmaciesGardePage";
+import { UnifiedSupport } from "./components/UnifiedSupport";
 
-import Login from "./pages/Login";
-
-import { TestForm } from "@/components/TestForm";
-
-import { useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import Preloader from "@/components/Preloader";
 import { initializeMockData } from "@/data/ecarnetMockData";
 
-const queryClient = new QueryClient();
+// Pages chargées immédiatement (critiques pour le premier rendu)
+import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
 
-import { UnifiedSupport } from "./components/UnifiedSupport";
+// Pages lazy-loadées (chargées uniquement quand visitées)
+const IndexV2 = lazy(() => import("./pages/IndexV2"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const ProfileSelection = lazy(() => import("./pages/ProfileSelection"));
+const VisitorPage = lazy(() => import("./pages/VisitorPage"));
+const TermsPage = lazy(() => import("./pages/TermsPage"));
+const Login = lazy(() => import("./pages/Login"));
+
+// Auth pages
+const PatientAuth = lazy(() => import("./pages/auth/PatientAuth"));
+const PharmacyAuth = lazy(() => import("./pages/auth/PharmacyAuth"));
+const DriverAuth = lazy(() => import("./pages/auth/DriverAuth"));
+const DoctorAuth = lazy(() => import("./pages/auth/DoctorAuth"));
+const InsurerAuth = lazy(() => import("./pages/auth/InsurerAuth"));
+
+// Feature pages
+const PharmaciesPage = lazy(() => import("./pages/PharmaciesPage"));
+const PharmaciesGardePage = lazy(() => import("./pages/PharmaciesGardePage"));
+const TrackingPage = lazy(() => import("./pages/TrackingPage"));
+const PaymentPage = lazy(() => import("./pages/PaymentPage"));
+const ParapharmacyPage = lazy(() => import("./pages/ParapharmacyPage"));
+const MedicinesPage = lazy(() => import("./pages/MedicinesPage"));
+const ContactPage = lazy(() => import("./pages/ContactPage"));
+const ConsultationPage = lazy(() => import("./pages/ConsultationPage"));
+const PrescriptionsPage = lazy(() => import("./pages/PrescriptionsPage"));
+const ConsultationFeaturePage = lazy(() => import("./pages/ConsultationFeaturePage"));
+const DoctorProfilePage = lazy(() => import("./pages/DoctorProfilePage"));
+const DeliveryTracking = lazy(() => import("./pages/DeliveryTracking"));
+const PharmacistDashboard = lazy(() => import("./pages/PharmacistDashboard"));
+const ContactsDashboardPage = lazy(() => import("./pages/ContactsDashboardPage"));
+const PatientMobilePage = lazy(() => import("./pages/PatientMobilePage"));
+
+// E-Carnet pages
+const ECarnetDashboard = lazy(() => import("./pages/ECarnetDashboard"));
+const VaccinationTracker = lazy(() => import("./components/ecarnet/VaccinationTracker"));
+const AllergyManager = lazy(() => import("./components/ecarnet/AllergyManager"));
+const MedicalVisits = lazy(() => import("./components/ecarnet/MedicalVisits"));
+const DocumentManager = lazy(() => import("./components/ecarnet/DocumentManager"));
+const GrowthCharts = lazy(() => import("./components/ecarnet/GrowthCharts"));
+const PatientProfile = lazy(() => import("./components/ecarnet/PatientProfile"));
+const BirthRecord = lazy(() => import("./components/ecarnet/BirthRecord"));
+const AlertsPanel = lazy(() => import("./components/ecarnet/AlertsPanel"));
+
+// Misc
+const TestForm = lazy(() => import("@/components/TestForm").then(m => ({ default: m.TestForm })));
+
+const queryClient = new QueryClient();
 
 const App = () => {
   const [loading, setLoading] = useState(true);
@@ -63,10 +72,10 @@ const App = () => {
     // Initialize E-Carnet mock data
     initializeMockData();
 
-    // Ensure preloader displays for 4 seconds to show animation sequence
+    // Preloader display for 2 seconds
     const timer = setTimeout(() => {
       setLoading(false);
-    }, 4000);
+    }, 2000);
 
     return () => clearTimeout(timer);
   }, []);
@@ -84,51 +93,51 @@ const App = () => {
             <ReloadPrompt />
             <Sonner />
             <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/home-v2" element={<IndexV2 />} />
-                <Route path="/test-form" element={<TestForm />} />
-                <Route path="/profile-selection" element={<ProfileSelection />} />
-                <Route path="/visitor" element={<VisitorPage />} />
-                <Route path="/visiteur" element={<VisitorPage />} />
-                <Route path="/auth/patient" element={<PatientAuth />} />
-                <Route path="/auth/pharmacy" element={<PharmacyAuth />} />
-                <Route path="/auth/driver" element={<DriverAuth />} />
-                <Route path="/auth/doctor" element={<DoctorAuth />} />
-                <Route path="/auth/insurer" element={<InsurerAuth />} />
-                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                {/* <Route path="/login" element={<Login />} /> 
-                <Route path="/connexion" element={<Login />} /> Redundant, Auth handles this */}
-                <Route path="/pharmacies" element={<PharmaciesPage />} />
-                <Route path="/pharmacies-garde" element={<PharmaciesGardePage />} />
-                <Route path="/suivi" element={<TrackingPage />} />
-                <Route path="/livraison/suivi" element={<DeliveryTracking />} />
-                <Route path="/pharmacien/dashboard" element={<ProtectedRoute allowedRoles={['pharmacy', 'admin']}><PharmacistDashboard /></ProtectedRoute>} />
-                <Route path="/paiement" element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} />
-                <Route path="/parapharmacie" element={<ParapharmacyPage />} />
-                <Route path="/medicaments" element={<MedicinesPage />} />
-                <Route path="/contact" element={<ContactPage />} />
-                <Route path="/contacts-dashboard" element={<ProtectedRoute allowedRoles={['admin']}><ContactsDashboardPage /></ProtectedRoute>} />
-                <Route path="/patient-mobile" element={<PatientMobilePage />} />
-                <Route path="/ordonnances" element={<PrescriptionsPage />} />
-                <Route path="/consultation" element={<ConsultationPage />} />
-                <Route path="/consultation/:featureId" element={<ConsultationFeaturePage />} />
-                <Route path="/doctor/:doctorId" element={<DoctorProfilePage />} />
-                <Route path="/ecarnet" element={<ProtectedRoute><ECarnetDashboard /></ProtectedRoute>} />
-                <Route path="/ecarnet/profile" element={<PatientProfile />} />
-                <Route path="/ecarnet/new-patient" element={<PatientProfile />} />
-                <Route path="/ecarnet/birth" element={<BirthRecord />} />
-                <Route path="/ecarnet/vaccinations" element={<VaccinationTracker />} />
-                <Route path="/ecarnet/growth" element={<GrowthCharts />} />
-                <Route path="/ecarnet/allergies" element={<AllergyManager />} />
-                <Route path="/ecarnet/visits" element={<MedicalVisits />} />
-                <Route path="/ecarnet/documents" element={<DocumentManager />} />
-                <Route path="/ecarnet/alerts" element={<AlertsPanel />} />
-                <Route path="/terms" element={<TermsPage />} />
-                <Route path="/cgu" element={<TermsPage />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <Suspense fallback={<Preloader />}>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/home-v2" element={<IndexV2 />} />
+                  <Route path="/test-form" element={<TestForm />} />
+                  <Route path="/profile-selection" element={<ProfileSelection />} />
+                  <Route path="/visitor" element={<VisitorPage />} />
+                  <Route path="/visiteur" element={<VisitorPage />} />
+                  <Route path="/auth/patient" element={<PatientAuth />} />
+                  <Route path="/auth/pharmacy" element={<PharmacyAuth />} />
+                  <Route path="/auth/driver" element={<DriverAuth />} />
+                  <Route path="/auth/doctor" element={<DoctorAuth />} />
+                  <Route path="/auth/insurer" element={<InsurerAuth />} />
+                  <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                  <Route path="/pharmacies" element={<PharmaciesPage />} />
+                  <Route path="/pharmacies-garde" element={<PharmaciesGardePage />} />
+                  <Route path="/suivi" element={<TrackingPage />} />
+                  <Route path="/livraison/suivi" element={<DeliveryTracking />} />
+                  <Route path="/pharmacien/dashboard" element={<ProtectedRoute allowedRoles={['pharmacy', 'admin']}><PharmacistDashboard /></ProtectedRoute>} />
+                  <Route path="/paiement" element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} />
+                  <Route path="/parapharmacie" element={<ParapharmacyPage />} />
+                  <Route path="/medicaments" element={<MedicinesPage />} />
+                  <Route path="/contact" element={<ContactPage />} />
+                  <Route path="/contacts-dashboard" element={<ProtectedRoute allowedRoles={['admin']}><ContactsDashboardPage /></ProtectedRoute>} />
+                  <Route path="/patient-mobile" element={<PatientMobilePage />} />
+                  <Route path="/ordonnances" element={<PrescriptionsPage />} />
+                  <Route path="/consultation" element={<ConsultationPage />} />
+                  <Route path="/consultation/:featureId" element={<ConsultationFeaturePage />} />
+                  <Route path="/doctor/:doctorId" element={<DoctorProfilePage />} />
+                  <Route path="/ecarnet" element={<ProtectedRoute><ECarnetDashboard /></ProtectedRoute>} />
+                  <Route path="/ecarnet/profile" element={<PatientProfile />} />
+                  <Route path="/ecarnet/new-patient" element={<PatientProfile />} />
+                  <Route path="/ecarnet/birth" element={<BirthRecord />} />
+                  <Route path="/ecarnet/vaccinations" element={<VaccinationTracker />} />
+                  <Route path="/ecarnet/growth" element={<GrowthCharts />} />
+                  <Route path="/ecarnet/allergies" element={<AllergyManager />} />
+                  <Route path="/ecarnet/visits" element={<MedicalVisits />} />
+                  <Route path="/ecarnet/documents" element={<DocumentManager />} />
+                  <Route path="/ecarnet/alerts" element={<AlertsPanel />} />
+                  <Route path="/terms" element={<TermsPage />} />
+                  <Route path="/cgu" element={<TermsPage />} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
               <UnifiedSupport />
             </BrowserRouter>
           </TooltipProvider>
