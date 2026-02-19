@@ -4,18 +4,20 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { 
-  Download, 
-  Package, 
-  Calendar, 
-  MapPin, 
+import {
+  Download,
+  Package,
+  Calendar,
+  MapPin,
   CreditCard,
   FileText,
-  Eye
+  Eye,
+  Star
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { generateInvoicePDF } from '@/lib/invoicePdf';
 import { toast } from 'sonner';
+import ReviewDialog from '@/components/reviews/ReviewDialog';
 import {
   Dialog,
   DialogContent,
@@ -35,6 +37,16 @@ export const OrderHistory = ({ userId, userName, userEmail }: OrderHistoryProps)
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [reviewTarget, setReviewTarget] = useState<{ name: string; id: string } | null>(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
+
+  const openReview = (order: any) => {
+    setReviewTarget({
+      name: order.pharmacies?.name || 'la pharmacie',
+      id: order.pharmacy_id || '',
+    });
+    setReviewOpen(true);
+  };
 
   useEffect(() => {
     fetchOrders();
@@ -212,7 +224,7 @@ export const OrderHistory = ({ userId, userName, userEmail }: OrderHistoryProps)
                           <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground" />
                           <span className="text-muted-foreground">{order.delivery_address}</span>
                         </div>
-                        
+
                         <div className="flex items-center gap-2 text-sm">
                           <CreditCard className="h-4 w-4 text-muted-foreground" />
                           <span className="text-muted-foreground">
@@ -235,7 +247,18 @@ export const OrderHistory = ({ userId, userName, userEmail }: OrderHistoryProps)
                           <p className="text-sm text-muted-foreground">Total</p>
                           <p className="text-lg font-bold">{order.total.toLocaleString('fr-FR')} FCFA</p>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-wrap">
+                          {order.status === 'delivered' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openReview(order)}
+                              className="text-yellow-600 border-yellow-300 hover:bg-yellow-50"
+                            >
+                              <Star className="h-4 w-4 mr-1 fill-yellow-400 text-yellow-400" />
+                              Avis
+                            </Button>
+                          )}
                           <Button
                             variant="outline"
                             size="sm"
@@ -272,7 +295,7 @@ export const OrderHistory = ({ userId, userName, userEmail }: OrderHistoryProps)
               Commande #{selectedOrder?.id.substring(0, 8).toUpperCase()}
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedOrder && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -347,8 +370,8 @@ export const OrderHistory = ({ userId, userName, userEmail }: OrderHistoryProps)
                 </div>
               </div>
 
-              <Button 
-                className="w-full" 
+              <Button
+                className="w-full"
                 onClick={() => handleDownloadInvoice(selectedOrder)}
               >
                 <FileText className="h-4 w-4 mr-2" />
@@ -358,6 +381,14 @@ export const OrderHistory = ({ userId, userName, userEmail }: OrderHistoryProps)
           )}
         </DialogContent>
       </Dialog>
+      {/* Review Dialog */}
+      <ReviewDialog
+        isOpen={reviewOpen}
+        onClose={() => setReviewOpen(false)}
+        targetName={reviewTarget?.name || ''}
+        targetType="pharmacy"
+        targetId={reviewTarget?.id}
+      />
     </>
   );
 };

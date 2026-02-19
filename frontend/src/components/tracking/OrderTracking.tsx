@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,10 +12,11 @@ import {
   Phone,
   MessageCircle,
   Navigation,
-  User
+  User,
+  Radio
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import LeafletMap from '@/components/maps/LeafletMap';
 
@@ -53,18 +54,13 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
   const { user } = useAuth();
   const [trackingInfo, setTrackingInfo] = useState<TrackingInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isLive, setIsLive] = useState(false);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
-  useEffect(() => {
-    if (orderId) {
-      fetchTrackingInfo();
-      const interval = setInterval(fetchTrackingInfo, 30000); // Update every 30 seconds
-      return () => clearInterval(interval);
-    }
-  }, [orderId]);
-
+  // Initial fetch of full order info
   const fetchTrackingInfo = async () => {
     try {
-      const { data: orderData, error: orderError } = await supabase
+      const { data: orderData, error: orderError } = await (supabase as any)
         .from('orders')
         .select(`
           *,
@@ -116,9 +112,72 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
     }
   };
 
-  const getStatusIndex = (status: string) => {
-    return statusSteps.findIndex(step => step.key === status);
+  // Subscribe to realtime GPS updates on delivery_tracking table
+  const subscribeToRealtime = () => {
+    // Subscribe to order status changes
+    const orderChannel = supabase
+      .channel(`order-tracking-${orderId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'delivery_tracking',
+          filter: `order_id=eq.${orderId}`,
+        },
+        (payload) => {
+          const updated = payload.new as any;
+          setTrackingInfo((prev) =>
+            prev
+              ? {
+                ...prev,
+                current_latitude: updated.current_latitude ?? prev.current_latitude,
+                current_longitude: updated.current_longitude ?? prev.current_longitude,
+                estimated_arrival: updated.estimated_arrival ?? prev.estimated_arrival,
+              }
+              : prev
+          );
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `id=eq.${orderId}`,
+        },
+        (payload) => {
+          const updated = payload.new as any;
+          setTrackingInfo((prev) =>
+            prev ? { ...prev, status: updated.status ?? prev.status } : prev
+          );
+        }
+      )
+      .subscribe((status) => {
+        setIsLive(status === 'SUBSCRIBED');
+      });
+
+    channelRef.current = orderChannel;
   };
+
+  useEffect(() => {
+    if (!orderId) return;
+
+    fetchTrackingInfo();
+    subscribeToRealtime();
+
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+      setIsLive(false);
+    };
+  }, [orderId]);
+
+  const getStatusIndex = (status: string) =>
+    statusSteps.findIndex((step) => step.key === status);
 
   const getProgressPercentage = (status: string) => {
     const index = getStatusIndex(status);
@@ -127,8 +186,10 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
 
   const openInWaze = () => {
     if (trackingInfo?.current_latitude && trackingInfo?.current_longitude) {
-      const wazeUrl = `https://waze.com/ul?ll=${trackingInfo.current_latitude},${trackingInfo.current_longitude}&navigate=yes`;
-      window.open(wazeUrl, '_blank');
+      window.open(
+        `https://waze.com/ul?ll=${trackingInfo.current_latitude},${trackingInfo.current_longitude}&navigate=yes`,
+        '_blank'
+      );
     }
   };
 
@@ -159,6 +220,7 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
   }
 
   const currentStatusIndex = getStatusIndex(trackingInfo.status);
+  const isDelivering = ['assigned', 'picked_up'].includes(trackingInfo.status);
 
   return (
     <div className="space-y-6">
@@ -170,12 +232,25 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
               <Package className="h-5 w-5" />
               Commande #{trackingInfo.id.slice(-8)}
             </CardTitle>
-            <Badge
-              variant={trackingInfo.status === 'delivered' ? 'default' : 'secondary'}
-              className="capitalize"
-            >
-              {statusSteps.find(s => s.key === trackingInfo.status)?.label}
-            </Badge>
+            <div className="flex items-center gap-2">
+              {/* Live indicator */}
+              {isDelivering && (
+                <div className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full
+                  ${isLive
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-slate-100 text-slate-500'}`}
+                >
+                  <Radio className={`h-3.5 w-3.5 ${isLive ? 'animate-pulse' : ''}`} />
+                  {isLive ? 'En direct' : 'Connexion...'}
+                </div>
+              )}
+              <Badge
+                variant={trackingInfo.status === 'delivered' ? 'default' : 'secondary'}
+                className="capitalize"
+              >
+                {statusSteps.find((s) => s.key === trackingInfo.status)?.label}
+              </Badge>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -210,6 +285,33 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
         </CardContent>
       </Card>
 
+      {/* Map — shown when driver is en route */}
+      {isDelivering && trackingInfo.current_latitude && trackingInfo.current_longitude && (
+        <Card className="overflow-hidden border-green-200">
+          <CardHeader className="pb-2 bg-green-50/50">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Navigation className="h-4 w-4 text-green-600" />
+              Suivi GPS en direct
+              {isLive && (
+                <span className="ml-1 relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                </span>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0 overflow-hidden">
+            <LeafletMap
+              position={{
+                lat: trackingInfo.current_latitude,
+                lng: trackingInfo.current_longitude,
+              }}
+              height="350px"
+            />
+          </CardContent>
+        </Card>
+      )}
+
       {/* Status Timeline */}
       <Card>
         <CardHeader>
@@ -224,12 +326,15 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
 
               return (
                 <div key={step.key} className="flex items-center gap-3">
-                  <div className={`flex h-8 w-8 items-center justify-center rounded-full ${isCompleted
-                      ? isCurrent
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-green-500 text-white'
-                      : 'bg-muted text-muted-foreground'
-                    }`}>
+                  <div
+                    className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors
+                    ${isCompleted
+                        ? isCurrent
+                          ? 'bg-primary text-primary-foreground ring-4 ring-primary/20'
+                          : 'bg-green-500 text-white'
+                        : 'bg-muted text-muted-foreground'
+                      }`}
+                  >
                     <StepIcon className="h-4 w-4" />
                   </div>
                   <div className="flex-1">
@@ -237,9 +342,7 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
                       {step.label}
                     </p>
                   </div>
-                  {isCompleted && (
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                  )}
+                  {isCompleted && <CheckCircle className="h-4 w-4 text-green-500" />}
                 </div>
               );
             })}
@@ -261,7 +364,7 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
               <div className="flex items-center gap-3">
                 <Avatar>
                   <AvatarFallback>
-                    {trackingInfo.driver_name.split(' ').map(n => n[0]).join('')}
+                    {trackingInfo.driver_name.split(' ').map((n) => n[0]).join('')}
                   </AvatarFallback>
                 </Avatar>
                 <div>
@@ -286,29 +389,6 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
                 )}
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Map Visualization */}
-      {(trackingInfo.current_latitude && trackingInfo.current_longitude) && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Navigation className="h-5 w-5" />
-              Suivi en direct
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 overflow-hidden">
-            <LeafletMap
-              position={{
-                lat: trackingInfo.current_latitude,
-                lng: trackingInfo.current_longitude
-              }}
-              // Note: We don't have destination coords in trackingInfo easily available unless we geocode the address
-              // For now just showing driver position
-              height="350px"
-            />
           </CardContent>
         </Card>
       )}
