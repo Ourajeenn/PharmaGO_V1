@@ -19,6 +19,7 @@ import { HelpSupportSection } from '@/components/patient/HelpSupportSection'
 import { PharmacyMapSection } from '@/components/maps/PharmacyMapSection'
 import { LoyaltySection } from '@/components/dashboard/LoyaltySection'
 import { AIHealthAssistant } from '@/components/assistant/AIHealthAssistant'
+import { NotificationPermission } from '@/components/NotificationPermission'
 import { VoiceCommandControl } from '@/components/assistant/VoiceCommandControl'
 import { EWallet } from '@/components/wallet/EWallet'
 import { PrescriptionRenewal } from '@/components/prescription/PrescriptionRenewal'
@@ -548,8 +549,9 @@ export const PatientDashboard = () => {
               <CardDescription>Mettez à jour vos informations personnelles et de santé</CardDescription>
             </DialogHeader>
           </div>
-          <div className="p-6">
+          <div className="p-6 space-y-6">
             <EditablePatientProfile />
+            <NotificationPermission />
           </div>
         </DialogContent>
       </Dialog>

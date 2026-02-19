@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCart } from "@/contexts/CartContext";
 import ClickCollectQR from "@/components/cart/ClickCollectQR";
+import { USSDSimulator } from "@/components/payment/USSDSimulator";
+import pushNotifications, { NotificationTemplates } from "@/lib/pushNotifications";
 import {
   ArrowLeft,
   CreditCard,
@@ -104,6 +106,10 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStep, setPaymentStep] = useState<'details' | 'payment' | 'confirmation' | 'pickup_ready'>('details');
   const [orderId, setOrderId] = useState<string>('');
+  const [showUSSD, setShowUSSD] = useState(false);
+
+  // Mobile money provider IDs
+  const mobileMoneyProviders = ['orange_money', 'wave', 'mtn_money', 'moov_money'];
 
   // Click & Collect mode
   const [deliveryMode, setDeliveryMode] = useState<'delivery' | 'pickup'>('delivery');
@@ -157,22 +163,39 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
 
   const { user } = useAuth(); // Add useAuth hook
 
+  // Main payment handler — launches USSD for mobile money, or processes directly
   const handlePayment = async () => {
     if (!deliveryAddress || (selectedPaymentMethod !== 'cash_on_delivery' && !phoneNumber)) {
       toast.error("Veuillez remplir tous les champs obligatoires");
       return;
     }
 
+    // If mobile money → open USSD simulator first
+    if (mobileMoneyProviders.includes(selectedPaymentMethod)) {
+      setShowUSSD(true);
+      return;
+    }
+
+    // For non-mobile-money methods, process directly
+    await processOrder();
+  };
+
+  // Called after USSD success or directly for non-mobile-money
+  const processOrder = useCallback(async () => {
+    setShowUSSD(false);
     setIsProcessing(true);
     setPaymentStep('payment');
 
     try {
-      // 1. Simulate Payment Gateway Delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Brief processing delay for non-USSD methods
+      if (!mobileMoneyProviders.includes(selectedPaymentMethod)) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
 
       const newOrderId = `CMD-${Math.floor(Math.random() * 1000000)}`;
+      let finalOrderId = newOrderId;
 
-      // 2. Create Order in Supabase
+      // Create Order in Supabase
       if (user) {
         const { data, error } = await supabase
           .from('orders')
@@ -183,7 +206,7 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
             payment_method: selectedPaymentMethod,
             payment_status: selectedPaymentMethod === 'cash_on_delivery' ? 'pending' : 'completed',
             delivery_address: deliveryAddress,
-            pharmacy_id: Object.keys(pharmacyGroups)[0] || null, // Pick first pharmacy for now
+            pharmacy_id: Object.keys(pharmacyGroups)[0] || null,
             items_count: items.reduce((acc, item) => acc + item.quantity, 0),
             notes: orderNotes
           })
@@ -191,13 +214,37 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
           .single();
 
         if (error) throw error;
-        setOrderId(data.id.substring(0, 8).toUpperCase());
+        finalOrderId = data.id.substring(0, 8).toUpperCase();
+        setOrderId(finalOrderId);
+
+        // INSERT notification into Supabase (triggers realtime popover)
+        try {
+          await (supabase as any)
+            .from('notifications')
+            .insert({
+              user_id: user.id,
+              title: '✅ Commande confirmée',
+              message: `Votre commande #${finalOrderId} de ${finalTotal.toLocaleString()} FCFA a été confirmée.`,
+              type: 'success',
+              read: false,
+              metadata: { order_id: finalOrderId, amount: finalTotal }
+            });
+        } catch (notifError) {
+          console.warn('Notification insert failed (non-blocking):', notifError);
+        }
+
+        // Trigger browser push notification
+        try {
+          const template = NotificationTemplates.orderConfirmed(finalOrderId);
+          await pushNotifications.showNotification(template.title, template);
+        } catch (pushError) {
+          console.warn('Push notification failed (non-blocking):', pushError);
+        }
       } else {
-        // Fallback for guest checkout (if allowed)
         setOrderId(newOrderId);
       }
 
-      // 3. Success State
+      // Success State
       if (deliveryMode === 'pickup') {
         setPaymentStep('pickup_ready');
       } else {
@@ -206,7 +253,6 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
 
       toast.success("Paiement effectué avec succès !");
 
-      // Clear cart
       if (selectedPaymentMethod !== 'cash_on_delivery') {
         clearCart();
       }
@@ -214,11 +260,11 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
     } catch (error) {
       console.error('Payment Error:', error);
       toast.error("Erreur lors du traitement de la commande");
-      setPaymentStep('details'); // Go back
+      setPaymentStep('details');
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, [user, finalTotal, selectedPaymentMethod, deliveryAddress, deliveryMode, pharmacyGroups, items, orderNotes, clearCart]);
 
   const getPaymentMethodById = (id: string) => {
     return paymentMethods.find(method => method.id === id);
@@ -637,14 +683,24 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
           </div>
         )}
 
+        {/* USSD Simulator Dialog — opens for mobile money methods */}
+        <USSDSimulator
+          open={showUSSD}
+          provider={selectedPaymentMethod}
+          phoneNumber={phoneNumber}
+          amount={finalTotal}
+          onSuccess={processOrder}
+          onCancel={() => setShowUSSD(false)}
+        />
+
         {paymentStep === 'payment' && (
           <div className="max-w-md mx-auto">
             <Card>
               <CardContent className="py-12 text-center">
                 <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                <h3 className="text-xl font-semibold mb-2">Traitement du paiement</h3>
+                <h3 className="text-xl font-semibold mb-2">Finalisation de la commande</h3>
                 <p className="text-muted-foreground mb-4">
-                  Veuillez patienter pendant que nous traitons votre paiement...
+                  Enregistrement de votre commande...
                 </p>
                 <div className="bg-muted rounded-lg p-4">
                   <p className="text-sm">
