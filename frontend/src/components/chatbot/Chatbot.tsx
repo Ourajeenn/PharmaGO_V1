@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -7,20 +7,23 @@ import { Badge } from '@/components/ui/badge';
 import {
   MessageCircle,
   Send,
-  Bot,
-  User,
   X,
   Minimize2,
-  Maximize2
+  Maximize2,
+  User,
+  WifiOff,
+  Wifi
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useHealthAI } from '@/hooks/useHealthAI';
 
 interface ChatMessage {
   id: string;
   type: 'user' | 'bot';
   content: string;
   timestamp: Date;
+  isOffline?: boolean;
 }
 
 interface ChatbotProps {
@@ -29,21 +32,27 @@ interface ChatbotProps {
   isEmbedded?: boolean;
 }
 
+const DEFAULT_CHIPS = [
+  "📦 Suivre ma commande",
+  "🏥 Pharmacie de garde",
+  "💊 Conseil médicament",
+  "🆘 Urgence médicale",
+];
+
+const EDGE_FUNCTION_TIMEOUT_MS = 3500;
+
 export const Chatbot: React.FC<ChatbotProps> = ({
   isOpen: controlledIsOpen,
   onOpenChange,
-  isEmbedded = false
+  isEmbedded = false,
 }) => {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const isControlled = controlledIsOpen !== undefined;
   const isOpen = isControlled ? controlledIsOpen : internalIsOpen;
 
   const setIsOpen = (value: boolean) => {
-    if (isControlled && onOpenChange) {
-      onOpenChange(value);
-    } else {
-      setInternalIsOpen(value);
-    }
+    if (isControlled && onOpenChange) onOpenChange(value);
+    else setInternalIsOpen(value);
   };
 
   const [isMinimized, setIsMinimized] = useState(false);
@@ -51,77 +60,115 @@ export const Chatbot: React.FC<ChatbotProps> = ({
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [chips, setChips] = useState<string[]>(DEFAULT_CHIPS);
+
   const { toast } = useToast();
+  const { getLocalResponse } = useHealthAI();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  // ── Online/offline detection ────────────────────────────
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   useEffect(() => {
-    scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      const welcomeMessage: ChatMessage = {
-        id: '1',
+      const welcome: ChatMessage = {
+        id: '0',
         type: 'bot',
-        content: "Bonjour ! Je suis votre assistant PharmaGo intelligent. Comment puis-je vous aider aujourd'hui ?",
-        timestamp: new Date()
+        content: "Bonjour ! 👋 Je suis **Leslie**, votre assistante santé PharmaGo. Comment puis-je vous aider aujourd'hui ?",
+        timestamp: new Date(),
       };
-      setMessages([welcomeMessage]);
+      setMessages([welcome]);
     }
   }, [isOpen]);
 
+  // ── Edge function call with timeout ──────────────────────
+  const callEdgeFunction = useCallback(
+    async (content: string): Promise<string | null> => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), EDGE_FUNCTION_TIMEOUT_MS);
+
+      try {
+        const { data, error } = await supabase.functions.invoke('chat', {
+          body: { message: content, conversationId },
+        });
+
+        clearTimeout(timeoutId);
+        if (error) return null;
+
+        if (data.conversationId && !conversationId) {
+          setConversationId(data.conversationId);
+        }
+        return data.message ?? null;
+      } catch {
+        clearTimeout(timeoutId);
+        return null;
+      }
+    },
+    [conversationId]
+  );
+
+  // ── Main send handler ─────────────────────────────────────
   const sendMessage = async (content: string) => {
     if (!content.trim()) return;
 
-    const userMessage: ChatMessage = {
+    const userMsg: ChatMessage = {
       id: Date.now().toString(),
       type: 'user',
       content,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
-
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMsg]);
     setInputValue('');
     setIsTyping(true);
 
-    try {
-      const { data, error } = await supabase.functions.invoke('chat', {
-        body: {
-          message: content,
-          conversationId
-        }
-      });
+    let botContent: string;
+    let usedOffline = false;
 
-      if (error) throw error;
-
-      if (data.conversationId && !conversationId) {
-        setConversationId(data.conversationId);
+    if (!isOnline) {
+      // Offline — always use local AI
+      const { message, suggestedChips } = getLocalResponse(content);
+      botContent = message;
+      if (suggestedChips) setChips(suggestedChips);
+      usedOffline = true;
+    } else {
+      // Online — try edge function, fallback to local AI on timeout/error
+      const edgeResponse = await callEdgeFunction(content);
+      if (edgeResponse) {
+        botContent = edgeResponse;
+      } else {
+        const { message, suggestedChips } = getLocalResponse(content);
+        botContent = message;
+        if (suggestedChips) setChips(suggestedChips);
+        usedOffline = true;
       }
-
-      const botMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        type: 'bot',
-        content: data.message,
-        timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, botMessage]);
-    } catch (error) {
-      console.error('Chat error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de contacter l'assistant. Veuillez réessayer.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsTyping(false);
     }
+
+    const botMsg: ChatMessage = {
+      id: (Date.now() + 1).toString(),
+      type: 'bot',
+      content: botContent,
+      timestamp: new Date(),
+      isOffline: usedOffline,
+    };
+    setMessages((prev) => [...prev, botMsg]);
+    setIsTyping(false);
   };
 
+  // ── Floating button ────────────────────────────────────────
   if (!isOpen && !isEmbedded && !isControlled) {
     return (
       <Button
@@ -134,23 +181,45 @@ export const Chatbot: React.FC<ChatbotProps> = ({
     );
   }
 
-  // If closed and embedded/controlled, return null (parent controls visibility)
-  if (!isOpen && (isEmbedded || isControlled)) {
-    return null;
-  }
+  if (!isOpen && (isEmbedded || isControlled)) return null;
 
   return (
-    <Card className={`${isEmbedded ? 'w-full h-full border-none shadow-none' : 'fixed bottom-6 right-6 w-80 shadow-xl z-50'} transition-all duration-300 ${!isEmbedded && isMinimized ? 'h-14' : (!isEmbedded ? 'h-96' : 'flex-1')
-      }`}>
-      <CardHeader className="pb-2">
+    <Card
+      className={`${isEmbedded
+          ? 'w-full h-full border-none shadow-none'
+          : 'fixed bottom-6 right-6 w-96 shadow-2xl z-50'
+        } transition-all duration-300 ${!isEmbedded && isMinimized ? 'h-14 overflow-hidden' : !isEmbedded ? 'h-[520px]' : ''
+        }`}
+    >
+      {/* ── Header ──────────────────────────────────────── */}
+      <CardHeader className="pb-2 border-b">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm flex items-center gap-2">
-            <div className="h-6 w-6 rounded-full overflow-hidden border border-primary/20">
-              <img src="/leslie-avatar.png" alt="Leslie" className="h-full w-full object-cover" />
+            <div className="h-7 w-7 rounded-full overflow-hidden border border-primary/30 shadow-sm">
+              <img
+                src="/leslie-avatar.png"
+                alt="Leslie"
+                className="h-full w-full object-cover"
+              />
             </div>
-            Assistant PharmaGo
-            <Badge variant="secondary" className="text-xs">En ligne</Badge>
+            <span className="font-semibold">Leslie — PharmaGo AI</span>
+
+            {/* Online / offline indicator */}
+            <span
+              className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${isOnline
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-orange-100 text-orange-700'
+                }`}
+            >
+              {isOnline ? (
+                <Wifi className="h-2.5 w-2.5" />
+              ) : (
+                <WifiOff className="h-2.5 w-2.5" />
+              )}
+              {isOnline ? 'En ligne' : 'Hors-ligne'}
+            </span>
           </CardTitle>
+
           <div className="flex items-center gap-1">
             {!isEmbedded && (
               <Button
@@ -159,7 +228,11 @@ export const Chatbot: React.FC<ChatbotProps> = ({
                 className="h-6 w-6"
                 onClick={() => setIsMinimized(!isMinimized)}
               >
-                {isMinimized ? <Maximize2 className="h-3 w-3" /> : <Minimize2 className="h-3 w-3" />}
+                {isMinimized ? (
+                  <Maximize2 className="h-3 w-3" />
+                ) : (
+                  <Minimize2 className="h-3 w-3" />
+                )}
               </Button>
             )}
             <Button
@@ -174,18 +247,20 @@ export const Chatbot: React.FC<ChatbotProps> = ({
         </div>
       </CardHeader>
 
+      {/* ── Body ────────────────────────────────────────── */}
       {!isMinimized && (
-        <CardContent className="flex flex-col h-80">
-          <ScrollArea className="flex-1 pr-2">
+        <CardContent className="flex flex-col p-3 gap-3 h-[calc(100%-56px)]">
+          <ScrollArea className="flex-1 pr-1">
             <div className="space-y-3">
+              {/* Quick chips — shown when only welcome message */}
               {messages.length === 1 && (
-                <div className="grid grid-cols-2 gap-2 mb-4">
-                  {["📦 Suivre ma commande", "🏥 Pharmacie de garde", "📄 Envoyer ordonnance", "💊 Conseil médicament"].map((chip) => (
+                <div className="grid grid-cols-2 gap-1.5 mb-3">
+                  {chips.map((chip) => (
                     <Button
                       key={chip}
                       variant="outline"
                       size="sm"
-                      className="text-xs h-auto py-2 whitespace-normal text-left justify-start"
+                      className="text-xs h-auto py-2 whitespace-normal text-left justify-start leading-tight"
                       onClick={() => sendMessage(chip)}
                     >
                       {chip}
@@ -193,27 +268,46 @@ export const Chatbot: React.FC<ChatbotProps> = ({
                   ))}
                 </div>
               )}
+
+              {/* Messages */}
               {messages.map((message) => (
-                <div key={message.id} className="space-y-2">
+                <div key={message.id}>
                   <div
-                    className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                    className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'
+                      }`}
                   >
-                    <div className="flex items-start gap-2 max-w-[85%]">
+                    <div className="flex items-end gap-2 max-w-[88%]">
                       {message.type === 'bot' && (
-                        <div className="h-6 w-6 rounded-full overflow-hidden border border-primary/20 flex-shrink-0 shadow-sm">
-                          <img src="/leslie-avatar.png" alt="Leslie" className="h-full w-full object-cover" />
+                        <div className="h-6 w-6 rounded-full overflow-hidden border border-primary/20 flex-shrink-0 shadow-sm mb-0.5">
+                          <img
+                            src="/leslie-avatar.png"
+                            alt="Leslie"
+                            className="h-full w-full object-cover"
+                          />
                         </div>
                       )}
-                      <div
-                        className={`px-3 py-2 rounded-lg text-sm ${message.type === 'user'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted'
-                          }`}
-                      >
-                        {message.content}
+                      <div>
+                        <div
+                          className={`px-3 py-2 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${message.type === 'user'
+                              ? 'bg-primary text-primary-foreground rounded-br-sm'
+                              : 'bg-muted rounded-bl-sm'
+                            }`}
+                          dangerouslySetInnerHTML={{
+                            __html: message.content.replace(
+                              /\*\*(.*?)\*\*/g,
+                              '<strong>$1</strong>'
+                            ),
+                          }}
+                        />
+                        {message.isOffline && message.type === 'bot' && (
+                          <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1 pl-1">
+                            <WifiOff className="h-2.5 w-2.5" />
+                            Réponse locale (IA embarquée)
+                          </p>
+                        )}
                       </div>
                       {message.type === 'user' && (
-                        <div className="h-6 w-6 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+                        <div className="h-6 w-6 rounded-full bg-secondary flex items-center justify-center flex-shrink-0 mb-0.5">
                           <User className="h-3 w-3" />
                         </div>
                       )}
@@ -221,46 +315,65 @@ export const Chatbot: React.FC<ChatbotProps> = ({
                   </div>
                 </div>
               ))}
+
+              {/* Typing indicator */}
               {isTyping && (
                 <div className="flex justify-start">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-end gap-2">
                     <div className="h-6 w-6 rounded-full overflow-hidden border border-primary/20">
-                      <img src="/leslie-avatar.png" alt="Leslie" className="h-full w-full object-cover" />
+                      <img
+                        src="/leslie-avatar.png"
+                        alt="Leslie"
+                        className="h-full w-full object-cover"
+                      />
                     </div>
-                    <div className="bg-muted px-3 py-2 rounded-lg">
+                    <div className="bg-muted px-3 py-2.5 rounded-2xl rounded-bl-sm">
                       <div className="flex space-x-1">
-                        <div className="h-1 w-1 bg-muted-foreground rounded-full animate-pulse"></div>
-                        <div className="h-1 w-1 bg-muted-foreground rounded-full animate-pulse delay-100"></div>
-                        <div className="h-1 w-1 bg-muted-foreground rounded-full animate-pulse delay-200"></div>
+                        {[0, 150, 300].map((delay) => (
+                          <div
+                            key={delay}
+                            className="h-1.5 w-1.5 bg-muted-foreground/60 rounded-full animate-bounce"
+                            style={{ animationDelay: `${delay}ms` }}
+                          />
+                        ))}
                       </div>
                     </div>
                   </div>
                 </div>
               )}
+
               <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
 
-          <div className="flex items-center gap-2 mt-3 pt-3 border-t">
+          {/* ── Input area ──────────────────────────────── */}
+          {!isOnline && (
+            <div className="flex items-center gap-1.5 text-xs text-orange-600 bg-orange-50 rounded-lg px-3 py-1.5">
+              <WifiOff className="h-3.5 w-3.5 flex-shrink-0" />
+              Mode hors-ligne — Leslie répond en local
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 pt-1 border-t">
             <Input
-              placeholder="Tapez votre question..."
+              placeholder={isOnline ? "Tapez votre question..." : "Question (mode hors-ligne)..."}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   sendMessage(inputValue);
                 }
               }}
-              className="flex-1 h-8 text-sm"
+              className="flex-1 h-9 text-sm"
             />
             <Button
               onClick={() => sendMessage(inputValue)}
               disabled={!inputValue.trim() || isTyping}
               size="icon"
-              className="h-8 w-8"
+              className="h-9 w-9 flex-shrink-0"
             >
-              <Send className="h-3 w-3" />
+              <Send className="h-4 w-4" />
             </Button>
           </div>
         </CardContent>
