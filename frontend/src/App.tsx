@@ -48,6 +48,7 @@ const DeliveryTracking = lazy(() => import("./pages/DeliveryTracking"));
 const PharmacistDashboard = lazy(() => import("./pages/PharmacistDashboard"));
 const ContactsDashboardPage = lazy(() => import("./pages/ContactsDashboardPage"));
 const PatientMobilePage = lazy(() => import("./pages/PatientMobilePage"));
+const TeleconsultationPage = lazy(() => import("./pages/TeleconsultationPage"));
 
 // E-Carnet pages
 const ECarnetDashboard = lazy(() => import("./pages/ECarnetDashboard"));
@@ -120,6 +121,7 @@ const App = () => {
                   <Route path="/patient-mobile" element={<PatientMobilePage />} />
                   <Route path="/ordonnances" element={<PrescriptionsPage />} />
                   <Route path="/consultation" element={<ConsultationPage />} />
+                  <Route path="/teleconsultation" element={<ProtectedRoute><TeleconsultationPage /></ProtectedRoute>} />
                   <Route path="/consultation/:featureId" element={<ConsultationFeaturePage />} />
                   <Route path="/doctor/:doctorId" element={<DoctorProfilePage />} />
                   <Route path="/ecarnet" element={<ProtectedRoute><ECarnetDashboard /></ProtectedRoute>} />

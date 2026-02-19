@@ -19,6 +19,7 @@ import {
     QrCode
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { LoyaltyCard } from '@/components/wallet/LoyaltyCard';
 
 interface Transaction {
     id: string;
@@ -238,6 +239,11 @@ export function EWallet({ userId }: EWalletProps) {
                         <p className="text-xs text-amber-600">+5% sur chaque recharge ce mois</p>
                     </div>
                     <ChevronRight className="h-5 w-5 text-amber-600" />
+                </div>
+
+                {/* Loyalty Program */}
+                <div className="border-t pt-4">
+                    <LoyaltyCard points={420} totalSpent={balance} />
                 </div>
             </CardContent>
         </Card>
