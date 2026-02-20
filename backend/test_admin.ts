@@ -29,6 +29,6 @@ async function testAdmin() {
     } else {
         console.log(`Success! Found ${users.length} users.`);
     }
-}
+} NBVCXDFHJKLM%
 
 testAdmin();

@@ -2,7 +2,7 @@
 import { logger } from '@/utils/logger';
 interface PushSubscriptionOptions {
     userVisibleOnly: boolean;
-    applicationServerKey: string;
+    applicationServerKey: string | Uint8Array;
 }
 
 class PushNotificationManager {
@@ -140,7 +140,7 @@ class PushNotificationManager {
             throw new Error('Service Worker non initialisé');
         }
 
-        const defaultOptions: NotificationOptions = {
+        const defaultOptions: any = {
             icon: '/icon-192x192.png',
             badge: '/icon-72x72.png',
             vibrate: [200, 100, 200],
@@ -153,84 +153,90 @@ class PushNotificationManager {
 
 // Notification templates for common scenarios
 export const NotificationTemplates = {
-    orderConfirmed: (orderNumber: string) => ({
+    orderConfirmed: (orderNumber: string): NotificationOptions & { title: string } => ({
         title: '✅ Commande confirmée',
         body: `Votre commande #${orderNumber} a été confirmée et est en préparation`,
         icon: '/icon-192x192.png',
+        badge: '/icon-128x128.png',
         tag: `order-${orderNumber}`,
         data: { url: `/suivi?order=${orderNumber}`, type: 'order_confirmed' },
         actions: [
-            { action: 'view', title: 'Voir la commande', icon: '/icon-96x96.png' },
-            { action: 'close', title: 'Fermer', icon: '/icon-96x96.png' },
+            { action: 'view', title: 'Voir la commande' },
+            { action: 'close', title: 'Fermer' },
         ],
     }),
 
-    driverAssigned: (driverName: string, orderNumber: string) => ({
+    driverAssigned: (driverName: string, orderNumber: string): NotificationOptions & { title: string } => ({
         title: '🛵 Livreur assigné',
         body: `${driverName} va livrer votre commande #${orderNumber}`,
         icon: '/icon-192x192.png',
+        badge: '/icon-128x128.png',
         tag: `order-${orderNumber}`,
         data: { url: `/suivi?order=${orderNumber}`, type: 'driver_assigned' },
         actions: [
-            { action: 'track', title: 'Suivre', icon: '/icon-96x96.png' },
-            { action: 'close', title: 'Fermer', icon: '/icon-96x96.png' },
+            { action: 'track', title: 'Suivre' },
+            { action: 'close', title: 'Fermer' },
         ],
     }),
 
-    nearbyDelivery: (minutes: number, orderNumber: string) => ({
+    nearbyDelivery: (minutes: number, orderNumber: string): NotificationOptions & { title: string } => ({
         title: '📍 Livreur proche',
         body: `Votre livreur arrive dans ${minutes} minutes`,
         icon: '/icon-192x192.png',
+        badge: '/icon-128x128.png',
         tag: `order-${orderNumber}`,
         requireInteraction: true,
         data: { url: `/suivi?order=${orderNumber}`, type: 'nearby_delivery' },
         actions: [
-            { action: 'open', title: 'Voir', icon: '/icon-96x96.png' },
-            { action: 'close', title: 'OK', icon: '/icon-96x96.png' },
+            { action: 'open', title: 'Voir' },
+            { action: 'close', title: 'OK' },
         ],
     }),
 
-    delivered: (orderNumber: string) => ({
+    delivered: (orderNumber: string): NotificationOptions & { title: string } => ({
         title: '🎉 Commande livrée',
         body: `Votre commande #${orderNumber} a été livrée avec succès`,
         icon: '/icon-192x192.png',
+        badge: '/icon-128x128.png',
         tag: `order-${orderNumber}`,
         data: { url: `/suivi?order=${orderNumber}`, type: 'delivered' },
         actions: [
-            { action: 'rate', title: 'Noter', icon: '/icon-96x96.png' },
-            { action: 'close', title: 'Fermer', icon: '/icon-96x96.png' },
+            { action: 'rate', title: 'Noter' },
+            { action: 'close', title: 'Fermer' },
         ],
     }),
 
-    pharmacyOnDuty: (pharmacyName: string, address: string) => ({
+    pharmacyOnDuty: (pharmacyName: string, address: string): NotificationOptions & { title: string } => ({
         title: '🏥 Pharmacie de garde proche',
         body: `${pharmacyName} est de garde\n${address}`,
         icon: '/icon-192x192.png',
+        badge: '/icon-128x128.png',
         tag: 'pharmacy-on-duty',
         data: { url: '/pharmacies', type: 'pharmacy_on_duty' },
         actions: [
-            { action: 'directions', title: 'Itinéraire', icon: '/icon-96x96.png' },
-            { action: 'close', title: 'Fermer', icon: '/icon-96x96.png' },
+            { action: 'directions', title: 'Itinéraire' },
+            { action: 'close', title: 'Fermer' },
         ],
     }),
 
-    medicineReminder: (medicineName: string) => ({
+    medicineReminder: (medicineName: string): NotificationOptions & { title: string } => ({
         title: '💊 Rappel de renouvellement',
         body: `Il est temps de renouveler votre ${medicineName}`,
         icon: '/icon-192x192.png',
+        badge: '/icon-128x128.png',
         tag: 'medicine-reminder',
         data: { url: '/medicaments', type: 'medicine_reminder' },
         actions: [
-            { action: 'order', title: 'Commander', icon: '/icon-96x96.png' },
-            { action: 'later', title: 'Plus tard', icon: '/icon-96x96.png' },
+            { action: 'order', title: 'Commander' },
+            { action: 'later', title: 'Plus tard' },
         ],
     }),
 };
 
 // Export singleton instance
 export const pushNotifications = new PushNotificationManager(
-    // VAPID public key (should be stored in environment variable in production)
-    'YOUR_VAPID_PUBLIC_KEY_HERE'
+    // VAPID public key
+    'BEl62vpov1ceP3ID_qzTW77bbFpx7re8.0' // Mock VAPID key
 );
 
 export default pushNotifications;

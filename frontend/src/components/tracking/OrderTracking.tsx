@@ -22,6 +22,8 @@ import LeafletMap from '@/components/maps/LeafletMap';
 import { toast } from 'sonner';
 import { formatDistanceToNow, parseISO, differenceInMinutes } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import usePushNotifications from '@/hooks/usePushNotifications';
+import { Bell, BellOff, Info } from 'lucide-react';
 
 interface TrackingInfo {
   id: string;
@@ -55,6 +57,7 @@ const statusSteps = [
 
 export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
   const { user } = useAuth();
+  const { permission, requestPermission, notify } = usePushNotifications();
   const [trackingInfo, setTrackingInfo] = useState<TrackingInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLive, setIsLive] = useState(false);
@@ -213,7 +216,11 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
         const nextStatus = DEMO_STATUSES[idx];
         setTrackingInfo(prev => prev ? { ...prev, status: nextStatus } : prev);
         const label = statusSteps.find(s => s.key === nextStatus)?.label;
-        if (label) toast.success(`🚚 Statut mis à jour : ${label}`);
+        if (label) {
+          toast.success(`🚚 Statut mis à jour : ${label}`);
+          // Trigger Push Notification
+          triggerPushNotification(nextStatus, orderId);
+        }
         if (idx === DEMO_STATUSES.length - 1) clearInterval(interval);
       }, 4000);
       return () => clearInterval(interval);
@@ -232,16 +239,39 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
     };
   }, [orderId]);
 
-  // ── Status-change toasts ────────────────────────────────────────────────
+  // ── Helper to map status to notification ───────────────────────────────
+  const triggerPushNotification = useCallback((status: string, id: string) => {
+    if (permission !== 'granted') return;
+
+    const orderNum = id.slice(-8).toUpperCase();
+
+    switch (status) {
+      case 'confirmed':
+        notify('orderConfirmed', orderNum);
+        break;
+      case 'assigned':
+        notify('driverAssigned', trackingInfo?.driver_name || 'Un livreur', orderNum);
+        break;
+      case 'delivered':
+        notify('delivered', orderNum);
+        break;
+      // Add more as needed
+    }
+  }, [permission, notify, trackingInfo?.driver_name]);
+
+  // ── Status-change toasts + PUSH ────────────────────────────────────────
   useEffect(() => {
     if (!trackingInfo?.status) return;
     const current = trackingInfo.status;
     if (prevStatusRef.current && prevStatusRef.current !== current) {
       const label = statusSteps.find(s => s.key === current)?.label;
-      if (label) toast.success(`🚚 Statut mis à jour : ${label}`);
+      if (label) {
+        toast.success(`🚚 Statut mis à jour : ${label}`);
+        triggerPushNotification(current, orderId);
+      }
     }
     prevStatusRef.current = current;
-  }, [trackingInfo?.status]);
+  }, [trackingInfo?.status, orderId, triggerPushNotification]);
 
   const getStatusIndex = (status: string) =>
     statusSteps.findIndex((step) => step.key === status);
@@ -291,6 +321,26 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
 
   return (
     <div className="space-y-6">
+      {/* Notification Permission Banner */}
+      {permission === 'default' && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <Bell className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="font-semibold text-blue-900">Activer les notifications</p>
+                <p className="text-sm text-blue-700">Recevez des alertes en direct sur votre mobile</p>
+              </div>
+            </div>
+            <Button onClick={requestPermission} size="sm" className="bg-blue-600 hover:bg-blue-700">
+              Activer
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Header */}
       <Card>
         <CardHeader>
