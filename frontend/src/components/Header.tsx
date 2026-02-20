@@ -11,6 +11,7 @@ import { useDataSaver } from "@/contexts/DataSaverContext"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
+import useI18n, { type Lang, LANG_FLAGS, LANG_LABELS } from "@/hooks/useI18n"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +27,7 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { user, profile } = useAuth();
+  const { lang, setLang } = useI18n();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -74,6 +76,28 @@ const Header = () => {
                 <Clock className="h-4 w-4 text-primary" />
                 <span>24h/24 - Livraison 45min-2h</span>
               </div>
+
+              {/* Language switcher */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-1.5 text-xs font-semibold hover:text-primary transition-colors ml-4 border border-white/20 rounded-full px-2.5 py-1 bg-white/5 hover:bg-white/10">
+                    <span>{LANG_FLAGS[lang]}</span>
+                    <span>{LANG_LABELS[lang]}</span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-36">
+                  {(Object.keys(LANG_LABELS) as Lang[]).map((l) => (
+                    <DropdownMenuItem
+                      key={l}
+                      onClick={() => setLang(l)}
+                      className={lang === l ? 'font-bold text-primary' : ''}
+                    >
+                      {LANG_FLAGS[l]} {LANG_LABELS[l]}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
 
 
             </div>

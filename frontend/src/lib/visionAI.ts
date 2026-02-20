@@ -1,4 +1,5 @@
 // OpenAI Vision API Integration for Prescription Analysis
+import { analyzeWithOCR, type PrescriptionAnalysis as OCRAnalysis } from './prescriptionOCR';
 
 interface PrescriptionAnalysis {
     medications: Array<{
@@ -25,6 +26,11 @@ class VisionAI {
 
     // Analyze prescription image
     async analyzePrescription(imageBase64: string): Promise<PrescriptionAnalysis> {
+        // If no API key, go straight to Tesseract OCR
+        if (!this.apiKey) {
+            return this._ocrFallback(imageBase64);
+        }
+
         try {
             const response = await fetch(this.baseUrl, {
                 method: 'POST',
@@ -74,15 +80,24 @@ Important: Réponds uniquement avec du JSON valide.`,
 
             const data = await response.json();
             const content = data.choices[0].message.content;
-
-            // Parse JSON response
             const analysis = JSON.parse(content);
-
             return analysis;
         } catch (error) {
-            console.error('[VisionAI] Analysis error:', error);
-            throw new Error('Impossible d\'analyser l\'ordonnance');
+            console.warn('[VisionAI] OpenAI call failed, falling back to Tesseract OCR:', error);
+            return this._ocrFallback(imageBase64);
         }
+    }
+
+    /** Tesseract.js offline fallback */
+    private async _ocrFallback(imageBase64: string): Promise<PrescriptionAnalysis> {
+        // Convert base64 back to a Blob so Tesseract can read it
+        const byteString = atob(imageBase64);
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+        const blob = new Blob([ab], { type: 'image/jpeg' });
+        const result: OCRAnalysis = await analyzeWithOCR(blob as unknown as File);
+        return result as unknown as PrescriptionAnalysis;
     }
 
     // Check medication interactions
