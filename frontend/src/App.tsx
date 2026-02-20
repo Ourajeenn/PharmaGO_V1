@@ -74,10 +74,10 @@ const App = () => {
     // Initialize E-Carnet mock data
     initializeMockData();
 
-    // Preloader display for 2 seconds
+    // Preloader display for 1 second
     const timer = setTimeout(() => {
       setLoading(false);
-    }, 2000);
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, []);
