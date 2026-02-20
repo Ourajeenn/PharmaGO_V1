@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useCart } from "@/contexts/CartContext";
 import ClickCollectQR from "@/components/cart/ClickCollectQR";
 import { USSDSimulator } from "@/components/payment/USSDSimulator";
+import OrderInvoice from "@/components/payment/OrderInvoice";
 import pushNotifications, { NotificationTemplates } from "@/lib/pushNotifications";
 import {
   ArrowLeft,
@@ -97,6 +99,7 @@ interface PaymentSystemProps {
 }
 
 const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
+  const navigate = useNavigate();
   const { items, getTotalPrice, groupByPharmacy, clearCart } = useCart();
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('orange_money');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -717,80 +720,18 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
 
         {paymentStep === 'confirmation' && (
           <div className="max-w-2xl mx-auto space-y-6">
-            <Card>
-              <CardContent className="py-12 text-center">
-                <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-                <h3 className="text-2xl font-bold mb-2">Paiement confirmé !</h3>
-                <p className="text-muted-foreground mb-6">
-                  Votre commande a été enregistrée avec succès
-                </p>
-
-                <div className="bg-green-50 rounded-lg p-4 border border-green-200 mb-6">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <Receipt className="h-5 w-5 text-green-600" />
-                    <span className="font-semibold text-green-800">Numéro de commande</span>
-                  </div>
-                  <div className="text-2xl font-bold text-green-800">{orderId}</div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  <div className="bg-muted rounded-lg p-4">
-                    <Wallet className="h-6 w-6 mx-auto mb-2 text-primary" />
-                    <div className="font-semibold">Montant payé</div>
-                    <div className="text-lg font-bold text-primary">
-                      {finalTotal.toLocaleString()} FCFA
-                    </div>
-                  </div>
-                  <div className="bg-muted rounded-lg p-4">
-                    <Clock className="h-6 w-6 mx-auto mb-2 text-secondary" />
-                    <div className="font-semibold">Livraison estimée</div>
-                    <div className="text-lg font-bold text-secondary">30-45 min</div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Button variant="outline" className="flex-1" onClick={onBackToHome}>
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Retour à l'accueil
-                  </Button>
-                  <Button className="flex-1">
-                    <Truck className="h-4 w-4 mr-2" />
-                    Suivre ma commande
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Que se passe-t-il maintenant ?</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-semibold text-sm">1</div>
-                    <div>
-                      <div className="font-medium">Préparation de votre commande</div>
-                      <div className="text-sm text-muted-foreground">La pharmacie prépare vos médicaments</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center text-white font-semibold text-sm">2</div>
-                    <div>
-                      <div className="font-medium">Collecte par le livreur</div>
-                      <div className="text-sm text-muted-foreground">Notre livreur récupère votre commande</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center text-white font-semibold text-sm">3</div>
-                    <div>
-                      <div className="font-medium">Livraison à votre adresse</div>
-                      <div className="text-sm text-muted-foreground">Réception de vos médicaments</div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <OrderInvoice
+              orderId={orderId}
+              items={items}
+              subtotal={totalAmount}
+              deliveryFee={deliveryFee}
+              total={finalTotal}
+              paymentMethod={selectedPaymentMethod}
+              address={deliveryAddress}
+              onTrackOrder={() => {
+                navigate(`/suivi?order=${orderId}`);
+              }}
+            />
           </div>
         )}
 

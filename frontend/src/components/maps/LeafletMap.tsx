@@ -16,11 +16,39 @@ const DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
-interface LeafletMapProps {
-    position: { lat: number; lng: number } | null;
-    destination?: { lat: number; lng: number } | null;
-    height?: string;
+interface MapMarker {
+    lat: number;
+    lng: number;
+    label?: string;
+    description?: string;
+    isUser?: boolean;
 }
+
+interface LeafletMapProps {
+    position?: { lat: number; lng: number } | null;
+    destination?: { lat: number; lng: number } | null;
+    markers?: MapMarker[];
+    height?: string;
+    zoom?: number;
+}
+
+const UserIcon = L.icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+    shadowUrl: iconShadow,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+});
+
+const PharmacyIcon = L.icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+    shadowUrl: iconShadow,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+});
 
 const RecenterAutomatically = ({ lat, lng }: { lat: number; lng: number }) => {
     const map = useMap();
@@ -30,22 +58,20 @@ const RecenterAutomatically = ({ lat, lng }: { lat: number; lng: number }) => {
     return null;
 };
 
-const LeafletMap: React.FC<LeafletMapProps> = ({ position, destination, height = "300px" }) => {
+const LeafletMap: React.FC<LeafletMapProps> = ({
+    position,
+    destination,
+    markers = [],
+    height = "300px",
+    zoom = 13
+}) => {
     // Default to Abidjan if no position
     const center = position ? [position.lat, position.lng] : [5.3600, -4.0083];
-
-    if (!position && !destination) {
-        return (
-            <div style={{ height, width: '100%', background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <p>En attente de localisation...</p>
-            </div>
-        );
-    }
 
     return (
         <MapContainer
             center={center as [number, number]}
-            zoom={13}
+            zoom={zoom}
             style={{ height, width: '100%', borderRadius: '0.5rem', zIndex: 0 }}
         >
             <TileLayer
@@ -55,10 +81,8 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ position, destination, height =
 
             {position && (
                 <>
-                    <Marker position={[position.lat, position.lng]}>
-                        <Popup>
-                            Livreur
-                        </Popup>
+                    <Marker position={[position.lat, position.lng]} icon={UserIcon}>
+                        <Popup>Votre position</Popup>
                     </Marker>
                     <RecenterAutomatically lat={position.lat} lng={position.lng} />
                 </>
@@ -66,11 +90,24 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ position, destination, height =
 
             {destination && (
                 <Marker position={[destination.lat, destination.lng]}>
-                    <Popup>
-                        Destination
-                    </Popup>
+                    <Popup>Destination</Popup>
                 </Marker>
             )}
+
+            {markers.map((marker, idx) => (
+                <Marker
+                    key={idx}
+                    position={[marker.lat, marker.lng]}
+                    icon={marker.isUser ? UserIcon : PharmacyIcon}
+                >
+                    {marker.label && (
+                        <Popup>
+                            <div className="font-bold">{marker.label}</div>
+                            {marker.description && <div className="text-xs">{marker.description}</div>}
+                        </Popup>
+                    )}
+                </Marker>
+            ))}
         </MapContainer>
     );
 };

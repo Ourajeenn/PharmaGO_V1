@@ -26,20 +26,80 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import LeafletMap from '@/components/maps/LeafletMap';
+import { toast } from 'sonner';
+
+// Haversine formula for distance in KM
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // Radius of the earth in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const d = R * c;
+    return d;
+};
 
 export default function PharmaciesGardePage() {
     const navigate = useNavigate();
     const [selectedCommune, setSelectedCommune] = useState<string>('Toutes');
     const [searchQuery, setSearchQuery] = useState('');
+    const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+    // Get User Position
+    useState(() => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    setUserLocation({
+                        lat: pos.coords.latitude,
+                        lng: pos.coords.longitude
+                    });
+                    toast.success("Position récupérée — Pharmacies triées par proximité");
+                },
+                () => {
+                    console.warn("Geolocation blocked or failed");
+                }
+            );
+        }
+    });
+
+    // Known Commune Centers for fallback/mock coords
+    const communeCoords: { [key: string]: [number, number] } = {
+        "Plateau": [5.3200, -4.0200],
+        "Cocody": [5.3600, -3.9800],
+        "Adjamé": [5.3500, -4.0300],
+        "Marcory": [5.2900, -3.9900],
+        "Treichville": [5.2800, -4.0100],
+        "Yopougon": [5.3400, -4.0900],
+        "Abobo": [5.4200, -4.0200],
+        "Koumassi": [5.2900, -3.9500],
+        "Port-Bouët": [5.2500, -3.9200],
+        "Attécoubé": [5.3300, -4.0500],
+        "Bingerville": [5.3600, -3.8900],
+        "Anyama": [5.4900, -4.0500]
+    };
+
+    const getPharmacyCoords = (pharmacy: typeof realPharmacies[0]) => {
+        const coords = communeCoords[pharmacy.commune] || [5.345317, -4.024429];
+        const [lat, lng] = coords;
+        return {
+            lat: lat + (pharmacy.id * 0.0005), // unique offset
+            lng: lng + ((pharmacy.id % 7) * 0.0005)
+        };
+    };
 
     // Filter pharmacies that are on guard or open 24h
     const gardePharmacies = useMemo(() => {
         return realPharmacies.filter(p => p.isOnGuard || p.hours.toLowerCase().includes("24h"));
     }, []);
 
-    // Apply search and commune filters
+    // Apply search and commune filters + DISTANCE SORT
     const filteredPharmacies = useMemo(() => {
-        return gardePharmacies.filter(p => {
+        const filtered = gardePharmacies.filter(p => {
             const matchesSearch = !searchQuery ||
                 p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 p.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -49,34 +109,52 @@ export default function PharmaciesGardePage() {
 
             return matchesSearch && matchesCommune;
         });
-    }, [gardePharmacies, searchQuery, selectedCommune]);
+
+        // Add calculated distances if userLocation available
+        const withDistances = filtered.map(p => {
+            const pCoords = getPharmacyCoords(p);
+            const dist = userLocation
+                ? calculateDistance(userLocation.lat, userLocation.lng, pCoords.lat, pCoords.lng)
+                : parseFloat(p.distance.replace(' km', '').replace(',', '.')); // fallback to mock distance
+
+            return { ...p, calculatedDistance: dist, coords: pCoords };
+        });
+
+        // Sort by distance
+        return withDistances.sort((a, b) => a.calculatedDistance - b.calculatedDistance);
+    }, [gardePharmacies, searchQuery, selectedCommune, userLocation]);
+
+    const nearestPharmacyId = useMemo(() => {
+        if (filteredPharmacies.length === 0) return null;
+        return filteredPharmacies[0].id;
+    }, [filteredPharmacies]);
+
+    const mapMarkers = useMemo(() => {
+        const markers: any[] = filteredPharmacies.map(p => ({
+            lat: p.coords.lat,
+            lng: p.coords.lng,
+            label: p.name,
+            description: `${p.address} • ${p.calculatedDistance.toFixed(1)} km`
+        }));
+
+        if (userLocation) {
+            markers.push({
+                ...userLocation,
+                label: "Vous êtes ici",
+                isUser: true
+            });
+        }
+        return markers;
+    }, [filteredPharmacies, userLocation]);
 
     const handleCall = (phone: string) => {
         window.location.href = `tel:${phone}`;
     };
 
-    const handleGetDirections = (pharmacy: typeof realPharmacies[0]) => {
-        const communeCoords: { [key: string]: [number, number] } = {
-            "Plateau": [5.3200, -4.0200],
-            "Cocody": [5.3600, -3.9800],
-            "Adjamé": [5.3500, -4.0300],
-            "Marcory": [5.2900, -3.9900],
-            "Treichville": [5.2800, -4.0100],
-            "Yopougon": [5.3400, -4.0900],
-            "Abobo": [5.4200, -4.0200],
-            "Koumassi": [5.2900, -3.9500],
-            "Port-Bouët": [5.2500, -3.9200],
-            "Attécoubé": [5.3300, -4.0500],
-            "Bingerville": [5.3600, -3.8900],
-            "Anyama": [5.4900, -4.0500]
-        };
+    const handleGetDirections = (pharmacy: any) => {
+        const { lat, lng } = pharmacy.coords;
 
-        const coords = communeCoords[pharmacy.commune] || [5.345317, -4.024429];
-        const [lat, lng] = coords;
-        const uniqueLat = lat + (pharmacy.id * 0.001);
-        const uniqueLng = lng + ((pharmacy.id % 7) * 0.001);
-
-        const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${uniqueLat},${uniqueLng}&destination_place_id=${encodeURIComponent(pharmacy.name)}`;
+        const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${encodeURIComponent(pharmacy.name)}`;
         window.open(mapsUrl, '_blank');
     };
 
@@ -110,65 +188,16 @@ export default function PharmaciesGardePage() {
                 </div>
             </div>
 
-            <div className="container mx-auto px-4 py-8">
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="flex items-center gap-3">
-                                <div className="p-3 bg-blue-100 rounded-lg">
-                                    <Building2 className="h-6 w-6 text-blue-600" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-slate-600">Total</p>
-                                    <p className="text-2xl font-bold">{gardePharmacies.length}</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="flex items-center gap-3">
-                                <div className="p-3 bg-green-100 rounded-lg">
-                                    <MapPin className="h-6 w-6 text-green-600" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-slate-600">Communes</p>
-                                    <p className="text-2xl font-bold">{communesList.length - 1}</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="flex items-center gap-3">
-                                <div className="p-3 bg-orange-100 rounded-lg">
-                                    <Clock className="h-6 w-6 text-orange-600" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-slate-600">Service</p>
-                                    <p className="text-lg font-bold">24h/24</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="flex items-center gap-3">
-                                <div className="p-3 bg-purple-100 rounded-lg">
-                                    <Phone className="h-6 w-6 text-purple-600" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-slate-600">Disponible</p>
-                                    <p className="text-lg font-bold">Maintenant</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
+            <div className="container mx-auto px-4 py-8 -mt-8">
+                {/* Map Integration */}
+                <Card className="mb-8 overflow-hidden border-primary/20 shadow-xl">
+                    <LeafletMap
+                        position={userLocation}
+                        markers={mapMarkers}
+                        height="400px"
+                        zoom={userLocation ? 14 : 12}
+                    />
+                </Card>
 
                 {/* Search and Filters */}
                 <Card className="mb-8">
@@ -277,6 +306,11 @@ export default function PharmaciesGardePage() {
                                                     <Badge className="bg-secondary/10 text-secondary border-secondary/20">
                                                         🟢 Ouverte 24h/24
                                                     </Badge>
+                                                    {pharmacy.id === nearestPharmacyId && (
+                                                        <Badge className="bg-orange-500 text-white border-none animate-pulse">
+                                                            🚀 Plus proche
+                                                        </Badge>
+                                                    )}
                                                     {pharmacy.hasDelivery && (
                                                         <Badge className="bg-primary/10 text-primary border-primary/20">
                                                             <Truck className="h-3 w-3 mr-1" />
@@ -299,7 +333,9 @@ export default function PharmaciesGardePage() {
                                                 <MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                                                 <div className="text-sm">
                                                     <div>{pharmacy.address}</div>
-                                                    <div className="text-muted-foreground">{pharmacy.commune} • {pharmacy.distance}</div>
+                                                    <div className="text-muted-foreground">
+                                                        {pharmacy.commune} • {pharmacy.calculatedDistance.toFixed(1)} km
+                                                    </div>
                                                 </div>
                                             </div>
 
