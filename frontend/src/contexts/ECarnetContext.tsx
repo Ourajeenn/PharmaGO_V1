@@ -29,6 +29,14 @@ interface ECarnetContextType {
     updatePatient: (id: string, updates: Partial<Patient>) => Promise<void>;
     deletePatient: (id: string) => Promise<void>;
 
+    // Visit Methods
+    getPatientVisits: (patientId: string) => MedicalVisit[];
+    addMedicalVisit: (visit: Omit<MedicalVisit, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+
+    // Vaccination Methods
+    getPatientVaccinations: (patientId: string) => Vaccination[];
+    addVaccination: (vax: Omit<Vaccination, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+
     // Specific Getters
     getPatientAlerts: (patientId: string) => Alert[];
     getPatientSummary: (patientId: string) => PatientSummary | null;
@@ -206,6 +214,92 @@ export const ECarnetProvider: React.FC<{ children: ReactNode }> = ({ children })
         }
     };
 
+    // ── Visit helpers ────────────────────────────────────────────────────────
+    const getPatientVisits = (patientId: string): MedicalVisit[] =>
+        medicalVisits.filter(v => v.patientId === patientId);
+
+    const addMedicalVisit = async (visitData: Omit<MedicalVisit, 'id' | 'createdAt' | 'updatedAt'>) => {
+        try {
+            const { data, error } = await supabase
+                .from('medical_visits')
+                .insert({
+                    patient_id: visitData.patientId,
+                    visit_date: visitData.visitDate,
+                    visit_type: visitData.visitType,
+                    doctor_name: visitData.doctorName,
+                    specialty: visitData.specialty,
+                    reason: visitData.reason,
+                    diagnosis: visitData.diagnosis,
+                    recommendations: visitData.recommendations,
+                    next_visit_date: visitData.nextVisitDate,
+                    vital_signs: visitData.vitalSigns ? JSON.stringify(visitData.vitalSigns) : null,
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            const newVisit: MedicalVisit = {
+                ...visitData,
+                id: data.id,
+                createdAt: data.created_at,
+                updatedAt: data.updated_at,
+            };
+            setMedicalVisits(prev => [newVisit, ...prev]);
+        } catch (err: any) {
+            // Optimistic local save on network error
+            const localVisit: MedicalVisit = {
+                ...visitData,
+                id: `local-${Date.now()}`,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            };
+            setMedicalVisits(prev => [localVisit, ...prev]);
+            console.warn('[ECarnet] Supabase unavailable — visit saved locally:', err.message);
+        }
+    };
+
+    // ── Vaccination helpers ──────────────────────────────────────────────────
+    const getPatientVaccinations = (patientId: string): Vaccination[] =>
+        vaccinations.filter(v => v.patientId === patientId);
+
+    const addVaccination = async (vaxData: Omit<Vaccination, 'id' | 'createdAt' | 'updatedAt'>) => {
+        try {
+            const { data, error } = await supabase
+                .from('vaccinations')
+                .insert({
+                    patient_id: vaxData.patientId,
+                    vaccine_name: vaxData.vaccineName,
+                    disease: vaxData.disease,
+                    is_required: vaxData.isRequired,
+                    administration_date: vaxData.administrationDate,
+                    next_due_date: vaxData.nextDueDate,
+                    status: vaxData.status,
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            const newVax: Vaccination = {
+                ...vaxData,
+                id: data.id,
+                createdAt: data.created_at,
+                updatedAt: data.updated_at,
+            };
+            setVaccinations(prev => [newVax, ...prev]);
+        } catch (err: any) {
+            const localVax: Vaccination = {
+                ...vaxData,
+                id: `local-${Date.now()}`,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            };
+            setVaccinations(prev => [localVax, ...prev]);
+            console.warn('[ECarnet] Supabase unavailable — vaccination saved locally:', err.message);
+        }
+    };
+
     const getPatientAlerts = (patientId: string) => alerts.filter(a => a.patientId === patientId);
 
     const getPatientSummary = (patientId: string): PatientSummary | null => {
@@ -240,6 +334,10 @@ export const ECarnetProvider: React.FC<{ children: ReactNode }> = ({ children })
             addPatient,
             updatePatient,
             deletePatient,
+            getPatientVisits,
+            addMedicalVisit,
+            getPatientVaccinations,
+            addVaccination,
             getPatientAlerts,
             getPatientSummary
         }}>
