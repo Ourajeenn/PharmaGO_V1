@@ -115,26 +115,30 @@ const MedicinesPage = () => {
       setLoading(true);
       try {
         const { data, count } = await MedicineService.getMedicines('medication', medPage, pageSize);
-        const mapToUI = (item: any) => ({
-          id: item.id,
-          name: item.name,
-          category: item.category || "Médicaments",
-          price: Math.floor(Math.random() * 8000) + 500,
-          rating: (4 + Math.random()).toFixed(1),
-          inStock: Math.random() > 0.2, // 20% chance out of stock
-          prescription: item.requires_prescription,
-          image: dolipraneImg,
-          images: [dolipraneImg],
-          description: item.description || `DCI: ${item.dci || 'N/A'}.`,
-          composition: item.dci || item.generic_name || "N/A",
-          dosage: item.dosage || "Selon avis médical",
-          sideEffects: ["Consultez la notice pour plus d'informations"],
-          manufacturer: item.manufacturer || "Non spécifié",
-          ammNumber: item.amm_number,
-          countryOfOrigin: item.country_of_origin,
-          genericName: item.generic_name,
-          productType: item.product_type
-        });
+        const mapToUI = (item: any) => {
+          const totalStock = item.total_stock ?? Math.floor(Math.random() * 50); // Simulate if not provided
+          return {
+            id: item.id,
+            name: item.name,
+            category: item.category || "Médicaments",
+            price: Math.floor(Math.random() * 8000) + 500,
+            rating: (4 + Math.random()).toFixed(1),
+            inStock: totalStock > 0,
+            quantity: totalStock,
+            prescription: item.requires_prescription,
+            image: dolipraneImg,
+            images: [dolipraneImg],
+            description: item.description || `DCI: ${item.dci || 'N/A'}.`,
+            composition: item.dci || item.generic_name || "N/A",
+            dosage: item.dosage || "Selon avis médical",
+            sideEffects: ["Consultez la notice pour plus d'informations"],
+            manufacturer: item.manufacturer || "Non spécifié",
+            ammNumber: item.amm_number,
+            countryOfOrigin: item.country_of_origin,
+            genericName: item.generic_name,
+            productType: item.product_type
+          };
+        };
 
         setMedicines(data.length > 0 ? data.map(mapToUI) : mockProducts.slice(0, pageSize));
         setMedTotal(count || (data.length === 0 ? mockProducts.length : 0));
@@ -387,12 +391,16 @@ const MedicinesPage = () => {
                               Ordonnance RX
                             </div>
                           )}
-                          {!product.inStock && (
+                          {!product.inStock ? (
                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/80 backdrop-blur-sm text-white px-4 py-2 rounded-xl text-center transform -rotate-12 border border-white/20 shadow-2xl z-10">
                               <p className="text-xl font-black uppercase tracking-widest">Rupture</p>
                               <p className="text-[10px] font-medium text-white/80">Momentanée</p>
                             </div>
-                          )}
+                          ) : product.quantity < 5 ? (
+                            <div className="absolute top-4 left-4 bg-orange-500 text-white text-[8px] font-black uppercase tracking-[0.2em] px-3 py-1.5 rounded-full shadow-xl animate-pulse">
+                              Stock Faible ({product.quantity})
+                            </div>
+                          ) : null}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();

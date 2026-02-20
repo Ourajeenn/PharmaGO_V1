@@ -116,6 +116,7 @@ export const PharmacyDashboardNew = () => {
         Sat: 32000
     })
 
+    const [inventory, setInventory] = useState<any[]>([])
     const [salesData, setSalesData] = useState<SaleData[]>([
         {
             id: '1',
@@ -124,26 +125,6 @@ export const PharmacyDashboardNew = () => {
             userEmail: 'guest@wvchertz.com',
             quantity: 1,
             totalPrice: 152.00,
-            date: 'Apr 22, 2015 12:00 AM',
-            avatar: ''
-        },
-        {
-            id: '2',
-            name: 'Bentley Howard',
-            medicine: 'Test Medicine',
-            userEmail: 'guest@wvchertz.com',
-            quantity: 1,
-            totalPrice: 96.00,
-            date: 'Apr 22, 2015 12:00 AM',
-            avatar: ''
-        },
-        {
-            id: '3',
-            name: 'Evelyn Johnson',
-            medicine: 'Medicine One',
-            userEmail: 'guest@wvchertz.com',
-            quantity: 1,
-            totalPrice: 270.00,
             date: 'Apr 22, 2015 12:00 AM',
             avatar: ''
         }
@@ -236,6 +217,7 @@ export const PharmacyDashboardNew = () => {
                 .eq('pharmacy_id', pharmacy.id)
 
             if (!invError && inventoryData) {
+                setInventory(inventoryData)
                 // Count unique categories
                 const categories = new Set(inventoryData.map((item: any) => item.medicines?.category).filter(Boolean))
 
@@ -279,6 +261,25 @@ export const PharmacyDashboardNew = () => {
         // Implementation here
     }
 
+    const handleUpdateStock = async (id: string, newQuantity: number) => {
+        try {
+            const { error } = await supabase
+                .from('pharmacy_inventory')
+                .update({ quantity: newQuantity })
+                .eq('id', id)
+
+            if (error) throw error
+
+            setInventory(prev => prev.map(item =>
+                item.id === id ? { ...item, quantity: newQuantity } : item
+            ))
+            toast.success("Stock mis à jour")
+        } catch (error) {
+            console.error('Error updating stock:', error)
+            toast.error("Échec de la mise à jour du stock")
+        }
+    }
+
     const handleDelete = (id: string) => {
         toast.success('Vente supprimée')
         setSalesData(prev => prev.filter(sale => sale.id !== id))
@@ -305,6 +306,7 @@ export const PharmacyDashboardNew = () => {
     ]
 
     const commsItems = [
+        { icon: Bell, label: 'Chat', active: false },
         { icon: CreditCard, label: 'Payments', active: false },
         { icon: FileText, label: 'Reports', active: false },
         { icon: Settings, label: 'Settings', active: false }
@@ -939,21 +941,86 @@ export const PharmacyDashboardNew = () => {
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {[1, 2, 3, 4, 5].map((i) => (
-                                                <TableRow key={i}>
-                                                    <TableCell className="font-medium">Doliprane 1000mg</TableCell>
-                                                    <TableCell>Analgesic</TableCell>
-                                                    <TableCell>145 boxes</TableCell>
-                                                    <TableCell><Badge className="bg-green-100 text-green-700 hover:bg-green-100">In Stock</Badge></TableCell>
+                                            {inventory.map((item) => (
+                                                <TableRow key={item.id}>
+                                                    <TableCell className="font-medium">{item.medicines?.name}</TableCell>
+                                                    <TableCell>{item.medicines?.category}</TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center gap-2">
+                                                            <Input
+                                                                type="number"
+                                                                className="w-20 h-8"
+                                                                defaultValue={item.quantity}
+                                                                onBlur={(e) => handleUpdateStock(item.id, parseInt(e.target.value))}
+                                                            />
+                                                            <span className="text-xs text-slate-500">boîtes</span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {item.quantity > 10 ? (
+                                                            <Badge className="bg-green-100 text-green-700 hover:bg-green-100">En Stock</Badge>
+                                                        ) : item.quantity > 0 ? (
+                                                            <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">Stock Faible</Badge>
+                                                        ) : (
+                                                            <Badge className="bg-red-100 text-red-700 hover:bg-red-100">Rupture</Badge>
+                                                        )}
+                                                    </TableCell>
                                                     <TableCell className="text-right">
                                                         <Button variant="ghost" size="sm">Edit</Button>
                                                     </TableCell>
                                                 </TableRow>
                                             ))}
+                                            {inventory.length === 0 && (
+                                                <TableRow>
+                                                    <TableCell colSpan={5} className="text-center py-8 text-slate-400">
+                                                        Aucun produit dans l'inventaire
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
                                         </TableBody>
                                     </Table>
                                 </CardContent>
                             </Card>
+                        </div>
+                    )
+                }
+
+                {
+                    activeMenu === 'Chat' && (
+                        <div className="p-8 h-full flex flex-col">
+                            <h2 className="text-2xl font-bold text-slate-900 mb-6">Messages Clients</h2>
+                            <div className="flex-1 bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col shadow-sm">
+                                <div className="p-4 border-b bg-slate-50 flex items-center gap-3">
+                                    <Avatar className="h-10 w-10">
+                                        <AvatarFallback className="bg-primary text-white">JD</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <h4 className="font-bold">John Doe</h4>
+                                        <p className="text-xs text-green-600">En ligne</p>
+                                    </div>
+                                </div>
+                                <div className="flex-1 p-6 space-y-4 overflow-y-auto bg-slate-50/30">
+                                    <div className="flex gap-3 max-w-[80%]">
+                                        <Avatar className="h-8 w-8 mt-1">
+                                            <AvatarFallback>JD</AvatarFallback>
+                                        </Avatar>
+                                        <div className="bg-white p-3 rounded-2xl rounded-tl-none border shadow-sm">
+                                            <p className="text-sm">Bonjour, ma commande #CMD-123 est-elle prête ?</p>
+                                            <span className="text-[10px] text-slate-400">10:20</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3 max-w-[80%] ml-auto flex-row-reverse">
+                                        <div className="bg-slate-900 text-white p-3 rounded-2xl rounded-tr-none shadow-md">
+                                            <p className="text-sm">Bonjour John, oui nous la préparons. Le livreur arrive dans 5 min.</p>
+                                            <span className="text-[10px] text-slate-300">10:22</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="p-4 bg-white border-t flex gap-3">
+                                    <Input placeholder="Votre message..." className="flex-1 bg-slate-50" />
+                                    <Button className="bg-slate-900">Envoyer</Button>
+                                </div>
+                            </div>
                         </div>
                     )
                 }

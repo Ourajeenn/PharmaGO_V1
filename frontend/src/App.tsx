@@ -8,6 +8,7 @@ import { ECarnetProvider } from "@/contexts/ECarnetContext";
 import { ReloadPrompt } from "@/components/ReloadPrompt";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { UnifiedSupport } from "./components/UnifiedSupport";
+import { FloatingChat } from "./components/chat/FloatingChat";
 
 import { lazy, Suspense, useState, useEffect } from "react";
 import Preloader from "@/components/Preloader";
@@ -141,6 +142,7 @@ const App = () => {
                 </Routes>
               </Suspense>
               <UnifiedSupport />
+              <FloatingChat />
             </BrowserRouter>
           </TooltipProvider>
         </CartProvider>

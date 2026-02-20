@@ -254,6 +254,31 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
         setPaymentStep('confirmation');
       }
 
+      // Stock Decrement Logic (Sprint 11)
+      try {
+        for (const item of items) {
+          // Find the specific inventory record for this medicine at this pharmacy
+          const { data: invData } = await supabase
+            .from('pharmacy_inventory')
+            .select('id, quantity')
+            .eq('pharmacy_id', item.pharmacy_id)
+            .eq('medicine_id', item.medicine.id)
+            .single();
+
+          if (invData) {
+            const newQuantity = Math.max(0, invData.quantity - item.quantity);
+            await supabase
+              .from('pharmacy_inventory')
+              .update({ quantity: newQuantity })
+              .eq('id', invData.id);
+
+            console.log(`Stock updated for ${item.medicine.name}: ${invData.quantity} -> ${newQuantity}`);
+          }
+        }
+      } catch (stockError) {
+        console.warn('Stock decrement failed (non-blocking):', stockError);
+      }
+
       toast.success("Paiement effectué avec succès !");
 
       if (selectedPaymentMethod !== 'cash_on_delivery') {

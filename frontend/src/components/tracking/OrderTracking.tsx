@@ -21,6 +21,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import LeafletMap from '@/components/maps/LeafletMap';
 import { toast } from 'sonner';
 import { formatDistanceToNow, parseISO, differenceInMinutes } from 'date-fns';
+import { RealtimeChat } from '@/components/chat/RealtimeChat';
 import { fr } from 'date-fns/locale';
 import usePushNotifications from '@/hooks/usePushNotifications';
 import { Bell, BellOff, Info } from 'lucide-react';
@@ -64,6 +65,7 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
   const [etaMinutes, setEtaMinutes] = useState<number | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const prevStatusRef = useRef<string | null>(null);
+  const [showChat, setShowChat] = useState(false);
 
   // ── Demo mode mock data ──────────────────────────────────────────────────
   const DEMO_STATUSES = ['pending', 'confirmed', 'preparing', 'ready', 'assigned', 'picked_up', 'delivered'];
@@ -502,10 +504,23 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
                   <Phone className="h-4 w-4 mr-1" />
                   Appeler
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowChat(!showChat)}
+                >
                   <MessageCircle className="h-4 w-4 mr-1" />
                   Message
                 </Button>
+                {showChat && (
+                  <div className="fixed bottom-24 right-6 z-50">
+                    <RealtimeChat
+                      orderId={orderId}
+                      recipientId={trackingInfo.id} // Or pharmacy ID if available
+                      onClose={() => setShowChat(false)}
+                    />
+                  </div>
+                )}
                 {trackingInfo.current_latitude && trackingInfo.current_longitude && (
                   <Button variant="outline" size="sm" onClick={openInWaze}>
                     <Navigation className="h-4 w-4 mr-1" />
