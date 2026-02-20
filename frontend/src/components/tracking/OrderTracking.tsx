@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +19,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import LeafletMap from '@/components/maps/LeafletMap';
+import { toast } from 'sonner';
+import { formatDistanceToNow, parseISO, differenceInMinutes } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 interface TrackingInfo {
   id: string;
@@ -55,7 +58,31 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
   const [trackingInfo, setTrackingInfo] = useState<TrackingInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLive, setIsLive] = useState(false);
+  const [etaMinutes, setEtaMinutes] = useState<number | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const prevStatusRef = useRef<string | null>(null);
+
+  // ── Demo mode mock data ──────────────────────────────────────────────────
+  const DEMO_STATUSES = ['pending', 'confirmed', 'preparing', 'ready', 'assigned', 'picked_up', 'delivered'];
+  const mockTrackingData: TrackingInfo = {
+    id: 'demo-order-12345678',
+    status: 'assigned',
+    driver_name: 'Kouadio Bertin',
+    driver_phone: '+225 0701020304',
+    current_latitude: 5.3600,
+    current_longitude: -4.0083,
+    estimated_arrival: new Date(Date.now() + 18 * 60 * 1000).toISOString(),
+    order_total: 12500,
+    pharmacy_name: 'Pharmacie Centrale Abidjan',
+    pharmacy_address: 'Plateau, Avenue Chardy',
+    delivery_address: 'Cocody, Rue des Jardins, Villa 14',
+    created_at: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+    items: [
+      { medicine_name: 'Amoxicilline 500mg', quantity: 1, price: 2500 },
+      { medicine_name: 'Paracétamol 1000mg', quantity: 2, price: 800 },
+      { medicine_name: 'Ibuprofène 400mg', quantity: 1, price: 1500 },
+    ],
+  };
 
   // Initial fetch of full order info
   const fetchTrackingInfo = async () => {
@@ -161,9 +188,38 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
     channelRef.current = orderChannel;
   };
 
+  // ── ETA countdown (ticks every minute) ────────────────────────────────
   useEffect(() => {
-    if (!orderId) return;
+    const computeEta = () => {
+      if (!trackingInfo?.estimated_arrival) { setEtaMinutes(null); return; }
+      const mins = differenceInMinutes(parseISO(trackingInfo.estimated_arrival), new Date());
+      setEtaMinutes(mins > 0 ? mins : 0);
+    };
+    computeEta();
+    const interval = setInterval(computeEta, 60_000);
+    return () => clearInterval(interval);
+  }, [trackingInfo?.estimated_arrival]);
 
+  useEffect(() => {
+    if (orderId === 'demo') {
+      // Demo mode: inject mock data and cycle through statuses every 4s
+      setTrackingInfo(mockTrackingData);
+      setIsLive(true);
+      setLoading(false);
+
+      let idx = DEMO_STATUSES.indexOf(mockTrackingData.status);
+      const interval = setInterval(() => {
+        idx = Math.min(idx + 1, DEMO_STATUSES.length - 1);
+        const nextStatus = DEMO_STATUSES[idx];
+        setTrackingInfo(prev => prev ? { ...prev, status: nextStatus } : prev);
+        const label = statusSteps.find(s => s.key === nextStatus)?.label;
+        if (label) toast.success(`🚚 Statut mis à jour : ${label}`);
+        if (idx === DEMO_STATUSES.length - 1) clearInterval(interval);
+      }, 4000);
+      return () => clearInterval(interval);
+    }
+
+    if (!orderId) return;
     fetchTrackingInfo();
     subscribeToRealtime();
 
@@ -175,6 +231,17 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
       setIsLive(false);
     };
   }, [orderId]);
+
+  // ── Status-change toasts ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!trackingInfo?.status) return;
+    const current = trackingInfo.status;
+    if (prevStatusRef.current && prevStatusRef.current !== current) {
+      const label = statusSteps.find(s => s.key === current)?.label;
+      if (label) toast.success(`🚚 Statut mis à jour : ${label}`);
+    }
+    prevStatusRef.current = current;
+  }, [trackingInfo?.status]);
 
   const getStatusIndex = (status: string) =>
     statusSteps.findIndex((step) => step.key === status);
@@ -273,11 +340,19 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
                 </p>
               </div>
               {trackingInfo.estimated_arrival && (
-                <div>
-                  <p className="text-muted-foreground">Arrivée estimée</p>
-                  <p className="font-medium">
-                    {new Date(trackingInfo.estimated_arrival).toLocaleTimeString()}
-                  </p>
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-center">
+                  <p className="text-xs text-muted-foreground mb-0.5">Arrivée estimée</p>
+                  {etaMinutes !== null && etaMinutes > 0 ? (
+                    <p className="font-bold text-primary text-lg">
+                      Dans {etaMinutes} min
+                    </p>
+                  ) : etaMinutes === 0 ? (
+                    <p className="font-bold text-green-600 text-lg">Arrivée imminente !</p>
+                  ) : (
+                    <p className="font-medium">
+                      {new Date(trackingInfo.estimated_arrival).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  )}
                 </div>
               )}
             </div>

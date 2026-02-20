@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import useWebRTC from '@/hooks/useWebRTC';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,13 +41,25 @@ interface VideoConsultationProps {
 }
 
 export function VideoConsultation({ patient, appointmentId, onEnd }: VideoConsultationProps) {
-    const [isCallActive, setIsCallActive] = useState(false);
+    const {
+        callState,
+        localStream,
+        remoteStream,
+        initCall,
+        endCall: endWebRTCCall,
+        toggleMute: webRTCToggleMute,
+        toggleVideo: webRTCToggleVideo,
+        shareScreen,
+    } = useWebRTC(appointmentId);
+
     const [isMuted, setIsMuted] = useState(false);
     const [isVideoOn, setIsVideoOn] = useState(true);
     const [isScreenSharing, setIsScreenSharing] = useState(false);
     const [callDuration, setCallDuration] = useState(0);
     const [notes, setNotes] = useState('');
     const [isNotesOpen, setIsNotesOpen] = useState(false);
+
+    const isCallActive = callState === 'calling' || callState === 'connected';
 
     const localVideoRef = useRef<HTMLVideoElement>(null);
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -67,66 +80,51 @@ export function VideoConsultation({ patient, appointmentId, onEnd }: VideoConsul
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
+    // Sync localStream → localVideoRef
+    useEffect(() => {
+        if (localVideoRef.current && localStream) {
+            localVideoRef.current.srcObject = localStream;
+        }
+    }, [localStream]);
+
+    // Sync remoteStream → remoteVideoRef
+    useEffect(() => {
+        if (remoteVideoRef.current && remoteStream) {
+            remoteVideoRef.current.srcObject = remoteStream;
+        }
+    }, [remoteStream]);
+
     const startCall = async () => {
         try {
-            // Request camera and microphone access
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: true,
-                audio: true
-            });
-
-            if (localVideoRef.current) {
-                localVideoRef.current.srcObject = stream;
-            }
-
-            setIsCallActive(true);
-            toast.success('Appel vidéo démarré');
+            await initCall();
+            toast.success('Appel vidéo démarré — en attente du correspondant');
         } catch (error) {
-            console.error('Error accessing media devices:', error);
+            console.error('Error starting call:', error);
             toast.error('Impossible d\'accéder à la caméra/microphone');
         }
     };
 
     const endCall = () => {
-        // Stop all tracks
-        if (localVideoRef.current?.srcObject) {
-            const stream = localVideoRef.current.srcObject as MediaStream;
-            stream.getTracks().forEach(track => track.stop());
-        }
-
-        setIsCallActive(false);
+        endWebRTCCall();
         setCallDuration(0);
         toast.info('Appel terminé');
         onEnd?.();
     };
 
     const toggleMute = () => {
-        if (localVideoRef.current?.srcObject) {
-            const stream = localVideoRef.current.srcObject as MediaStream;
-            stream.getAudioTracks().forEach(track => {
-                track.enabled = isMuted;
-            });
-        }
+        webRTCToggleMute();
         setIsMuted(!isMuted);
     };
 
     const toggleVideo = () => {
-        if (localVideoRef.current?.srcObject) {
-            const stream = localVideoRef.current.srcObject as MediaStream;
-            stream.getVideoTracks().forEach(track => {
-                track.enabled = !isVideoOn;
-            });
-        }
+        webRTCToggleVideo();
         setIsVideoOn(!isVideoOn);
     };
 
     const toggleScreenShare = async () => {
         if (!isScreenSharing) {
             try {
-                const screenStream = await navigator.mediaDevices.getDisplayMedia({
-                    video: true
-                });
-                // Handle screen share stream
+                await shareScreen();
                 setIsScreenSharing(true);
                 toast.success('Partage d\'écran activé');
             } catch (error) {
