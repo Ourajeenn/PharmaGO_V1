@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { realPharmacies } from '../data/pharmacyData';
-import { Pharmacy, Medicine } from "@/types/pharmacy";
+import { Pharmacy } from "@/types/pharmacy";
+import { Medicine } from "@/lib/supabase";
 import { logger } from "@/utils/logger";
 import { User } from '@supabase/supabase-js';
 
@@ -180,6 +181,24 @@ export const PharmacyService = {
     },
 
     /**
+     * Get all medicines categorized as parapharmacy (no prescription required)
+     */
+    getParapharmacyProducts: async (): Promise<Medicine[]> => {
+        try {
+            const { data, error } = await supabase
+                .from('medicines')
+                .select('*')
+                .eq('requires_prescription', false);
+
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error("Error fetching parapharmacy products:", error);
+            return [];
+        }
+    },
+
+    /**
      * Get personalized recommendations for a user
      * @param userId User ID
      */
@@ -216,12 +235,9 @@ export const PharmacyService = {
             data.forEach((item: any) => {
                 if (item.medicine && !uniqueMedicines.has(item.medicine.id)) {
                     uniqueMedicines.set(item.medicine.id, {
-                        id: item.medicine.id,
-                        name: item.medicine.name,
-                        price: item.price, // Uses price from the first found pharmacy
-                        category: item.medicine.category || 'Général',
-                        description: item.medicine.description
-                    });
+                        ...item.medicine,
+                        price: item.price
+                    } as unknown as Medicine);
                 }
             });
 

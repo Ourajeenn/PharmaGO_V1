@@ -21,6 +21,7 @@ import ScrollReveal from '@/components/ScrollReveal';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import OrderHistory from '@/components/ecarnet/OrderHistory';
+import { PredictiveHealthService, RenewalAlert } from '@/services/PredictiveHealthService';
 
 const ECarnetDashboard = () => {
     const navigate = useNavigate();
@@ -34,6 +35,7 @@ const ECarnetDashboard = () => {
 
     const [summary, setSummary] = useState<ReturnType<typeof getPatientSummary>>(null);
     const [alerts, setAlerts] = useState<ReturnType<typeof getPatientAlerts>>([]);
+    const [renewalAlerts, setRenewalAlerts] = useState<RenewalAlert[]>([]);
 
     // Calculate health score based on patient type
     const calculateHealthScore = () => {
@@ -102,6 +104,10 @@ const ECarnetDashboard = () => {
             setSummary(patientSummary);
             const patientAlerts = getPatientAlerts(currentPatient.id);
             setAlerts(patientAlerts);
+
+            // Fetch renewal predictions
+            PredictiveHealthService.getRenewalPredictions(currentPatient.id)
+                .then(setRenewalAlerts);
         }
     }, [currentPatient, getPatientSummary, getPatientAlerts]);
 
@@ -329,6 +335,46 @@ const ECarnetDashboard = () => {
                             <ScrollReveal animation="fade-up" delay={0.4}>
                                 <OrderHistory />
                             </ScrollReveal>
+
+                            {renewalAlerts.length > 0 && (
+                                <ScrollReveal animation="fade-up" delay={0.5}>
+                                    <div className="glass-card p-10 border-red-500/20 bg-red-500/5 backdrop-blur-xl">
+                                        <div className="flex items-center gap-4 mb-8">
+                                            <div className="h-12 w-12 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-600">
+                                                <AlertCircle className="h-6 w-6" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-xl font-black uppercase tracking-tighter">Alertes Renouvellement</h3>
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-red-600/60">Action Requise Immédiatement</p>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-4">
+                                            {renewalAlerts.map((alert) => (
+                                                <div key={alert.id} className="flex items-center justify-between p-6 bg-white/60 rounded-[2rem] border border-white/80 shadow-sm">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="h-10 w-10 bg-foreground/5 rounded-full flex items-center justify-center">
+                                                            <Syringe className="h-5 w-5 text-foreground/40" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-black uppercase tracking-tight">{alert.medicineName}</p>
+                                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                                                                Épuisement prévu dans <span className="text-red-600">{alert.remainingDays} jours</span>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <Button
+                                                        size="sm"
+                                                        className="h-10 px-6 rounded-xl bg-primary text-white font-black uppercase tracking-widest text-[10px] hover:scale-105 transition-all"
+                                                        onClick={() => navigate('/pharmacies')}
+                                                    >
+                                                        Commander
+                                                    </Button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </ScrollReveal>
+                            )}
                         </div>
 
                         <div className="space-y-10">

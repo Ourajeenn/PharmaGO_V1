@@ -20,6 +20,9 @@ import {
 import { VideoConsultation } from '@/components/consultation/VideoConsultation';
 import AppointmentBookingDialog from '@/components/consultation/AppointmentBookingDialog';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useEffect } from 'react';
+import { AppointmentService } from '@/services/AppointmentService';
 
 interface Doctor {
     id: string;
@@ -35,7 +38,8 @@ interface Doctor {
     nextSlot: string;
 }
 
-const DOCTORS: Doctor[] = [
+// Mock data fallback if DB is empty
+const MOCK_DOCTORS: Doctor[] = [
     {
         id: '1',
         name: 'Dr. Kouamé Assoua',
@@ -48,54 +52,6 @@ const DOCTORS: Doctor[] = [
         languages: ['Français', 'Dioula'],
         nextSlot: 'Maintenant',
     },
-    {
-        id: '2',
-        name: 'Dr. Fatou Diallo',
-        specialty: 'Pédiatre',
-        rating: 4.8,
-        reviews: 247,
-        experience: '12 ans',
-        price: 7500,
-        available: true,
-        languages: ['Français', 'Anglais'],
-        nextSlot: '15 min',
-    },
-    {
-        id: '3',
-        name: 'Dr. Ibrahim Coulibaly',
-        specialty: 'Cardiologue',
-        rating: 4.7,
-        reviews: 189,
-        experience: '20 ans',
-        price: 10000,
-        available: false,
-        languages: ['Français'],
-        nextSlot: '14h00',
-    },
-    {
-        id: '4',
-        name: 'Dr. Aya Brou',
-        specialty: 'Dermatologue',
-        rating: 4.6,
-        reviews: 145,
-        experience: '8 ans',
-        price: 8000,
-        available: true,
-        languages: ['Français', 'Baoulé'],
-        nextSlot: '30 min',
-    },
-    {
-        id: '5',
-        name: 'Dr. Moussa Konaté',
-        specialty: 'Interniste',
-        rating: 4.8,
-        reviews: 203,
-        experience: '18 ans',
-        price: 9000,
-        available: false,
-        languages: ['Français', 'Anglais'],
-        nextSlot: '16h30',
-    },
 ];
 
 const SPECIALTIES = ['Tous', 'Généraliste', 'Pédiatre', 'Cardiologue', 'Dermatologue', 'Interniste'];
@@ -103,13 +59,53 @@ const SPECIALTIES = ['Tous', 'Généraliste', 'Pédiatre', 'Cardiologue', 'Derma
 type View = 'list' | 'video';
 
 export default function TeleconsultationPage() {
+    const [doctors, setDoctors] = useState<Doctor[]>([]);
+    const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [selectedSpecialty, setSelectedSpecialty] = useState('Tous');
     const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
     const [bookingOpen, setBookingOpen] = useState(false);
     const [view, setView] = useState<View>('list');
 
-    const filtered = DOCTORS.filter((d) => {
+    useEffect(() => {
+        const fetchDoctors = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('user_profiles')
+                    .select('*')
+                    .eq('role', 'doctor');
+
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    // Map real DB data to Doctor interface
+                    const formatted: Doctor[] = data.map((d: any) => ({
+                        id: d.id,
+                        name: d.name || 'Médecin PharmaGo',
+                        specialty: d.specialty || 'Généraliste',
+                        rating: 4.5 + Math.random() * 0.5, // Mock ratings for now
+                        reviews: Math.floor(Math.random() * 200),
+                        experience: '10 ans',
+                        price: 5000,
+                        available: true,
+                        languages: ['Français'],
+                        nextSlot: 'Maintenant'
+                    }));
+                    setDoctors(formatted);
+                } else {
+                    setDoctors(MOCK_DOCTORS);
+                }
+            } catch (err) {
+                console.error('Teleconsultation: error fetching doctors', err);
+                setDoctors(MOCK_DOCTORS);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchDoctors();
+    }, []);
+
+    const filtered = doctors.filter((d) => {
         const matchSearch =
             d.name.toLowerCase().includes(search.toLowerCase()) ||
             d.specialty.toLowerCase().includes(search.toLowerCase());
@@ -317,7 +313,7 @@ export default function TeleconsultationPage() {
                 <AppointmentBookingDialog
                     isOpen={bookingOpen}
                     onClose={() => setBookingOpen(false)}
-                    specialty={selectedDoctor.specialty}
+                    doctor={selectedDoctor}
                 />
             )}
         </div>

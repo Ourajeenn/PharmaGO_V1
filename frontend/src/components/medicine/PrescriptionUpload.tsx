@@ -1,21 +1,33 @@
 import { useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, X, CheckCircle, Shield, Sparkles, Brain, Loader2, ArrowRight, ShoppingCart } from "lucide-react";
+import { Upload, FileText, X, CheckCircle, Shield, Sparkles, Brain, Loader2, ArrowRight, ShoppingCart, Star } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { visionAI } from "@/lib/visionAI";
+import { useCart } from "@/contexts/CartContext";
 
 interface PrescriptionUploadProps {
   onUpload?: (file: File) => void;
 }
 
 const PrescriptionUpload = ({ onUpload }: PrescriptionUploadProps) => {
+  const { addToCart } = useCart();
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   /* AI Analysis State */
   const [analyzing, setAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<{ medicines: string[], confidence: number } | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<{
+    medications: Array<{
+      name: string;
+      dosage: string;
+      frequency: string;
+      duration: string;
+      confidence: number;
+    }>;
+    confidence?: number;
+  } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -75,36 +87,58 @@ const PrescriptionUpload = ({ onUpload }: PrescriptionUploadProps) => {
         onUpload(selectedFile);
       }
 
-      toast.success("Ordonnance validée et sécurisée avec succès");
+      // Trigger real analysis
+      setAnalyzing(true);
+      const result = await visionAI.analyzePrescription(fileData);
 
-      // Trigger AI Analysis automatically
-      await analyzePrescription();
+      setAnalysisResult({
+        medications: result.medications,
+        confidence: Math.round(result.medications.reduce((acc, m) => acc + (m.confidence || 0.8), 0) / (result.medications.length || 1) * 100)
+      });
+
+      toast.success(`${result.medications.length} médicaments détectés par l'IA`);
 
     } catch (error: any) {
-      console.error('Upload validation error:', error);
-      toast.error(error.message || "Impossible de valider le fichier");
+      console.error('Upload error:', error);
+      toast.error(error.message || "Impossible de traiter le fichier");
     } finally {
       setUploading(false);
+      setAnalyzing(false);
     }
   };
 
-  const analyzePrescription = async () => {
-    setAnalyzing(true);
-    // Simulate AI Processing time
-    await new Promise(resolve => setTimeout(resolve, 2500));
+  const handleAddToCart = () => {
+    if (!analysisResult) return;
 
-    setAnalysisResult({
-      medicines: ["Amoxicilline 1g", "Paracétamol 1000mg", "Spasfon Lyoc"],
-      confidence: 98.5
+    analysisResult.medications.forEach(med => {
+      addToCart({
+        medicine: {
+          id: `ocr-${med.name}-${Date.now()}`,
+          name: med.name,
+          description: `Détecté par scan: ${med.dosage || 'Dosage à confirmer'}`,
+          category: 'Scanner',
+          requires_prescription: true,
+          manufacturer: 'Analyse IA',
+          generic_name: med.name,
+          dosage: med.dosage || 'À préciser',
+          form: 'Comprimé',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        quantity: 1,
+        pharmacy_id: 'auto-select',
+        pharmacy_name: 'Pharmacie la plus proche',
+        price: 2500 // Simulated price
+      });
     });
-    setAnalyzing(false);
-    toast.info("Analyse IA terminée : 3 médicaments détectés");
+
+    toast.success(`${analysisResult.medications.length} médicaments ajoutés au panier`);
   };
 
   const handleRemove = () => {
     setFile(null);
     setPreview(null);
-    setAnalysisResult(null); // Reset analysis
+    setAnalysisResult(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -181,30 +215,53 @@ const PrescriptionUpload = ({ onUpload }: PrescriptionUploadProps) => {
 
             {/* Analysis Section */}
             {analyzing ? (
-              <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 flex items-center justify-center gap-3 animate-pulse">
-                <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
-                <span className="text-sm font-medium text-blue-700">Analyse de l'ordonnance par IA...</span>
+              <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 flex flex-col items-center justify-center gap-3 animate-pulse">
+                <Loader2 className="h-10 w-10 text-blue-600 animate-spin" />
+                <span className="text-sm font-black uppercase tracking-widest text-blue-700">Analyse Neurone en cours...</span>
               </div>
             ) : analysisResult ? (
-              <div className="bg-gradient-to-br from-purple-50 to-blue-50 p-4 rounded-xl border border-blue-100 animate-in fade-in slide-in-from-bottom-2">
-                <div className="flex items-center gap-2 mb-3">
-                  <Brain className="h-4 w-4 text-purple-600" />
-                  <span className="font-bold text-sm text-purple-800">Analyse Intelligente</span>
-                  <span className="ml-auto text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full border border-green-200 font-bold">
-                    {analysisResult.confidence}% confiance
-                  </span>
+              <div className="bg-gradient-to-br from-purple-50 to-blue-50 p-6 rounded-[2rem] border border-blue-100 shadow-xl animate-in fade-in slide-in-from-bottom-4">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-purple-600 flex items-center justify-center text-white shadow-lg">
+                    <Brain className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h4 className="font-black uppercase tracking-tighter text-purple-900 leading-none">Analyse Intelligente</h4>
+                    <p className="text-[10px] font-bold text-purple-600 uppercase tracking-widest">Vision AI v4.0</p>
+                  </div>
+                  <div className="ml-auto text-[10px] bg-green-500 text-white px-3 py-1 rounded-full font-black uppercase tracking-[0.1em] shadow-md">
+                    {analysisResult.confidence}% Confiance
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  {analysisResult.medicines.map((med, idx) => (
-                    <div key={idx} className="flex items-center justify-between bg-white/60 p-2 rounded-lg border border-purple-100">
-                      <span className="text-sm font-medium">{med}</span>
-                      <CheckCircle className="h-3 w-3 text-green-500" />
+
+                <div className="space-y-2 mb-6">
+                  {analysisResult.medications.map((med, idx) => (
+                    <div key={idx} className="bg-white/80 p-3 rounded-xl border border-purple-100 shadow-sm flex items-center justify-between group hover:border-purple-300 transition-all">
+                      <div className="flex-1">
+                        <p className="text-sm font-black text-slate-800 uppercase tracking-tight">{med.name}</p>
+                        <p className="text-[10px] font-medium text-slate-500">{med.dosage} • {med.frequency}</p>
+                      </div>
+                      <CheckCircle className="h-4 w-4 text-green-500 opacity-60 group-hover:opacity-100 transition-opacity" />
                     </div>
                   ))}
                 </div>
-                <Button className="w-full mt-3 bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-200" size="sm">
-                  <ShoppingCart className="h-3 w-3 mr-2" /> Ajouter au panier
-                </Button>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={handleRemove}
+                    className="rounded-xl border-2 border-slate-200 font-bold h-12"
+                  >
+                    Annuler
+                  </Button>
+                  <Button
+                    onClick={handleAddToCart}
+                    className="rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-black uppercase tracking-widest h-12 shadow-lg shadow-purple-200 group"
+                  >
+                    <ShoppingCart className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" />
+                    Panier
+                  </Button>
+                </div>
               </div>
             ) : null}
 

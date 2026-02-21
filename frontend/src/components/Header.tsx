@@ -12,6 +12,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import useI18n, { type Lang, LANG_FLAGS, LANG_LABELS } from "@/hooks/useI18n"
+import { useOnlineStatus } from "@/hooks/useOnlineStatus"
+import { WifiOff } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +30,7 @@ const Header = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const { lang, setLang } = useI18n();
+  const isOnline = useOnlineStatus();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -100,6 +103,13 @@ const Header = () => {
 
 
 
+              {/* Offline Indicator Desktop */}
+              {!isOnline && (
+                <div className="flex items-center space-x-2 px-3 py-1 bg-orange-100 text-orange-700 rounded-full animate-pulse border border-orange-200">
+                  <WifiOff className="h-4 w-4" />
+                  <span className="font-bold text-xs uppercase tracking-tight">Mode Hors-ligne</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -188,6 +198,12 @@ const Header = () => {
                       <User className="h-4 w-4 mr-2" />
                       Dashboard
                     </DropdownMenuItem>
+                    {profile.role === 'admin' && (
+                      <DropdownMenuItem onClick={() => navigate('/admin/dashboard')}>
+                        <Shield className="h-4 w-4 mr-2 text-red-500" />
+                        Admin Dashboard
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => navigate('/profile-selection')}>
                       <Shield className="h-4 w-4 mr-2" />
                       Changer de profil
@@ -226,6 +242,13 @@ const Header = () => {
                   <span className="text-white font-bold text-lg">P</span>
                 </div>
               </Link>
+
+              {/* Offline Indicator Mobile */}
+              {!isOnline && (
+                <div className="md:hidden flex items-center justify-center h-8 w-8 bg-orange-500 text-white rounded-full shadow-lg border-2 border-white animate-pulse">
+                  <WifiOff className="h-4 w-4" />
+                </div>
+              )}
 
               {/* Mobile menu toggle */}
               <Button

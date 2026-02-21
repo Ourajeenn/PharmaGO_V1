@@ -20,11 +20,18 @@ type Intent =
     | 'allergy'
     | 'delivery'
     | 'payment'
+    | 'insurance'
+    | 'location'
+    | 'typhoid'
+    | 'local_tips'
+    | 'parapharmacy'
+    | 'health_analysis'
     | 'unknown';
 
 interface AIResponse {
     message: string;
     suggestedChips?: string[];
+    isAlert?: boolean;
 }
 
 // ─── Intent Detection ─────────────────────────────────────────────────────────
@@ -45,6 +52,12 @@ const intentPatterns: Record<Intent, RegExp> = {
     allergy: /\b(allergie|allergique|démangeaison|urticaire|éruption|antihistaminique)\b/i,
     delivery: /\b(livrer|livraison|domicile|délai|heure|quand|retard)\b/i,
     payment: /\b(payer|paiement|orange money|wave|mtn|prix|coût|tarif|facture)\b/i,
+    insurance: /\b(assurance|mugef|gna|nsia|allianz|aig|tiers-payant|tiers payant)\b/i,
+    location: /\b(abidjan|cocody|angré|angre|riviera|yopougon|yop|marcory|plateau|abobo|treichville|quartier|secteur)\b/i,
+    typhoid: /\b(typhoïde|typhoide|widal|bactérie|eau contaminée)\b/i,
+    local_tips: /\b(dioula|baoulé|baoule|langue|ethnie|dialecte|traduction|ivoirien|mousso|tché|kènègnè|kenegne)\b/i,
+    parapharmacy: /\b(vitamine|complément|peau|cosmétique|savon|shampoing|bébé|lait|soin|beauté|crème|parapharmacie)\b/i,
+    health_analysis: /\b(analyse|résultats|mesure|santé|bilan|données|état|comment va)\b/i,
     unknown: /.*/,
 };
 
@@ -61,8 +74,8 @@ function detectIntent(text: string): Intent {
 
 const responses: Record<Intent, AIResponse> = {
     greeting: {
-        message: "Bonjour ! 👋 Je suis Leslie, votre assistant santé PharmaGo. Je peux vous aider avec vos commandes, trouver une pharmacie, vous conseiller sur vos médicaments ou répondre à vos questions de santé. Comment puis-je vous aider ?",
-        suggestedChips: ["📦 Ma commande", "🏥 Pharmacie garde", "💊 Conseil médicament", "🆘 Urgence"],
+        message: "Bonjour ! 👋 Je suis Leslie, votre assistant santé PharmaGo. Je peux vous conseiller sur vos médicaments, trouver une parapharmacie, analyser votre historique ou gérer vos **assurances (MUGEF-CI, NSIA, etc.)**. Comment puis-je vous aider ?",
+        suggestedChips: ["📦 Ma commande", "🏥 Pharmacie garde", "🩸 Analyse santé", "🛡️ Assurances"],
     },
 
     order_tracking: {
@@ -106,7 +119,7 @@ const responses: Record<Intent, AIResponse> = {
     },
 
     pain: {
-        message: "💊 **Douleurs** — Pour les douleurs légères à modérées, le paracétamol (Doliprane, Panadol) est souvent recommandé en première intention. L'ibuprofène (Advil, Nurofen) peut aider pour les douleurs inflammatoires mais est contre-indiqué en cas de grossesse et d'ulcère. Pour des douleurs intenses ou persistantes, consultez un médecin.",
+        message: "💊 **Douleurs** — Pour les douleurs légères à modérées, le paracétamol (Doliprane, Panadol) est often recommandé en première intention. L'ibuprofène (Advil, Nurofen) peut aider pour les douleurs inflammatoires mais est contre-indiqué en cas de grossesse et d'ulcère. Pour des douleurs intenses ou persistantes, consultez un médecin.",
         suggestedChips: ["💊 Commander antidouleur", "👨‍⚕️ Consulter", "🔍 Plus d'infos"],
     },
 
@@ -135,21 +148,131 @@ const responses: Record<Intent, AIResponse> = {
         suggestedChips: ["💳 Payer maintenant", "🔍 Voir ma facture"],
     },
 
+    insurance: {
+        message: "PharmaGo accepte plusieurs assurances santé en Côte d'Ivoire : **MUGEF-CI**, **GNA Assurance**, **NSIA**, **Allianz**, et **AIG**. Pour utiliser votre assurance, scannez votre carte de tiers-payant dans votre profil. La prise en charge est instantanée pour les médicaments éligibles.",
+        suggestedChips: ["🪪 Scanner ma carte", "📄 Liste médicaments éligibles", "🔍 Vérifier ma couverture"],
+    },
+
+    location: {
+        message: "PharmaGo livre dans tout Abidjan ! Que vous soyez à **Cocody** (Angré, Riviera), **Yopougon**, **Marcory** (Zone 4), **Plateau** ou **Abobo**, nos livreurs vous trouvent grâce au GPS. Précisez votre quartier pour une estimation plus précise.",
+        suggestedChips: ["📍 Ma position", "🚚 Délais par quartier", "🏥 Pharmacie à proximité"],
+    },
+
+    typhoid: {
+        message: "🌡️ **Fièvre Typhoïde** — Symptômes : forte fièvre persistante, maux de tête, fatigue intense, douleurs abdominales. C'est une infection bactérienne sérieuse. **Consultez un médecin** pour un bilan sanguin (Widal). Le traitement nécessite des antibiotiques spécifiques. Hydratez-vous bien et évitez les aliments crus.",
+        suggestedChips: ["👨‍⚕️ Voir un médecin", "💊 Antibiotiques prescrits", "🏥 Laboratoire proche"],
+    },
+
+    local_tips: {
+        message: "PharmaGo se rapproche de vous ! Voici quelques conseils de santé dans nos langues locales :\n\n• **Dioula** : *'I ka kènègnè ?'* (Comment va ta santé ?) — Pensez à boire beaucoup de l'eau pendant l'harmattan.\n• **Baoulé** : *'A kènè kpa ?'* (Tu te portes bien ?) — N'oubliez pas de bien laver les fruits avant de manger.\n\nJe peux vous donner d'autres conseils si vous le souhaitez ! 😊",
+        suggestedChips: ["🗣️ Plus de conseils", "🍎 Hygiène de vie"],
+    },
+
+    parapharmacy: {
+        message: "Besoin de soins ? PharmaGo propose une large gamme de parapharmacie :\n• **Vitamines** (C, D, Zinc) pour booster l'immunité.\n• **Soins Bébé** (Lait, couches, crèmes de change).\n• **Dermocosmétique** (Savons médicaux, protections solaires).\n\nConsultez notre section **Parapharmacie** pour découvrir les promotions du moment ! ✨",
+        suggestedChips: ["🧼 Voir la boutique", "👶 Espace Bébé", "🧴 Soins de la peau"],
+    },
+
+    health_analysis: {
+        message: "Je peux analyser vos dernières mesures santé ! Jetez un œil à votre tableau de bord ou demandez-moi une analyse précise de votre tension ou glycémie. 📊",
+        suggestedChips: ["🩸 Analyser ma tension", "🩸 Analyser ma glycémie", "📈 Voir tendances"],
+    },
+
     unknown: {
-        message: "Bonne question ! Je suis votre assistant santé PharmaGo. Je peux vous aider avec : vos commandes, trouver une pharmacie, des conseils médicaux généraux (paludisme, fièvre, douleurs...), vos ordonnances ou vos paiements. Que souhaitez-vous savoir ? 😊",
-        suggestedChips: ["📦 Ma commande", "🏥 Pharmacie garde", "💊 Conseil santé", "💳 Paiement"],
+        message: "Bonne question ! En tant qu'assistant PharmaGo, je peux analyser vos besoins basés sur votre historique d'achats (renouvellements, allergies) ou vous conseiller sur la parapharmacie. Que souhaitez-vous savoir ? 😊",
+        suggestedChips: ["📦 Ma commande", "🏥 Pharmacie garde", "🧼 Parapharmacie", "🛡️ Assurances"],
     },
 };
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useHealthAI() {
-    const getLocalResponse = (userMessage: string): AIResponse => {
-        const intent = detectIntent(userMessage);
-        return responses[intent] ?? responses.unknown;
+    /**
+     * analyzeHealthData — Analyse metrics and return insights
+     * @param metrics Dashboard health metrics
+     */
+    const analyzeHealthData = (metrics: any): AIResponse => {
+        let message = "Voici l'analyse de vos dernières mesures santé : \n\n";
+        let alertsCount = 0;
+        const chips = ["🩺 Conseil prévention", "🏥 Prendre RDV"];
+
+        // Blood Pressure Analysis
+        if (metrics.blood_pressure?.value) {
+            const [sys, dia] = metrics.blood_pressure.value.split('/').map(Number);
+            if (sys > 140 || dia > 90) {
+                message += "⚠️ **Hypertension détectée** : Votre tension est élevée (" + metrics.blood_pressure.value + "). Je vous recommande de vous reposer et de consulter un médecin si cela persiste.\n";
+                alertsCount++;
+            } else if (sys < 90) {
+                message += "🟡 **Hypotension détectée** : Votre tension est basse. Pensez à bien vous hydrater.\n";
+            } else {
+                message += "✅ **Tension** : Optimale (" + metrics.blood_pressure.value + "). Continuez ainsi !\n";
+            }
+        }
+
+        // Glucose Analysis
+        if (metrics.glucose?.value) {
+            const val = parseFloat(metrics.glucose.value);
+            if (val > 1.26) {
+                message += "⚠️ **Glycémie élevée** : Votre taux est de " + val + " g/L. Surveillez votre consommation de sucre.\n";
+                alertsCount++;
+            } else if (val < 0.7) {
+                message += "🟡 **Hypoglycémie** : Votre taux est bas. Prenez une collation sucrée si vous ressentez une faiblesse.\n";
+            } else {
+                message += "✅ **Glycémie** : Normale.\n";
+            }
+        }
+
+        // SpO2 Analysis
+        if (metrics.spO2?.value) {
+            const val = parseInt(metrics.spO2.value);
+            if (val < 95) {
+                message += "⚠️ **Saturation O2 basse** : Votre SpO2 est à " + val + "%. Si vous avez des difficultés respiratoires, contactez un médecin.\n";
+                alertsCount++;
+            } else {
+                message += "✅ **Saturation O2** : Excellente (" + val + "%).\n";
+            }
+        }
+
+        if (alertsCount === 0) {
+            message += "\nGlobalement, vos paramètres sont excellents. PharmaGo est fier de votre assiduité ! 😊";
+        }
+
+        return {
+            message,
+            suggestedChips: chips,
+            isAlert: alertsCount > 0
+        };
     };
 
-    return { getLocalResponse };
+    /**
+     * getLocalResponse — Get response from the local engine
+     * @param userMessage Message from the user
+     * @param context Optional patient context (name, allergies, metrics, etc.)
+     */
+    const getLocalResponse = (userMessage: string, context?: { name?: string; allergies?: string; metrics?: any }): AIResponse => {
+        const intent = detectIntent(userMessage);
+
+        // Priority to health analysis if metrics are present and intent is health_analysis
+        if (intent === 'health_analysis' && context?.metrics) {
+            return analyzeHealthData(context.metrics);
+        }
+
+        const response = { ...(responses[intent] ?? responses.unknown) };
+
+        // Personalization: Inject name if available
+        if (context?.name && response.message.includes("Bonjour !")) {
+            response.message = response.message.replace("Bonjour !", `Bonjour **${context.name}** ! 👋`);
+        }
+
+        // Contextual warning: If user asks about medicine and has allergies
+        if (intent === 'medicine_info' && context?.allergies) {
+            response.message += `\n\n⚠️ **Rappel Allergies** : Votre profil indique des allergies à : *${context.allergies}*. Vérifiez bien la composition.`;
+        }
+
+        return response;
+    };
+
+    return { getLocalResponse, analyzeHealthData };
 }
 
 export default useHealthAI;

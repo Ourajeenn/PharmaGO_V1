@@ -4,9 +4,10 @@ import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Eye, EyeOff, Lock, Mail, ArrowLeft, LogIn } from 'lucide-react'
+import { Eye, EyeOff, Lock, Mail, ArrowLeft, LogIn, Fingerprint } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { z } from 'zod'
+import { BiometricService } from '@/services/BiometricService'
 
 const loginSchema = z.object({
   email: z.string().email('Email invalide'),
@@ -22,7 +23,31 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [biometricLoading, setBiometricLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const handleBiometricLogin = async () => {
+    setBiometricLoading(true)
+    setError('')
+    try {
+      const success = await BiometricService.authenticate()
+      if (success) {
+        toast({
+          title: 'Authentification réussie',
+          description: 'Déverrouillage biométrique activé'
+        })
+        // En mode démo, on redirige vers le dashboard
+        // En production, le Passkey contient l'id utilisateur
+        navigate('/dashboard')
+      } else {
+        setError('Échec de la vérification biométrique')
+      }
+    } catch (err) {
+      setError('Erreur biométrique')
+    } finally {
+      setBiometricLoading(false)
+    }
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -297,14 +322,29 @@ export default function Login() {
               </div>
 
               {/* Sign in button */}
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full h-12 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold rounded-xl shadow-lg shadow-orange-500/30 transition-all duration-300 hover:shadow-orange-500/50"
-              >
-                <LogIn className="mr-2 h-5 w-5" />
-                {loading ? 'Connexion...' : 'Se connecter'}
-              </Button>
+              <div className="flex flex-col gap-3">
+                <Button
+                  type="submit"
+                  disabled={loading || biometricLoading}
+                  className="w-full h-12 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold rounded-xl shadow-lg shadow-orange-500/30 transition-all duration-300 hover:shadow-orange-500/50"
+                >
+                  <LogIn className="mr-2 h-5 w-5" />
+                  {loading ? 'Connexion...' : 'Se connecter'}
+                </Button>
+
+                {BiometricService.isSupported() && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={loading || biometricLoading}
+                    onClick={handleBiometricLogin}
+                    className="w-full h-12 border-white/20 bg-white/5 text-white hover:bg-white/10 rounded-xl transition-all"
+                  >
+                    <Fingerprint className="mr-2 h-5 w-5 text-cyan-400" />
+                    {biometricLoading ? 'Vérification...' : 'Déverrouillage Biométrique'}
+                  </Button>
+                )}
+              </div>
 
               {/* Sign up link */}
               <div className="text-center pt-4">

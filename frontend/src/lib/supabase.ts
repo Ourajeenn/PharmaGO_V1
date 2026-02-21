@@ -15,6 +15,7 @@ export interface UserProfile {
   avatar_url?: string
   birth_date?: string
   gender?: 'male' | 'female' | 'other'
+  loyalty_points?: number
 }
 
 export interface Patient {

@@ -2,9 +2,11 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -15,7 +17,6 @@ import { useCart } from "@/contexts/CartContext";
 import ClickCollectQR from "@/components/cart/ClickCollectQR";
 import { USSDSimulator } from "@/components/payment/USSDSimulator";
 import OrderInvoice from "@/components/payment/OrderInvoice";
-import pushNotifications, { NotificationTemplates } from "@/lib/pushNotifications";
 import {
   ArrowLeft,
   CreditCard,
@@ -30,9 +31,14 @@ import {
   Receipt,
   Wallet,
   Zap,
-  Info
+  Info,
+  Loader2
 } from "lucide-react";
 import { toast } from "sonner";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { InsuranceService, InsurancePartner } from "@/services/InsuranceService";
+import { useLoyalty } from "@/hooks/useLoyalty";
+import { Gift } from "lucide-react";
 
 interface PaymentMethod {
   id: string;
@@ -100,7 +106,10 @@ interface PaymentSystemProps {
 
 const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
   const navigate = useNavigate();
-  const { items, getTotalPrice, groupByPharmacy, clearCart } = useCart();
+  const { notify } = usePushNotifications();
+  const { items, getTotalPrice, getDiscountedTotal, groupByPharmacy, clearCart, selectedInsurance, setInsurance, coverageRate, setCoverageRate, pointsToUse, setPointsToUse } = useCart();
+  const { points: availablePoints, earnPoints, redeemPoints } = useLoyalty();
+  const [usePoints, setUsePoints] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('orange_money');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [deliveryAddress, setDeliveryAddress] = useState('');
@@ -110,6 +119,9 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
   const [paymentStep, setPaymentStep] = useState<'details' | 'payment' | 'confirmation' | 'pickup_ready'>('details');
   const [orderId, setOrderId] = useState<string>('');
   const [showUSSD, setShowUSSD] = useState(false);
+  const [insurancePartners, setInsurancePartners] = useState<InsurancePartner[]>([]);
+  const [insuranceCardNumber, setInsuranceCardNumber] = useState('');
+  const [isVerifyingInsurance, setIsVerifyingInsurance] = useState(false);
 
   // Mobile money provider IDs
   const mobileMoneyProviders = ['orange_money', 'wave', 'mtn_money', 'moov_money'];
@@ -117,6 +129,47 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
   // Click & Collect mode
   const [deliveryMode, setDeliveryMode] = useState<'delivery' | 'pickup'>('delivery');
   const [selectedPharmacy, setSelectedPharmacy] = useState<{ name: string; address: string } | null>(null);
+
+  const { user, profile } = useAuth();
+
+  // Auto-load insurance from profile
+  useEffect(() => {
+    const loadProfileInsurance = async () => {
+      if (user?.id && profile?.role === 'patient' && !selectedInsurance) {
+        try {
+          const { data, error } = await supabase
+            .from('patients')
+            .select('insurance_id, insurance_name')
+            .eq('user_id', user.id)
+            .single();
+
+          if (data && data.insurance_id) {
+            console.log("Auto-loading insurance from profile:", data.insurance_name);
+            setInsuranceCardNumber(data.insurance_id);
+
+            // Try to match with a partner
+            const partners = await InsuranceService.getPartners();
+            const partner = partners.find(p => p.id === data.insurance_name?.toLowerCase() || p.name === data.insurance_name);
+
+            if (partner) {
+              setInsurance(partner);
+              // Verify immediately
+              setIsVerifyingInsurance(true);
+              const result = await InsuranceService.verifyCoverage(partner.id, data.insurance_id);
+              if (result.active) {
+                setCoverageRate(result.rate);
+                toast.success(`Assurance ${partner.name} appliquée automatiquement.`);
+              }
+              setIsVerifyingInsurance(false);
+            }
+          }
+        } catch (err) {
+          console.error("Error auto-loading insurance:", err);
+        }
+      }
+    };
+    loadProfileInsurance();
+  }, [user, profile, selectedInsurance]);
 
   const pharmacyGroups = groupByPharmacy();
   const totalAmount = getTotalPrice();
@@ -146,10 +199,41 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
       setDeliveryFeeBreakdown(breakdown);
     };
     calculateFee();
+
+    const fetchPartners = async () => {
+      const partners = await InsuranceService.getPartners();
+      setInsurancePartners(partners);
+    };
+    fetchPartners();
   }, [pharmacyGroups, deliveryUrgency]);
 
+  const handleVerifyInsurance = async () => {
+    if (!selectedInsurance) return;
+    if (!insuranceCardNumber) {
+      toast.error("Veuillez entrer votre numéro de carte");
+      return;
+    }
+
+    setIsVerifyingInsurance(true);
+    try {
+      const result = await InsuranceService.verifyCoverage(selectedInsurance.id, insuranceCardNumber);
+      if (result.active) {
+        setCoverageRate(result.rate);
+        toast.success(`Couverture active : ${result.rate}% pris en charge`);
+      } else {
+        setCoverageRate(0);
+        toast.error("Couverture invalide ou expirée");
+      }
+    } catch (err) {
+      toast.error("Erreur lors de la vérification");
+    } finally {
+      setIsVerifyingInsurance(false);
+    }
+  };
+
   const deliveryFee = deliveryMode === 'pickup' ? 0 : (deliveryFeeBreakdown?.total || Object.keys(pharmacyGroups).length * 500);
-  const finalTotal = totalAmount + deliveryFee;
+  const totalWithInsurance = getDiscountedTotal() + deliveryFee;
+  const finalTotal = totalWithInsurance;
 
   useEffect(() => {
     if (useCurrentLocation && navigator.geolocation) {
@@ -164,7 +248,6 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
     }
   }, [useCurrentLocation]);
 
-  const { user } = useAuth(); // Add useAuth hook
 
   // Main payment handler — launches USSD for mobile money, or processes directly
   const handlePayment = async () => {
@@ -198,25 +281,31 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
       const newOrderId = `CMD-${Math.floor(Math.random() * 1000000)}`;
       let finalOrderId = newOrderId;
 
-      // Create Order in Supabase
+      // Create Order in Supabase using OrderService
       if (user) {
-        const { data, error } = await supabase
-          .from('orders')
-          .insert({
-            patient_id: user.id,
-            status: 'pending',
-            total: finalTotal,
-            payment_method: selectedPaymentMethod,
-            payment_status: selectedPaymentMethod === 'cash_on_delivery' ? 'pending' : 'completed',
-            delivery_address: deliveryAddress,
-            pharmacy_id: Object.keys(pharmacyGroups)[0] || null,
-            items_count: items.reduce((acc, item) => acc + item.quantity, 0),
-            notes: orderNotes
-          })
-          .select()
-          .single();
+        const { OrderService } = await import('@/services/OrderService');
 
-        if (error) throw error;
+        const orderParams = {
+          patient_id: user.id,
+          total: finalTotal,
+          payment_method: selectedPaymentMethod,
+          payment_status: selectedPaymentMethod === 'cash_on_delivery' ? 'pending' : 'completed',
+          delivery_address: deliveryAddress,
+          notes: orderNotes,
+          items: items.map(item => ({
+            medicine_id: item.medicine.id,
+            quantity: item.quantity,
+            unit_price: item.price,
+            pharmacy_id: item.pharmacy_id
+          })),
+          insurance_id: selectedInsurance?.id,
+          insurance_card_number: insuranceCardNumber,
+          coverage_rate: coverageRate,
+          amount_paid: finalTotal
+        };
+
+        const data = await OrderService.createOrder(orderParams);
+
         finalOrderId = data.id.substring(0, 8).toUpperCase();
         setOrderId(finalOrderId);
 
@@ -238,8 +327,7 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
 
         // Trigger browser push notification
         try {
-          const template = NotificationTemplates.orderConfirmed(finalOrderId);
-          await pushNotifications.showNotification(template.title, template);
+          notify('orderConfirmed', finalOrderId);
         } catch (pushError) {
           console.warn('Push notification failed (non-blocking):', pushError);
         }
@@ -254,35 +342,20 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
         setPaymentStep('confirmation');
       }
 
-      // Stock Decrement Logic (Sprint 11)
-      try {
-        for (const item of items) {
-          // Find the specific inventory record for this medicine at this pharmacy
-          const { data: invData } = await supabase
-            .from('pharmacy_inventory')
-            .select('id, quantity')
-            .eq('pharmacy_id', item.pharmacy_id)
-            .eq('medicine_id', item.medicine.id)
-            .single();
-
-          if (invData) {
-            const newQuantity = Math.max(0, invData.quantity - item.quantity);
-            await supabase
-              .from('pharmacy_inventory')
-              .update({ quantity: newQuantity })
-              .eq('id', invData.id);
-
-            console.log(`Stock updated for ${item.medicine.name}: ${invData.quantity} -> ${newQuantity}`);
-          }
-        }
-      } catch (stockError) {
-        console.warn('Stock decrement failed (non-blocking):', stockError);
-      }
 
       toast.success("Paiement effectué avec succès !");
 
+      // Earn points for this order (on the raw amount before loyalty discount)
+      await earnPoints(totalAmount);
+
+      // If points were used, deduct them from DB
+      if (pointsToUse > 0) {
+        await redeemPoints(pointsToUse);
+      }
+
       if (selectedPaymentMethod !== 'cash_on_delivery') {
         clearCart();
+        setPointsToUse(0);
       }
 
     } catch (error) {
@@ -614,6 +687,75 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
                         </div>
                       </RadioGroup>
 
+                      {/* Insurance / Tiers-Payant Section */}
+                      <div className="mt-8 border-t pt-6">
+                        <div className="flex items-center gap-2 mb-4">
+                          <Shield className="h-5 w-5 text-primary" />
+                          <h3 className="font-bold text-lg">Assurance (Tiers-Payant)</h3>
+                        </div>
+
+                        <div className="space-y-4">
+                          <div className="flex gap-4">
+                            <div className="flex-1">
+                              <Label htmlFor="insurance-select">Sélectionnez votre assurance</Label>
+                              <Select
+                                value={selectedInsurance?.id || "none"}
+                                onValueChange={(val) => {
+                                  if (val === "none") {
+                                    setInsurance(null);
+                                    setCoverageRate(0);
+                                  } else {
+                                    const partner = insurancePartners.find(p => p.id === val);
+                                    setInsurance(partner || null);
+                                  }
+                                }}
+                              >
+                                <SelectTrigger id="insurance-select">
+                                  <SelectValue placeholder="Aucune assurance" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">Aucune assurance</SelectItem>
+                                  {insurancePartners.map(p => (
+                                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {selectedInsurance && (
+                              <div className="flex-1">
+                                <Label htmlFor="card-number">Numéro de carte</Label>
+                                <div className="flex gap-2">
+                                  <Input
+                                    id="card-number"
+                                    placeholder="Ex: 00123456"
+                                    value={insuranceCardNumber}
+                                    onChange={(e) => setInsuranceCardNumber(e.target.value)}
+                                  />
+                                  <Button
+                                    variant="outline"
+                                    onClick={handleVerifyInsurance}
+                                    disabled={isVerifyingInsurance}
+                                  >
+                                    {isVerifyingInsurance ? <Loader2 className="animate-spin h-4 w-4" /> : "Vérifier"}
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {coverageRate > 0 && selectedInsurance && (
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center gap-3">
+                              <CheckCircle className="h-5 w-5 text-blue-600" />
+                              <div className="text-sm text-blue-800">
+                                <p className="font-bold">Prise en charge {selectedInsurance.name} active !</p>
+                                <p>Taux : {coverageRate}% — Vous ne payez que {100 - coverageRate}% du total.</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
                       {selectedPaymentMethod && selectedPaymentMethod !== 'cash_on_delivery' && (
                         <div className="mt-6">
                           <Label htmlFor="phone">Numéro de téléphone</Label>
@@ -630,8 +772,63 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
                         </div>
                       )}
 
+                      {/* Loyalty Points Section */}
+                      <div className="mt-8 border-t pt-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            <Gift className="h-5 w-5 text-yellow-500" />
+                            <h3 className="font-bold text-lg">PharmaWallet</h3>
+                          </div>
+                          <Badge variant="secondary" className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">
+                            {availablePoints} points disponibles
+                          </Badge>
+                        </div>
 
+                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                              <p className="font-medium">Utiliser mes points de fidélité</p>
+                              <p className="text-xs text-muted-foreground">1 point = 1 FCFA de réduction</p>
+                            </div>
+                            <Checkbox
+                              checked={usePoints}
+                              onCheckedChange={(checked) => {
+                                setUsePoints(checked as boolean);
+                                if (checked) {
+                                  // Use as many points as possible (capped by total and available points)
+                                  const maxUsable = Math.min(availablePoints, totalAmount);
+                                  setPointsToUse(maxUsable);
+                                } else {
+                                  setPointsToUse(0);
+                                }
+                              }}
+                            />
+                          </div>
 
+                          {usePoints && (
+                            <div className="mt-4 animate-in fade-in slide-in-from-top-2">
+                              <div className="flex items-center gap-4">
+                                <div className="flex-1">
+                                  <Label className="text-[10px] uppercase font-bold text-muted-foreground mb-1 block">Points à utiliser</Label>
+                                  <Input
+                                    type="number"
+                                    max={availablePoints}
+                                    value={pointsToUse}
+                                    onChange={(e) => {
+                                      const val = parseInt(e.target.value) || 0;
+                                      setPointsToUse(Math.min(val, availablePoints));
+                                    }}
+                                    className="h-10 rounded-lg"
+                                  />
+                                </div>
+                                <div className="pt-5">
+                                  <p className="text-sm font-bold text-green-600">-{pointsToUse.toLocaleString()} FCFA</p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                       <div className="mt-6 bg-green-50 rounded-lg p-4 border border-green-200">
                         <div className="flex items-center gap-2 mb-2">
                           <Shield className="h-4 w-4 text-green-600" />
@@ -686,12 +883,24 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
                         <span>Sous-total</span>
                         <span>{totalAmount.toLocaleString()} FCFA</span>
                       </div>
+                      {coverageRate > 0 && (
+                        <div className="flex justify-between text-blue-600 font-medium">
+                          <span>Prise en charge ({coverageRate}%)</span>
+                          <span>-{((totalAmount * coverageRate) / 100).toLocaleString()} FCFA</span>
+                        </div>
+                      )}
+                      {pointsToUse > 0 && (
+                        <div className="flex justify-between text-yellow-600 font-medium">
+                          <span>Points de fidélité</span>
+                          <span>-{pointsToUse.toLocaleString()} FCFA</span>
+                        </div>
+                      )}
                       <div className="flex justify-between">
                         <span>Frais de livraison</span>
                         <span>{deliveryFee.toLocaleString()} FCFA</span>
                       </div>
                       <div className="flex justify-between font-bold text-lg border-t pt-2">
-                        <span>Total</span>
+                        <span>{coverageRate > 0 || pointsToUse > 0 ? 'Reste à charge' : 'Total'}</span>
                         <span>{finalTotal.toLocaleString()} FCFA</span>
                       </div>
                     </div>

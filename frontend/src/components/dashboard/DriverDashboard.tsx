@@ -45,6 +45,7 @@ export const DriverDashboard = () => {
   const { user, profile } = useAuth()
   const [loading, setLoading] = useState(true)
   const [isAvailable, setIsAvailable] = useState(true)
+  const [driverId, setDriverId] = useState<string | null>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [selectedDeliveryForProof, setSelectedDeliveryForProof] = useState<any>(null)
   const [isCompensationOpen, setIsCompensationOpen] = useState(false)
@@ -61,11 +62,14 @@ export const DriverDashboard = () => {
       if (!user) return
       const { data, error } = await supabase
         .from('drivers')
-        .select('available')
+        .select('*')
         .eq('user_id', user.id)
-        .single()
+        .maybeSingle()
 
-      if (data) setIsAvailable(data.available || false)
+      if (data) {
+        setIsAvailable(data.available ?? false)
+        setDriverId(data.user_id) // user_id is the primary key in 'drivers' table
+      }
     }
     fetchAvailability()
   }, [user])
@@ -122,7 +126,7 @@ export const DriverDashboard = () => {
                 user_profiles:user_id (name, phone, address)
             )
         `)
-        .in('status', ['pret', 'en_livraison', 'livre'])
+        .in('status', ['ready', 'picked_up', 'in_transit', 'delivered'])
         .order('created_at', { ascending: false })
         .limit(20)
 
@@ -147,7 +151,7 @@ export const DriverDashboard = () => {
         }))
         setDeliveries(formattedDeliveries)
 
-        const todayFinished = deliveryData.filter((d: any) => d.created_at.startsWith(today) && d.status === 'livre')
+        const todayFinished = deliveryData.filter((d: any) => d.created_at.startsWith(today) && (d.status === 'delivered' || d.status === 'livre'))
 
         setStats(prev => ({
           ...prev,
@@ -164,6 +168,47 @@ export const DriverDashboard = () => {
       setLoading(false)
     }
   }
+
+  // ── Real-time GPS Tracking Logic ────────────────────────
+  const [activeDeliveryId, setActiveDeliveryId] = useState<string | null>(null)
+
+  useEffect(() => {
+    // Detect the single active delivery for tracking
+    const active = deliveries.find(d => ['picked_up', 'in_transit'].includes(d.status))
+    setActiveDeliveryId(active?.id || null)
+  }, [deliveries])
+
+  useEffect(() => {
+    if (!activeDeliveryId || !isAvailable) return
+
+    let watchId: number | null = null
+
+    if ("geolocation" in navigator) {
+      watchId = navigator.geolocation.watchPosition(
+        async (pos) => {
+          const { latitude, longitude } = pos.coords
+
+          // Upsert to delivery_tracking table
+          await supabase
+            .from('delivery_tracking')
+            .upsert({
+              order_id: activeDeliveryId,
+              driver_id: driverId,
+              status: deliveries.find(d => d.id === activeDeliveryId)?.status || 'in_transit',
+              current_latitude: latitude,
+              current_longitude: longitude,
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'order_id' })
+        },
+        (err) => console.error("GPS Watch Error:", err),
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+      )
+    }
+
+    return () => {
+      if (watchId !== null) navigator.geolocation.clearWatch(watchId)
+    }
+  }, [activeDeliveryId, isAvailable])
 
   const handleStatusUpdate = async (orderId: string, newStatus: string, customerPhone: string, customerName: string) => {
     try {
@@ -182,9 +227,9 @@ export const DriverDashboard = () => {
       // Send SMS Notification
       if (customerPhone) {
         let message = ''
-        if (newStatus === 'en_livraison') {
+        if (newStatus === 'in_transit') {
           message = `Bonjour ${customerName}, votre livreur PharmaGo est en route ! Votre commande arrive bientôt.`
-        } else if (newStatus === 'livre') {
+        } else if (newStatus === 'delivered') {
           message = `Bonjour ${customerName}, votre commande PharmaGo a été livrée avec succès. Merci de nous avoir fait confiance !`
         }
 
@@ -193,6 +238,18 @@ export const DriverDashboard = () => {
             body: { to: customerPhone, message }
           })
         }
+      }
+
+      if (newStatus === 'picked_up' && driverId) {
+        // Initialize tracking entry
+        await (supabase as any)
+          .from('delivery_tracking')
+          .upsert({
+            order_id: orderId,
+            driver_id: driverId,
+            status: 'picked_up',
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'order_id' })
       }
 
       fetchDashboardData() // Refresh everything
@@ -204,16 +261,20 @@ export const DriverDashboard = () => {
 
   const getStatusBadge = (status: string) => {
     const styles = {
-      en_attente: 'bg-yellow-500/10 text-yellow-600 border-yellow-200/50',
-      pret: 'bg-purple-500/10 text-purple-600 border-purple-200/50',
-      en_livraison: 'bg-blue-500/10 text-blue-600 border-blue-200/50',
-      livre: 'bg-green-500/10 text-green-600 border-green-200/50',
+      pending: 'bg-yellow-500/10 text-yellow-600 border-yellow-200/50',
+      preparing: 'bg-orange-500/10 text-orange-600 border-orange-200/50',
+      ready: 'bg-purple-500/10 text-purple-600 border-purple-200/50',
+      picked_up: 'bg-blue-500/10 text-blue-600 border-blue-200/50',
+      in_transit: 'bg-indigo-500/10 text-indigo-600 border-indigo-200/50',
+      delivered: 'bg-green-500/10 text-green-600 border-green-200/50',
     }
     const labels = {
-      en_attente: 'Attente',
-      pret: 'À ramasser',
-      en_livraison: 'En route',
-      livre: 'Livré',
+      pending: 'Attente',
+      preparing: 'Préparation',
+      ready: 'À ramasser',
+      picked_up: 'Récupérée',
+      in_transit: 'En route',
+      delivered: 'Livré',
     }
     return (
       <Badge className={`${styles[status as keyof typeof styles] || 'bg-gray-100/10'} border px-2 py-0.5 rounded-full text-[10px] font-black uppercase`}>
@@ -230,8 +291,8 @@ export const DriverDashboard = () => {
     )
   }
 
-  const activeDeliveries = deliveries.filter(d => d.status === 'pret' || d.status === 'en_livraison')
-  const historyDeliveries = deliveries.filter(d => d.status === 'livre')
+  const activeDeliveries = deliveries.filter(d => ['ready', 'picked_up', 'in_transit'].includes(d.status))
+  const historyDeliveries = deliveries.filter(d => d.status === 'delivered')
 
   return (
     <PremiumDashboardLayout activeTab="home" role="driver">
@@ -412,17 +473,25 @@ export const DriverDashboard = () => {
                       </div>
 
                       <div className="flex gap-3">
-                        {delivery.status === 'pret' && (
+                        {delivery.status === 'ready' && (
                           <Button
                             className="flex-1 rounded-xl bg-primary shadow-xl shadow-primary/20 font-bold group-hover:translate-y-[-2px] transition-all"
-                            onClick={() => handleStatusUpdate(delivery.id, 'en_livraison', delivery.phone, delivery.customer)}
+                            onClick={() => handleStatusUpdate(delivery.id, 'picked_up', delivery.phone, delivery.customer)}
                           >
                             <CheckCircle className="h-4 w-4 mr-2" /> Récupérer
                           </Button>
                         )}
-                        {delivery.status === 'en_livraison' && (
+                        {delivery.status === 'picked_up' && (
                           <Button
-                            className="flex-1 rounded-xl bg-green-600 shadow-xl shadow-green-200 font-bold group-hover:translate-y-[-2px] transition-all"
+                            className="flex-1 rounded-xl bg-orange-600 shadow-xl shadow-orange-200 font-bold group-hover:translate-y-[-2px] transition-all text-white"
+                            onClick={() => handleStatusUpdate(delivery.id, 'in_transit', delivery.phone, delivery.customer)}
+                          >
+                            <Navigation className="h-4 w-4 mr-2" /> Commencer Livraison
+                          </Button>
+                        )}
+                        {delivery.status === 'in_transit' && (
+                          <Button
+                            className="flex-1 rounded-xl bg-green-600 shadow-xl shadow-green-200 font-bold group-hover:translate-y-[-2px] transition-all text-white"
                             onClick={() => setSelectedDeliveryForProof(delivery)}
                           >
                             <Zap className="h-4 w-4 mr-2" /> Valider Livraison
@@ -430,9 +499,6 @@ export const DriverDashboard = () => {
                         )}
                         <Button variant="outline" className="rounded-xl glass-morphism border-white/40 w-12 px-0">
                           <Navigation className="h-4 w-4 text-blue-500" />
-                        </Button>
-                        <Button variant="outline" className="rounded-xl glass-morphism border-white/40 w-12 px-0">
-                          <Phone className="h-4 w-4 text-purple-500" />
                         </Button>
                       </div>
                     </div>
@@ -517,7 +583,7 @@ export const DriverDashboard = () => {
               // Update order status
               await handleStatusUpdate(
                 selectedDeliveryForProof.id,
-                'livre',
+                'delivered',
                 selectedDeliveryForProof.phone,
                 selectedDeliveryForProof.customer
               )

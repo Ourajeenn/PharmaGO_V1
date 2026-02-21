@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageSquare, Send, X, Loader2 } from 'lucide-react';
 import { toast } from "sonner";
 import { format } from 'date-fns';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 interface Message {
     id: string;
@@ -35,6 +36,8 @@ export const RealtimeChat: React.FC<RealtimeChatProps> = ({ orderId, recipientId
 
         fetchMessages();
 
+        const { notify } = usePushNotifications();
+
         // Subscribe to real-time messages
         const channel = supabase
             .channel('public:messages')
@@ -44,7 +47,15 @@ export const RealtimeChat: React.FC<RealtimeChatProps> = ({ orderId, recipientId
                 table: 'messages',
                 filter: `recipient_id=eq.${user.id}`
             }, (payload) => {
-                setMessages(prev => [...prev, payload.new as Message]);
+                const newMsg = payload.new as Message;
+                setMessages(prev => [...prev, newMsg]);
+
+                // Trigger push notification if message is from someone else
+                if (newMsg.sender_id !== user.id) {
+                    notify('delivered', newMsg.order_id || 'new_message'); // Using 'delivered' as a generic message template for now or custom
+                    // Actually, let's use a better template if possible, or just raw title
+                }
+
                 scrollToBottom();
             })
             .subscribe();
@@ -139,8 +150,8 @@ export const RealtimeChat: React.FC<RealtimeChatProps> = ({ orderId, recipientId
                             >
                                 <div
                                     className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.sender_id === user?.id
-                                            ? 'bg-slate-900 text-white rounded-tr-none'
-                                            : 'bg-white border text-slate-900 rounded-tl-none shadow-sm'
+                                        ? 'bg-slate-900 text-white rounded-tr-none'
+                                        : 'bg-white border text-slate-900 rounded-tl-none shadow-sm'
                                         }`}
                                 >
                                     <p>{msg.content}</p>

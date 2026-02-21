@@ -7,10 +7,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
-import { Save, Edit, X, Upload, Loader2, ChevronDown } from 'lucide-react'
+import { Save, Edit, X, Upload, Loader2, ChevronDown, Shield, Zap, Fingerprint } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import insuranceData from '@/data/insurances.json'
 import { uploadProfileImage } from '@/utils/upload'
+import { BiometricService } from '@/services/BiometricService'
 
 interface PatientProfileData {
   name: string
@@ -108,7 +109,7 @@ export const EditablePatientProfile = ({ userId }: EditablePatientProfileProps =
         bloodType: patientData?.blood_type || '',
         allergies: patientData?.allergies || '',
         chronicConditions: patientData?.medical_history || '', // Mapping 'medical_history' to 'chronicConditions' for now
-        avatarUrl: userProfile?.avatar_url || null
+        avatarUrl: (userProfile as any)?.avatar_url || null
       }
 
       setProfileData(mergedData)
@@ -366,102 +367,156 @@ export const EditablePatientProfile = ({ userId }: EditablePatientProfileProps =
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="insuranceName">Compagnie d'assurance</Label>
-              {isEditing ? (
-                <div className="space-y-2">
-                  <Select
-                    value={insuranceData.includes(editedData.insuranceName || '') ? editedData.insuranceName : 'Autre'}
-                    onValueChange={(value) => {
-                      if (value === 'Autre') {
-                        handleChange('insuranceName', '')
-                      } else {
-                        handleChange('insuranceName', value)
-                      }
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionnez votre assurance" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {insuranceData.map((name) => (
-                        <SelectItem key={name} value={name}>
-                          {name}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="Autre">Autre (Saisir manuellement)</SelectItem>
-                    </SelectContent>
-                  </Select>
+            <div className="space-y-4 md:col-span-2 border-t pt-4 mt-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Shield className="h-5 w-5 text-primary" />
+                <h4 className="font-bold">Portefeuille Assurances (Tiers-Payant)</h4>
+              </div>
+              <p className="text-xs text-muted-foreground mb-4">
+                Enregistrez vos cartes d'assurance pour bénéficier d'une prise en charge automatique lors de vos commandes.
+              </p>
 
-                  {(!insuranceData.includes(editedData.insuranceName || '') || editedData.insuranceName === '') && (
-                    <Input
-                      placeholder="Nom de votre assurance..."
-                      value={editedData.insuranceName}
-                      onChange={(e) => handleChange('insuranceName', e.target.value)}
-                      className="mt-2"
-                    />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-primary/5 p-4 rounded-2xl border border-primary/10">
+                <div className="space-y-2">
+                  <Label htmlFor="insuranceName">Compagnie d'assurance</Label>
+                  {isEditing ? (
+                    <Select
+                      value={insuranceData.includes(editedData.insuranceName || '') ? editedData.insuranceName : 'Autre'}
+                      onValueChange={(value) => {
+                        if (value === 'Autre') {
+                          handleChange('insuranceName', '')
+                        } else {
+                          handleChange('insuranceName', value)
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="bg-white">
+                        <SelectValue placeholder="Sélectionnez votre assurance" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {insuranceData.map((name) => (
+                          <SelectItem key={name} value={name}>
+                            {name}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="Autre">Autre (Saisir manuellement)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <p className="text-sm font-semibold">{profileData.insuranceName || 'Aucune assurance configurée'}</p>
                   )}
                 </div>
-              ) : (
-                <p className="p-2 bg-secondary/5 rounded">{profileData.insuranceName || 'Non renseigné'}</p>
+
+                <div className="space-y-2">
+                  <Label htmlFor="insuranceId">Numéro de Carte</Label>
+                  {isEditing ? (
+                    <Input
+                      id="insuranceId"
+                      value={editedData.insuranceId}
+                      onChange={(e) => handleChange('insuranceId', e.target.value)}
+                      placeholder="Ex: 001234567..."
+                      className="bg-white"
+                    />
+                  ) : (
+                    <p className="text-sm font-mono">{profileData.insuranceId || '—'}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="cmuNumber">Numéro de Sécurité Sociale (CMU)</Label>
+                  {isEditing ? (
+                    <Input
+                      id="cmuNumber"
+                      value={editedData.cmuNumber}
+                      onChange={(e) => handleChange('cmuNumber', e.target.value)}
+                      placeholder="Identifiant CMU unique"
+                      className="bg-white"
+                    />
+                  ) : (
+                    <p className="text-sm">{profileData.cmuNumber || 'Non renseigné'}</p>
+                  )}
+                </div>
+              </div>
+
+              {!isEditing && profileData.insuranceId && (
+                <div className="flex items-center gap-2 text-[10px] text-green-600 font-medium bg-green-50 px-3 py-1.5 rounded-full w-fit">
+                  <Zap className="h-3 w-3" />
+                  Prise en charge active pour ce profil
+                </div>
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="insuranceId">Numéro de carte d'assurance</Label>
-              {isEditing ? (
-                <Input
-                  id="insuranceId"
-                  value={editedData.insuranceId}
-                  onChange={(e) => handleChange('insuranceId', e.target.value)}
-                  placeholder="Ex: 123456789"
-                />
-              ) : (
-                <p className="p-2 bg-secondary/5 rounded">{profileData.insuranceId || 'Non renseigné'}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="cmuNumber">Numéro CMU</Label>
-              {isEditing ? (
-                <Input
-                  id="cmuNumber"
-                  value={editedData.cmuNumber}
-                  onChange={(e) => handleChange('cmuNumber', e.target.value)}
-                />
-              ) : (
-                <p className="p-2 bg-secondary/5 rounded">{profileData.cmuNumber || 'Non renseigné'}</p>
-              )}
-            </div>
-
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="allergies">Allergies</Label>
+            <div className="space-y-2 md:col-span-2 border-t pt-4">
+              <h3 className="font-semibold text-lg pb-2">Santé & Antécédents</h3>
+              <Label htmlFor="allergies">Allergies connues</Label>
               {isEditing ? (
                 <Textarea
                   id="allergies"
                   value={editedData.allergies}
                   onChange={(e) => handleChange('allergies', e.target.value)}
-                  placeholder="Listez vos allergies connues..."
+                  placeholder="Ex: Pénicilline, Arachides..."
                 />
               ) : (
-                <p className="p-2 bg-secondary/5 rounded min-h-[60px]">{profileData.allergies || 'Aucune allergie signalée'}</p>
+                <p className="p-2 bg-secondary/5 rounded min-h-[60px] text-sm">{profileData.allergies || 'Aucune allergie signalée'}</p>
               )}
             </div>
 
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="chronicConditions">Conditions chroniques (Antécédents)</Label>
+              <Label htmlFor="chronicConditions">Conditions chroniques</Label>
               {isEditing ? (
                 <Textarea
                   id="chronicConditions"
                   value={editedData.chronicConditions}
                   onChange={(e) => handleChange('chronicConditions', e.target.value)}
-                  placeholder="Listez vos conditions chroniques..."
+                  placeholder="Ex: Diabète Type 2, Hypertension..."
                 />
               ) : (
-                <p className="p-2 bg-secondary/5 rounded min-h-[60px]">{profileData.chronicConditions || 'Aucun antécédent signalé'}</p>
+                <p className="p-2 bg-secondary/5 rounded min-h-[60px] text-sm">{profileData.chronicConditions || 'Aucun antécédent signalé'}</p>
               )}
             </div>
           </div>
+        </div>
+        {/* Sécurité et Biométrie */}
+        <div className="space-y-4 pt-4 border-t">
+          <div className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-indigo-600" />
+            <h3 className="font-semibold text-lg">Sécurité et Accès</h3>
+          </div>
+
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm">
+                <Fingerprint className="h-6 w-6 text-indigo-600" />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm">Déverrouillage Biométrique (Face ID / Empreinte)</h4>
+                <p className="text-xs text-muted-foreground max-w-md">
+                  Activez cette option pour vous connecter plus rapidement et sécuriser vos données de santé sur cet appareil.
+                </p>
+              </div>
+            </div>
+
+            <Button
+              variant={BiometricService.isEnrolled() ? "secondary" : "default"}
+              disabled={!BiometricService.isSupported()}
+              onClick={async () => {
+                const success = await BiometricService.registerBiometrics(profileData.name || 'Patient PharmaGo');
+                if (success) {
+                  toast.success("Biométrie activée avec succès");
+                  // Force re-render if needed or use local state
+                }
+              }}
+              className="rounded-xl"
+            >
+              {BiometricService.isEnrolled() ? "Désactiver" : "Activer"}
+            </Button>
+          </div>
+
+          {!BiometricService.isSupported() && (
+            <p className="text-[10px] text-amber-600 bg-amber-50 p-2 rounded-lg">
+              ⚠️ Votre navigateur ou appareil ne semble pas supporter le déverrouillage biométrique WebAuthn.
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>

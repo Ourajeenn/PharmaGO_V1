@@ -15,6 +15,8 @@ import {
     Bell, CheckCircle, X, Save, User
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useAuth } from '@/hooks/useAuth'
+import { supabase } from '@/lib/supabase'
 
 interface Allergy {
     id: string
@@ -82,6 +84,58 @@ export const MedicalRecordSection = () => {
         { id: '2', medication: 'Metformine 500mg', dosage: '1 comprimé', frequency: '2x/jour', startDate: '2021-12-01', prescribedBy: 'Dr. Touré' },
         { id: '3', medication: 'Aspirine 100mg', dosage: '1 comprimé', frequency: '1x/jour', startDate: '2020-01-15', prescribedBy: 'Dr. Koné' }
     ])
+
+    const { user, profile } = useAuth()
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        const fetchMedicalData = async () => {
+            if (user?.id && profile?.role === 'patient') {
+                try {
+                    const { data, error } = await supabase
+                        .from('patients')
+                        .select('allergies, medical_history')
+                        .eq('user_id', user.id)
+                        .single()
+
+                    if (data) {
+                        // Transform simple strings into arrays for the UI
+                        if (data.allergies) {
+                            const allergyList = data.allergies.split(',').map((name, index) => ({
+                                id: `db-${index}`,
+                                name: name.trim(),
+                                severity: 'moderate' as const,
+                                reaction: 'Signalé par le patient',
+                                dateDiscovered: new Date().toISOString()
+                            }))
+                            setAllergies(allergyList)
+                        } else {
+                            setAllergies([])
+                        }
+
+                        if (data.medical_history) {
+                            const historyList = data.medical_history.split(',').map((condition, index) => ({
+                                id: `db-hist-${index}`,
+                                condition: condition.trim(),
+                                diagnosisDate: new Date().toISOString(),
+                                status: 'active' as const,
+                                notes: 'Signalé dans le profil'
+                            }))
+                            setMedicalHistory(historyList)
+                        } else {
+                            setMedicalHistory([])
+                        }
+                    }
+                } catch (err) {
+                    console.error('Error fetching medical data:', err)
+                } finally {
+                    setLoading(false)
+                }
+            }
+        }
+
+        fetchMedicalData()
+    }, [user, profile])
 
     const openAddDialog = (type: typeof dialogType) => {
         setDialogType(type)

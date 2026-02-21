@@ -7,14 +7,24 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Calendar as CalendarIcon, Clock, User, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { AppointmentService } from "@/services/AppointmentService";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
+
+interface Doctor {
+    id: string;
+    name: string;
+    specialty: string;
+}
 
 interface AppointmentBookingDialogProps {
     isOpen: boolean;
     onClose: () => void;
-    specialty?: string;
+    doctor: Doctor | null;
 }
 
-const AppointmentBookingDialog = ({ isOpen, onClose, specialty = "Généraliste" }: AppointmentBookingDialogProps) => {
+const AppointmentBookingDialog = ({ isOpen, onClose, doctor }: AppointmentBookingDialogProps) => {
+    const { user } = useAuth();
     const navigate = useNavigate();
     const [date, setDate] = useState<Date | undefined>(new Date());
     const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
@@ -35,14 +45,27 @@ const AppointmentBookingDialog = ({ isOpen, onClose, specialty = "Généraliste"
         }
     };
 
-    const doctor = getDoctor(specialty);
+    const handleConfirm = async () => {
+        if (date && selectedSlot && doctor && user) {
+            try {
+                const newAppointment = await AppointmentService.createAppointment({
+                    patient_id: user.id,
+                    doctor_id: doctor.id,
+                    date: format(date, 'yyyy-MM-dd'),
+                    time: selectedSlot,
+                    type: 'video',
+                    notes: `Consultation pour ${doctor.specialty}`
+                });
 
-    const handleConfirm = () => {
-        if (date && selectedSlot) {
-            // Navigate to doctor profile with appointment details
-            // In a real app, we would pass these details via state or context
-            navigate("/doctor/dr-kouassi"); // Keeping this hardcoded for now or could be dynamic
-            onClose();
+                if (newAppointment) {
+                    toast.success('Rendez-vous confirmé !');
+                    onClose();
+                } else {
+                    toast.error('Erreur lors de la confirmation');
+                }
+            } catch (err) {
+                toast.error('Erreur technique');
+            }
         }
     };
 
@@ -50,7 +73,7 @@ const AppointmentBookingDialog = ({ isOpen, onClose, specialty = "Généraliste"
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>
-                    <DialogTitle>Prendre rendez-vous - {specialty}</DialogTitle>
+                    <DialogTitle>Prendre rendez-vous - {doctor?.specialty || 'Généraliste'}</DialogTitle>
                 </DialogHeader>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -97,8 +120,8 @@ const AppointmentBookingDialog = ({ isOpen, onClose, specialty = "Généraliste"
                             <User className="h-6 w-6 text-primary" />
                         </div>
                         <div>
-                            <p className="font-medium">{doctor.name}</p>
-                            <p className="text-sm text-muted-foreground">{doctor.title}</p>
+                            <p className="font-medium">{doctor?.name}</p>
+                            <p className="text-sm text-muted-foreground">{doctor?.specialty}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">

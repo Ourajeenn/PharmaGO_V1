@@ -17,8 +17,12 @@ import {
   Search,
   CheckCircle,
   Star,
-  CreditCard
+  CreditCard,
+  Loader2
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 interface Order {
   id: string;
@@ -98,6 +102,7 @@ const mockOrders: Order[] = [
 ];
 
 const statusSteps = [
+  { key: 'pending', label: 'En attente', icon: Search },
   { key: 'preparing', label: 'Préparation', icon: Package },
   { key: 'ready', label: 'Prête', icon: CheckCircle },
   { key: 'picked_up', label: 'Récupérée', icon: Truck },
@@ -111,22 +116,101 @@ interface OrderTrackingProps {
 
 const OrderTracking = ({ onBackToHome }: OrderTrackingProps) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchOrderId, setSearchOrderId] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [orders] = useState<Order[]>(mockOrders);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  // Fetch initial orders
   useEffect(() => {
-    // Auto-select the first order if available
-    if (orders.length > 0 && !selectedOrder) {
-      setSelectedOrder(orders[0]);
+    if (!user) return;
+    fetchOrders();
+
+    // Subscribe to REALTIME updates on 'orders' table
+    const ordersChannel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
+        (payload) => {
+          console.log('Realtime update:', payload);
+          fetchOrders(); // Refresh all to stay in sync
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(ordersChannel);
+    };
+  }, [user]);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const { data: ordersData, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          pharmacies:pharmacy_id (
+            id,
+            user_profiles:user_id (name, phone, address)
+          ),
+          order_items (
+            id,
+            quantity,
+            unit_price,
+            medicines:medicine_id (name)
+          )
+        `)
+        .eq('patient_id', user?.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (ordersData) {
+        const formattedOrders: Order[] = ordersData.map((o: any) => ({
+          id: o.id,
+          status: o.status,
+          pharmacy: {
+            name: o.pharmacies?.user_profiles?.name || 'Pharmacie',
+            address: o.pharmacies?.user_profiles?.address || 'Adresse non spécifiée',
+            phone: o.pharmacies?.user_profiles?.phone || ''
+          },
+          items: o.order_items?.map((item: any) => ({
+            id: item.id,
+            name: item.medicines?.name || 'Médicament',
+            quantity: item.quantity,
+            price: item.unit_price
+          })) || [],
+          total: o.total || 0,
+          deliveryFee: 1500, // Fixed for now or fetch from setting
+          estimatedDelivery: "---",
+          deliveryAddress: o.delivery_address || 'À domicile',
+          orderTime: new Date(o.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          paymentMethod: o.payment_method || 'Orange Money',
+          paymentStatus: o.payment_status === 'paid' ? 'paid' : 'pending'
+        }));
+        setOrders(formattedOrders);
+        if (!selectedOrder && formattedOrders.length > 0) {
+          setSelectedOrder(formattedOrders[0]);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching orders:', err);
+      toast.error("Échec du chargement des commandes");
+    } finally {
+      setLoading(false);
     }
-  }, [orders, selectedOrder]);
+  };
 
   const searchOrder = () => {
-    const order = orders.find(o => o.id === searchOrderId);
+    const order = orders.find(o => o.id === searchOrderId || o.id.includes(searchOrderId));
     if (order) {
       setSelectedOrder(order);
       setSearchOrderId("");
+    } else {
+      toast.error("Commande non trouvée");
     }
   };
 
@@ -141,6 +225,7 @@ const OrderTracking = ({ onBackToHome }: OrderTrackingProps) => {
 
   const getStatusBadge = (status: string) => {
     const variants = {
+      pending: "bg-gray-100 text-gray-800 border-gray-200",
       preparing: "bg-yellow-100 text-yellow-800 border-yellow-200",
       ready: "bg-blue-100 text-blue-800 border-blue-200",
       picked_up: "bg-purple-100 text-purple-800 border-purple-200",
@@ -150,6 +235,7 @@ const OrderTracking = ({ onBackToHome }: OrderTrackingProps) => {
     };
 
     const labels = {
+      pending: "En attente de validation",
       preparing: "En préparation",
       ready: "Prête à récupérer",
       picked_up: "Récupérée",
@@ -228,245 +314,252 @@ const OrderTracking = ({ onBackToHome }: OrderTrackingProps) => {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="tracking" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="tracking">Suivi en temps réel</TabsTrigger>
-            <TabsTrigger value="orders">Mes commandes</TabsTrigger>
-          </TabsList>
+        {loading && orders.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <p className="text-muted-foreground animate-pulse">Chargement de vos commandes...</p>
+          </div>
+        ) : (
+          <Tabs defaultValue="tracking" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="tracking">Suivi en temps réel</TabsTrigger>
+              <TabsTrigger value="orders">Mes commandes</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="tracking" className="space-y-6">
-            {selectedOrder ? (
-              <>
-                {/* Order Summary */}
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2">
-                        <Package className="h-5 w-5" />
-                        Commande {selectedOrder.id}
-                      </CardTitle>
-                      {getStatusBadge(selectedOrder.status)}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div>
-                        <h4 className="font-semibold mb-2">Montant total</h4>
-                        <p className="text-2xl font-bold text-primary">
-                          {(selectedOrder.total + selectedOrder.deliveryFee).toLocaleString()} FCFA
-                        </p>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold mb-2">Pharmacie</h4>
-                        <p className="text-sm">{selectedOrder.pharmacy.name}</p>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold mb-2">Livraison estimée</h4>
-                        <p className="text-lg font-semibold text-secondary">
-                          {selectedOrder.estimatedDelivery}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Status Timeline */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Statut de la commande</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <Progress
-                        value={getProgressPercentage(selectedOrder.status)}
-                        className="h-2"
-                      />
-
-                      <div className="flex justify-between">
-                        {statusSteps.map((step, index) => {
-                          const Icon = step.icon;
-                          const isCompleted = index <= getStatusIndex(selectedOrder.status);
-                          const isCurrent = index === getStatusIndex(selectedOrder.status);
-
-                          return (
-                            <div key={step.key} className="flex flex-col items-center text-center">
-                              <div className={`
-                                w-10 h-10 rounded-full flex items-center justify-center mb-2
-                                ${isCompleted
-                                  ? 'bg-primary text-white'
-                                  : 'bg-muted text-muted-foreground'
-                                }
-                                ${isCurrent ? 'ring-2 ring-primary ring-offset-2' : ''}
-                              `}>
-                                <Icon className="h-5 w-5" />
-                              </div>
-                              <span className={`text-xs ${isCompleted ? 'font-semibold' : ''}`}>
-                                {step.label}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Driver Info & Actions */}
-                {selectedOrder.driver && selectedOrder.status === 'in_transit' && (
+            <TabsContent value="tracking" className="space-y-6">
+              {selectedOrder ? (
+                <>
+                  {/* Order Summary */}
                   <Card>
                     <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Truck className="h-5 w-5" />
-                        Votre livreur
-                      </CardTitle>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center gap-2">
+                          <Package className="h-5 w-5" />
+                          Commande {selectedOrder.id}
+                        </CardTitle>
+                        {getStatusBadge(selectedOrder.status)}
+                      </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                            <span className="text-xl">👨‍💼</span>
-                          </div>
-                          <div>
-                            <h4 className="font-semibold">{selectedOrder.driver.name}</h4>
-                            <div className="flex items-center gap-1">
-                              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                              <span className="text-sm">{selectedOrder.driver.rating}</span>
-                            </div>
-                          </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                          <h4 className="font-semibold mb-2">Montant total</h4>
+                          <p className="text-2xl font-bold text-primary">
+                            {(selectedOrder.total + selectedOrder.deliveryFee).toLocaleString()} FCFA
+                          </p>
                         </div>
-
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => callDriver(selectedOrder.driver!.phone)}
-                          >
-                            <Phone className="h-4 w-4 mr-2" />
-                            Appeler
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openInWaze(
-                              selectedOrder.driver!.location.lat,
-                              selectedOrder.driver!.location.lng
-                            )}
-                          >
-                            <Navigation className="h-4 w-4 mr-2" />
-                            Waze
-                          </Button>
+                        <div>
+                          <h4 className="font-semibold mb-2">Pharmacie</h4>
+                          <p className="text-sm">{selectedOrder.pharmacy.name}</p>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold mb-2">Livraison estimée</h4>
+                          <p className="text-lg font-semibold text-secondary">
+                            {selectedOrder.estimatedDelivery}
+                          </p>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
-                )}
 
-                {/* Delivery Address */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <MapPin className="h-5 w-5" />
-                      Adresse de livraison
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p>{selectedOrder.deliveryAddress}</p>
-                  </CardContent>
-                </Card>
+                  {/* Status Timeline */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Statut de la commande</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <Progress
+                          value={getProgressPercentage(selectedOrder.status)}
+                          className="h-2"
+                        />
 
-                {/* Order Items */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Détails de la commande</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {selectedOrder.items.map(item => (
-                        <div key={item.id} className="flex justify-between items-center">
-                          <div>
-                            <h4 className="font-medium">{item.name}</h4>
-                            <p className="text-sm text-muted-foreground">Quantité: {item.quantity}</p>
+                        <div className="flex justify-between">
+                          {statusSteps.map((step, index) => {
+                            const Icon = step.icon;
+                            const isCompleted = index <= getStatusIndex(selectedOrder.status);
+                            const isCurrent = index === getStatusIndex(selectedOrder.status);
+
+                            return (
+                              <div key={step.key} className="flex flex-col items-center text-center">
+                                <div className={`
+                                w-10 h-10 rounded-full flex items-center justify-center mb-2
+                                ${isCompleted
+                                    ? 'bg-primary text-white'
+                                    : 'bg-muted text-muted-foreground'
+                                  }
+                                ${isCurrent ? 'ring-2 ring-primary ring-offset-2' : ''}
+                              `}>
+                                  <Icon className="h-5 w-5" />
+                                </div>
+                                <span className={`text-xs ${isCompleted ? 'font-semibold' : ''}`}>
+                                  {step.label}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Driver Info & Actions */}
+                  {selectedOrder.driver && selectedOrder.status === 'in_transit' && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Truck className="h-5 w-5" />
+                          Votre livreur
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                              <span className="text-xl">👨‍💼</span>
+                            </div>
+                            <div>
+                              <h4 className="font-semibold">{selectedOrder.driver.name}</h4>
+                              <div className="flex items-center gap-1">
+                                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                                <span className="text-sm">{selectedOrder.driver.rating}</span>
+                              </div>
+                            </div>
                           </div>
-                          <span className="font-semibold">
-                            {(item.price * item.quantity).toLocaleString()} FCFA
-                          </span>
-                        </div>
-                      ))}
 
-                      <div className="border-t pt-4 space-y-2">
-                        <div className="flex justify-between">
-                          <span>Sous-total</span>
-                          <span>{selectedOrder.total.toLocaleString()} FCFA</span>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => callDriver(selectedOrder.driver!.phone)}
+                            >
+                              <Phone className="h-4 w-4 mr-2" />
+                              Appeler
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openInWaze(
+                                selectedOrder.driver!.location.lat,
+                                selectedOrder.driver!.location.lng
+                              )}
+                            >
+                              <Navigation className="h-4 w-4 mr-2" />
+                              Waze
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex justify-between">
-                          <span>Frais de livraison</span>
-                          <span>{selectedOrder.deliveryFee.toLocaleString()} FCFA</span>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Delivery Address */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <MapPin className="h-5 w-5" />
+                        Adresse de livraison
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p>{selectedOrder.deliveryAddress}</p>
+                    </CardContent>
+                  </Card>
+
+                  {/* Order Items */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Détails de la commande</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {selectedOrder.items.map(item => (
+                          <div key={item.id} className="flex justify-between items-center">
+                            <div>
+                              <h4 className="font-medium">{item.name}</h4>
+                              <p className="text-sm text-muted-foreground">Quantité: {item.quantity}</p>
+                            </div>
+                            <span className="font-semibold">
+                              {(item.price * item.quantity).toLocaleString()} FCFA
+                            </span>
+                          </div>
+                        ))}
+
+                        <div className="border-t pt-4 space-y-2">
+                          <div className="flex justify-between">
+                            <span>Sous-total</span>
+                            <span>{selectedOrder.total.toLocaleString()} FCFA</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Frais de livraison</span>
+                            <span>{selectedOrder.deliveryFee.toLocaleString()} FCFA</span>
+                          </div>
+                          <div className="flex justify-between font-bold text-lg border-t pt-2">
+                            <span>Total</span>
+                            <span>{(selectedOrder.total + selectedOrder.deliveryFee).toLocaleString()} FCFA</span>
+                          </div>
                         </div>
-                        <div className="flex justify-between font-bold text-lg border-t pt-2">
-                          <span>Total</span>
-                          <span>{(selectedOrder.total + selectedOrder.deliveryFee).toLocaleString()} FCFA</span>
+
+                        <div className="bg-muted rounded-lg p-4 mt-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <CreditCard className="h-4 w-4" />
+                            <span className="font-medium">Paiement</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>{selectedOrder.paymentMethod}</span>
+                            <Badge className={selectedOrder.paymentStatus === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                              {selectedOrder.paymentStatus === 'paid' ? 'Payé' : 'En attente'}
+                            </Badge>
+                          </div>
                         </div>
                       </div>
-
-                      <div className="bg-muted rounded-lg p-4 mt-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <CreditCard className="h-4 w-4" />
-                          <span className="font-medium">Paiement</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>{selectedOrder.paymentMethod}</span>
-                          <Badge className={selectedOrder.paymentStatus === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
-                            {selectedOrder.paymentStatus === 'paid' ? 'Payé' : 'En attente'}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
+                    </CardContent>
+                  </Card>
+                </>
+              ) : (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="text-xl font-semibold mb-2">Aucune commande sélectionnée</h3>
+                    <p className="text-muted-foreground">
+                      Recherchez votre commande en utilisant votre numéro de commande
+                    </p>
                   </CardContent>
                 </Card>
-              </>
-            ) : (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-xl font-semibold mb-2">Aucune commande sélectionnée</h3>
-                  <p className="text-muted-foreground">
-                    Recherchez votre commande en utilisant votre numéro de commande
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
+              )}
+            </TabsContent>
 
-          <TabsContent value="orders" className="space-y-6">
-            <div className="grid gap-4">
-              {orders.map(order => (
-                <Card
-                  key={order.id}
-                  className={`cursor-pointer transition-all hover:shadow-md ${selectedOrder?.id === order.id ? 'ring-2 ring-primary' : ''
-                    }`}
-                  onClick={() => setSelectedOrder(order)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-semibold">{order.id}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {order.pharmacy.name} • {order.orderTime}
-                        </p>
+            <TabsContent value="orders" className="space-y-6">
+              <div className="grid gap-4">
+                {orders.map(order => (
+                  <Card
+                    key={order.id}
+                    className={`cursor-pointer transition-all hover:shadow-md ${selectedOrder?.id === order.id ? 'ring-2 ring-primary' : ''
+                      }`}
+                    onClick={() => setSelectedOrder(order)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-semibold">{order.id}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {order.pharmacy.name} • {order.orderTime}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          {getStatusBadge(order.status)}
+                          <p className="text-lg font-bold mt-1">
+                            {(order.total + order.deliveryFee).toLocaleString()} FCFA
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        {getStatusBadge(order.status)}
-                        <p className="text-lg font-bold mt-1">
-                          {(order.total + order.deliveryFee).toLocaleString()} FCFA
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-        </Tabs>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
+        )}
       </div>
     </div>
   );

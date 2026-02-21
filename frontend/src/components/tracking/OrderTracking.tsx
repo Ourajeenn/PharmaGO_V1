@@ -89,8 +89,25 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
     ],
   };
 
+  // ── Helper to map status to notification ───────────────────────────────
+  const triggerPushNotification = useCallback((status: string, id: string) => {
+    if (permission !== 'granted') return;
+    const orderNum = id.slice(-8).toUpperCase();
+    switch (status) {
+      case 'confirmed':
+        notify('orderConfirmed', orderNum);
+        break;
+      case 'assigned':
+        notify('driverAssigned', trackingInfo?.driver_name || 'Un livreur', orderNum);
+        break;
+      case 'delivered':
+        notify('delivered', orderNum);
+        break;
+    }
+  }, [permission, notify, trackingInfo?.driver_name]);
+
   // Initial fetch of full order info
-  const fetchTrackingInfo = async () => {
+  const fetchTrackingInfo = useCallback(async () => {
     try {
       const { data: orderData, error: orderError } = await (supabase as any)
         .from('orders')
@@ -142,11 +159,10 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [orderId]);
 
   // Subscribe to realtime GPS updates on delivery_tracking table
-  const subscribeToRealtime = () => {
-    // Subscribe to order status changes
+  const subscribeToRealtime = useCallback(() => {
     const orderChannel = supabase
       .channel(`order-tracking-${orderId}`)
       .on(
@@ -160,14 +176,12 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
         (payload) => {
           const updated = payload.new as any;
           setTrackingInfo((prev) =>
-            prev
-              ? {
-                ...prev,
-                current_latitude: updated.current_latitude ?? prev.current_latitude,
-                current_longitude: updated.current_longitude ?? prev.current_longitude,
-                estimated_arrival: updated.estimated_arrival ?? prev.estimated_arrival,
-              }
-              : prev
+            prev ? {
+              ...prev,
+              current_latitude: updated.current_latitude ?? prev.current_latitude,
+              current_longitude: updated.current_longitude ?? prev.current_longitude,
+              estimated_arrival: updated.estimated_arrival ?? prev.estimated_arrival,
+            } : prev
           );
         }
       )
@@ -191,7 +205,7 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
       });
 
     channelRef.current = orderChannel;
-  };
+  }, [orderId]);
 
   // ── ETA countdown (ticks every minute) ────────────────────────────────
   useEffect(() => {
@@ -206,8 +220,7 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
   }, [trackingInfo?.estimated_arrival]);
 
   useEffect(() => {
-    if (orderId === 'demo') {
-      // Demo mode: inject mock data and cycle through statuses every 4s
+    if (orderId === 'demo' || (!orderId && !loading)) {
       setTrackingInfo(mockTrackingData);
       setIsLive(true);
       setLoading(false);
@@ -220,8 +233,7 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
         const label = statusSteps.find(s => s.key === nextStatus)?.label;
         if (label) {
           toast.success(`🚚 Statut mis à jour : ${label}`);
-          // Trigger Push Notification
-          triggerPushNotification(nextStatus, orderId);
+          triggerPushNotification(nextStatus, orderId || 'demo');
         }
         if (idx === DEMO_STATUSES.length - 1) clearInterval(interval);
       }, 4000);
@@ -239,27 +251,7 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
       }
       setIsLive(false);
     };
-  }, [orderId]);
-
-  // ── Helper to map status to notification ───────────────────────────────
-  const triggerPushNotification = useCallback((status: string, id: string) => {
-    if (permission !== 'granted') return;
-
-    const orderNum = id.slice(-8).toUpperCase();
-
-    switch (status) {
-      case 'confirmed':
-        notify('orderConfirmed', orderNum);
-        break;
-      case 'assigned':
-        notify('driverAssigned', trackingInfo?.driver_name || 'Un livreur', orderNum);
-        break;
-      case 'delivered':
-        notify('delivered', orderNum);
-        break;
-      // Add more as needed
-    }
-  }, [permission, notify, trackingInfo?.driver_name]);
+  }, [orderId, loading, triggerPushNotification, fetchTrackingInfo, subscribeToRealtime]);
 
   // ── Status-change toasts + PUSH ────────────────────────────────────────
   useEffect(() => {
@@ -275,8 +267,7 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
     prevStatusRef.current = current;
   }, [trackingInfo?.status, orderId, triggerPushNotification]);
 
-  const getStatusIndex = (status: string) =>
-    statusSteps.findIndex((step) => step.key === status);
+  const getStatusIndex = (status: string) => statusSteps.findIndex((step) => step.key === status);
 
   const getProgressPercentage = (status: string) => {
     const index = getStatusIndex(status);
@@ -285,10 +276,7 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
 
   const openInWaze = () => {
     if (trackingInfo?.current_latitude && trackingInfo?.current_longitude) {
-      window.open(
-        `https://waze.com/ul?ll=${trackingInfo.current_latitude},${trackingInfo.current_longitude}&navigate=yes`,
-        '_blank'
-      );
+      window.open(`https://waze.com/ul?ll=${trackingInfo.current_latitude},${trackingInfo.current_longitude}&navigate=yes`, '_blank');
     }
   };
 
@@ -323,7 +311,6 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
 
   return (
     <div className="space-y-6">
-      {/* Notification Permission Banner */}
       {permission === 'default' && (
         <Card className="bg-blue-50 border-blue-200">
           <CardContent className="p-4 flex items-center justify-between">
@@ -336,74 +323,41 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
                 <p className="text-sm text-blue-700">Recevez des alertes en direct sur votre mobile</p>
               </div>
             </div>
-            <Button onClick={requestPermission} size="sm" className="bg-blue-600 hover:bg-blue-700">
-              Activer
-            </Button>
+            <Button onClick={requestPermission} size="sm" className="bg-blue-600 hover:bg-blue-700"> Activer </Button>
           </CardContent>
         </Card>
       )}
 
-      {/* Header */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Commande #{trackingInfo.id.slice(-8)}
-            </CardTitle>
+            <CardTitle className="flex items-center gap-2"> <Package className="h-5 w-5" /> Commande #{trackingInfo.id.slice(-8)} </CardTitle>
             <div className="flex items-center gap-2">
-              {/* Live indicator */}
               {isDelivering && (
-                <div className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full
-                  ${isLive
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-slate-100 text-slate-500'}`}
-                >
-                  <Radio className={`h-3.5 w-3.5 ${isLive ? 'animate-pulse' : ''}`} />
-                  {isLive ? 'En direct' : 'Connexion...'}
+                <div className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${isLive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+                  <Radio className={`h-3.5 w-3.5 ${isLive ? 'animate-pulse' : ''}`} /> {isLive ? 'En direct' : 'Connexion...'}
                 </div>
               )}
-              <Badge
-                variant={trackingInfo.status === 'delivered' ? 'default' : 'secondary'}
-                className="capitalize"
-              >
-                {statusSteps.find((s) => s.key === trackingInfo.status)?.label}
-              </Badge>
+              <Badge variant={trackingInfo.status === 'delivered' ? 'default' : 'secondary'} className="capitalize"> {statusSteps.find((s) => s.key === trackingInfo.status)?.label} </Badge>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <Progress value={getProgressPercentage(trackingInfo.status)} className="h-2" />
-
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <div>
-                <p className="text-muted-foreground">Total</p>
-                <p className="font-medium">{trackingInfo.order_total.toLocaleString()} FCFA</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Pharmacie</p>
-                <p className="font-medium">{trackingInfo.pharmacy_name}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Commande passée</p>
-                <p className="font-medium">
-                  {new Date(trackingInfo.created_at).toLocaleDateString()}
-                </p>
-              </div>
+              <div><p className="text-muted-foreground">Total</p><p className="font-medium">{trackingInfo.order_total.toLocaleString()} FCFA</p></div>
+              <div><p className="text-muted-foreground">Pharmacie</p><p className="font-medium">{trackingInfo.pharmacy_name}</p></div>
+              <div><p className="text-muted-foreground">Commande passée</p><p className="font-medium">{new Date(trackingInfo.created_at).toLocaleDateString()}</p></div>
               {trackingInfo.estimated_arrival && (
                 <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-center">
                   <p className="text-xs text-muted-foreground mb-0.5">Arrivée estimée</p>
                   {etaMinutes !== null && etaMinutes > 0 ? (
-                    <p className="font-bold text-primary text-lg">
-                      Dans {etaMinutes} min
-                    </p>
+                    <p className="font-bold text-primary text-lg">Dans {etaMinutes} min</p>
                   ) : etaMinutes === 0 ? (
                     <p className="font-bold text-green-600 text-lg">Arrivée imminente !</p>
                   ) : (
-                    <p className="font-medium">
-                      {new Date(trackingInfo.estimated_arrival).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                    </p>
+                    <p className="font-medium">{new Date(trackingInfo.estimated_arrival).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
                   )}
                 </div>
               )}
@@ -412,13 +366,11 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
         </CardContent>
       </Card>
 
-      {/* Map — shown when driver is en route */}
       {isDelivering && trackingInfo.current_latitude && trackingInfo.current_longitude && (
         <Card className="overflow-hidden border-green-200">
           <CardHeader className="pb-2 bg-green-50/50">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Navigation className="h-4 w-4 text-green-600" />
-              Suivi GPS en direct
+              <Navigation className="h-4 w-4 text-green-600" /> Suivi GPS en direct
               {isLive && (
                 <span className="ml-1 relative flex h-2.5 w-2.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -427,105 +379,44 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
               )}
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-0 overflow-hidden">
-            <LeafletMap
-              position={{
-                lat: trackingInfo.current_latitude,
-                lng: trackingInfo.current_longitude,
-              }}
-              height="350px"
-            />
-          </CardContent>
+          <CardContent className="p-0"> <LeafletMap position={{ lat: trackingInfo.current_latitude, lng: trackingInfo.current_longitude }} height="350px" /> </CardContent>
         </Card>
       )}
 
-      {/* Status Timeline */}
       <Card>
-        <CardHeader>
-          <CardTitle>Suivi de la commande</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle>Suivi de la commande</CardTitle></CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {statusSteps.map((step, index) => {
-              const StepIcon = step.icon;
-              const isCompleted = index <= currentStatusIndex;
-              const isCurrent = index === currentStatusIndex;
-
-              return (
-                <div key={step.key} className="flex items-center gap-3">
-                  <div
-                    className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors
-                    ${isCompleted
-                        ? isCurrent
-                          ? 'bg-primary text-primary-foreground ring-4 ring-primary/20'
-                          : 'bg-green-500 text-white'
-                        : 'bg-muted text-muted-foreground'
-                      }`}
-                  >
-                    <StepIcon className="h-4 w-4" />
-                  </div>
-                  <div className="flex-1">
-                    <p className={`font-medium ${isCompleted ? 'text-foreground' : 'text-muted-foreground'}`}>
-                      {step.label}
-                    </p>
-                  </div>
-                  {isCompleted && <CheckCircle className="h-4 w-4 text-green-500" />}
-                </div>
-              );
-            })}
+            {statusSteps.map((step, index) => (
+              <div key={step.key} className="flex items-center gap-3">
+                <div className={`flex h-8 w-8 items-center justify-center rounded-full ${index <= currentStatusIndex ? index === currentStatusIndex ? 'bg-primary text-primary-foreground ring-4 ring-primary/20' : 'bg-green-500 text-white' : 'bg-muted text-muted-foreground'}`}> <step.icon className="h-4 w-4" /> </div>
+                <div className="flex-1"><p className={`font-medium ${index <= currentStatusIndex ? 'text-foreground' : 'text-muted-foreground'}`}>{step.label}</p></div>
+                {index <= currentStatusIndex && <CheckCircle className="h-4 w-4 text-green-500" />}
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
 
-      {/* Driver Info & Actions */}
       {trackingInfo.driver_name && (
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Votre livreur
-            </CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="flex items-center gap-2"> <User className="h-5 w-5" /> Votre livreur </CardTitle></CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Avatar>
-                  <AvatarFallback>
-                    {trackingInfo.driver_name.split(' ').map((n) => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-medium">{trackingInfo.driver_name}</p>
-                  <p className="text-sm text-muted-foreground">Livreur PharmaGo</p>
-                </div>
+                <Avatar><AvatarFallback>{trackingInfo.driver_name.split(' ').map((n) => n[0]).join('')}</AvatarFallback></Avatar>
+                <div><p className="font-medium">{trackingInfo.driver_name}</p><p className="text-sm text-muted-foreground">Livreur PharmaGo</p></div>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={callDriver}>
-                  <Phone className="h-4 w-4 mr-1" />
-                  Appeler
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowChat(!showChat)}
-                >
-                  <MessageCircle className="h-4 w-4 mr-1" />
-                  Message
-                </Button>
+                <Button variant="outline" size="sm" onClick={callDriver}> <Phone className="h-4 w-4 mr-1" /> Appeler </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowChat(!showChat)}> <MessageCircle className="h-4 w-4 mr-1" /> Message </Button>
                 {showChat && (
                   <div className="fixed bottom-24 right-6 z-50">
-                    <RealtimeChat
-                      orderId={orderId}
-                      recipientId={trackingInfo.id} // Or pharmacy ID if available
-                      onClose={() => setShowChat(false)}
-                    />
+                    <RealtimeChat orderId={orderId} recipientId={trackingInfo.id} onClose={() => setShowChat(false)} />
                   </div>
                 )}
                 {trackingInfo.current_latitude && trackingInfo.current_longitude && (
-                  <Button variant="outline" size="sm" onClick={openInWaze}>
-                    <Navigation className="h-4 w-4 mr-1" />
-                    Waze
-                  </Button>
+                  <Button variant="outline" size="sm" onClick={openInWaze}> <Navigation className="h-4 w-4 mr-1" /> Waze </Button>
                 )}
               </div>
             </div>
@@ -533,32 +424,18 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
         </Card>
       )}
 
-      {/* Delivery Address */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
-            Adresse de livraison
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>{trackingInfo.delivery_address}</p>
-        </CardContent>
+        <CardHeader><CardTitle className="flex items-center gap-2"> <MapPin className="h-5 w-5" /> Adresse de livraison </CardTitle></CardHeader>
+        <CardContent><p>{trackingInfo.delivery_address}</p></CardContent>
       </Card>
 
-      {/* Order Items */}
       <Card>
-        <CardHeader>
-          <CardTitle>Détails de la commande</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle>Détails de la commande</CardTitle></CardHeader>
         <CardContent>
           <div className="space-y-3">
             {trackingInfo.items.map((item, index) => (
               <div key={index} className="flex items-center justify-between py-2">
-                <div>
-                  <p className="font-medium">{item.medicine_name}</p>
-                  <p className="text-sm text-muted-foreground">Quantité: {item.quantity}</p>
-                </div>
+                <div><p className="font-medium">{item.medicine_name}</p><p className="text-sm text-muted-foreground">Quantité: {item.quantity}</p></div>
                 <p className="font-medium">{(item.price * item.quantity).toLocaleString()} FCFA</p>
               </div>
             ))}

@@ -48,6 +48,8 @@ import {
   LayoutDashboard
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { cn } from '@/lib/utils'
+import { useHealthAI } from '@/hooks/useHealthAI'
 import { PatientProfileWidget } from '@/components/dashboard/widgets/medicore/PatientProfileWidget'
 import { HealthMetricCard } from '@/components/dashboard/widgets/medicore/HealthMetricCard'
 import { BodyMapWidget } from '@/components/dashboard/widgets/medicore/BodyMapWidget'
@@ -116,12 +118,50 @@ export const PatientDashboard = () => {
     blood_pressure: { value: 'N/A', unit: 'mmHg' },
     spO2: { value: 'N/A', unit: '%' }
   })
+  const [metricsHistory, setMetricsHistory] = useState<{
+    glucose: any[],
+    blood_pressure: any[],
+    spO2: any[]
+  }>({
+    glucose: [],
+    blood_pressure: [],
+    spO2: []
+  })
 
   useEffect(() => {
     if (user?.id) {
       fetchDashboardData()
     }
   }, [user])
+
+  const { getLocalResponse, analyzeHealthData } = useHealthAI()
+  const [analysis, setAnalysis] = useState<any>(null)
+
+  // ── Helper to determine metric status ───────────────────────────────
+  const getMetricStatus = (type: string, value: string | number) => {
+    if (value === 'N/A') return 'neutral'
+
+    if (type === 'glucose') {
+      const val = typeof value === 'string' ? parseFloat(value) : value
+      if (val > 1.26) return 'danger'
+      if (val < 0.70) return 'warning'
+    }
+    if (type === 'blood_pressure') {
+      const parts = String(value).split('/')
+      if (parts.length === 2) {
+        const sys = parseInt(parts[0])
+        const dia = parseInt(parts[1])
+        if (sys > 140 || dia > 90) return 'danger'
+        if (sys < 90) return 'warning'
+      }
+    }
+    if (type === 'spO2') {
+      const val = typeof value === 'string' ? parseInt(value) : value
+      if (val < 95) return 'danger'
+      if (val < 97) return 'warning'
+    }
+    return 'neutral'
+  }
 
   const fetchDashboardData = async () => {
     if (!user) return
@@ -207,6 +247,31 @@ export const PatientDashboard = () => {
             unit: spo2.unit || '%'
           }
         }
+        const history = {
+          glucose: [] as any[],
+          blood_pressure: [] as any[],
+          spO2: [] as any[]
+        }
+
+        metricsData.forEach((m: any) => {
+          const type = m.metric_type || m.type
+          const value = m.value.value || m.value
+          const entry = { value: typeof value === 'number' ? value : parseFloat(value), date: m.measured_at }
+
+          if (type === 'glucose') history.glucose.push(entry)
+          if (type === 'blood_pressure') {
+            const sys = m.value.systolic || parseFloat(m.value.split('/')[0])
+            history.blood_pressure.push({ value: sys, date: m.measured_at })
+          }
+          if (type === 'spO2') history.spO2.push(entry)
+        })
+
+        setMetricsHistory({
+          glucose: history.glucose.slice(0, 10).reverse(),
+          blood_pressure: history.blood_pressure.slice(0, 10).reverse(),
+          spO2: history.spO2.slice(0, 10).reverse()
+        })
+
         setMetrics(latestMetrics)
       }
 
@@ -301,6 +366,8 @@ export const PatientDashboard = () => {
                         icon={Droplet}
                         chartType="wave"
                         chartColor="text-blue-400"
+                        data={metricsHistory.glucose}
+                        status={getMetricStatus('glucose', metrics.glucose.value)}
                       />
                       <HealthMetricCard
                         title="Tension"
@@ -310,6 +377,8 @@ export const PatientDashboard = () => {
                         icon={Activity}
                         chartType="bar"
                         chartColor="text-indigo-400"
+                        data={metricsHistory.blood_pressure}
+                        status={getMetricStatus('blood_pressure', metrics.blood_pressure.value)}
                       />
                       <HealthMetricCard
                         title="Oxygène"
@@ -318,8 +387,54 @@ export const PatientDashboard = () => {
                         icon={Wind}
                         chartType="wave"
                         chartColor="text-cyan-400"
+                        data={metricsHistory.spO2}
+                        status={getMetricStatus('spO2', metrics.spO2.value)}
                       />
                     </div>
+
+                    {/* AI Analysis Row */}
+                    <Card className="glass-morphism border-white/20 bg-gradient-to-r from-blue-50/50 to-indigo-50/50">
+                      <CardContent className="p-6">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center">
+                              <Sparkles className="h-6 w-6 text-blue-600 animate-pulse" />
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-lg">Analyse IA Leslie Premium</h4>
+                              <p className="text-sm text-muted-foreground">Détection proactive d'anomalies & conseils personnalisés</p>
+                            </div>
+                          </div>
+                          <Button
+                            onClick={() => setAnalysis(analyzeHealthData(metrics))}
+                            className="rounded-xl px-6 bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200"
+                          >
+                            Lancer l'analyse
+                          </Button>
+                        </div>
+
+                        {analysis && (
+                          <div className="mt-6 p-4 rounded-2xl bg-white/60 border border-white/40 animate-in fade-in slide-in-from-top-2 duration-500">
+                            <div className="flex items-start gap-3">
+                              <div className={cn(
+                                "mt-1 w-2 h-2 rounded-full",
+                                analysis.isAlert ? "bg-red-500 animate-ping" : "bg-green-500"
+                              )} />
+                              <div className="text-sm text-gray-800 leading-relaxed whitespace-pre-line">
+                                {analysis.message}
+                              </div>
+                            </div>
+                            <div className="mt-4 flex flex-wrap gap-2">
+                              {analysis.suggestedChips?.map((chip: string) => (
+                                <Badge key={chip} variant="secondary" className="cursor-pointer hover:bg-blue-100 transition-colors">
+                                  {chip}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
 
                     {/* Neuro / Activity Chart */}
                     <div className="h-[300px]">

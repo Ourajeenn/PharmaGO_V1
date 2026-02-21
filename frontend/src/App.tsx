@@ -12,11 +12,12 @@ import { FloatingChat } from "./components/chat/FloatingChat";
 
 import { lazy, Suspense, useState, useEffect } from "react";
 import Preloader from "@/components/Preloader";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { initializeMockData } from "@/data/ecarnetMockData";
 
-// Pages chargées immédiatement (critiques pour le premier rendu)
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+// Pages chargées immédiatement (en théorie), mais passées en lazy pour le bundle
+const Index = lazy(() => import("./pages/Index"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Pages lazy-loadées (chargées uniquement quand visitées)
 const IndexV2 = lazy(() => import("./pages/IndexV2"));
@@ -25,6 +26,7 @@ const ProfileSelection = lazy(() => import("./pages/ProfileSelection"));
 const VisitorPage = lazy(() => import("./pages/VisitorPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const Login = lazy(() => import("./pages/Login"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 
 // Auth pages
 const PatientAuth = lazy(() => import("./pages/auth/PatientAuth"));
@@ -68,11 +70,24 @@ const TestForm = lazy(() => import("@/components/TestForm").then(m => ({ default
 const queryClient = new QueryClient();
 
 const App = () => {
+  const { requestPermission } = usePushNotifications();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Initialize E-Carnet mock data
     initializeMockData();
+
+    // Request notification permissions
+    const setupNotifications = async () => {
+      // Delay slightly to not overwhelm during preloader
+      setTimeout(async () => {
+        const result = await requestPermission();
+        if (result === 'granted') {
+          console.log('Notifications authorized');
+        }
+      }, 3000);
+    };
+    setupNotifications();
 
     // Preloader display for 1 second
     const timer = setTimeout(() => {
@@ -80,7 +95,7 @@ const App = () => {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [requestPermission]);
 
   if (loading) {
     return <Preloader />;
@@ -114,6 +129,7 @@ const App = () => {
                   <Route path="/suivi" element={<TrackingPage />} />
                   <Route path="/livraison/suivi" element={<DeliveryTracking />} />
                   <Route path="/pharmacien/dashboard" element={<ProtectedRoute allowedRoles={['pharmacy', 'admin']}><PharmacistDashboard /></ProtectedRoute>} />
+                  <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
                   <Route path="/paiement" element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} />
                   <Route path="/parapharmacie" element={<ParapharmacyPage />} />
                   <Route path="/medicaments" element={<MedicinesPage />} />

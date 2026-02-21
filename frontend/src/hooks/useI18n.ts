@@ -69,6 +69,21 @@ const translations = {
     scanCamera: { fr: 'Prendre une photo', en: 'Take a photo', dz: 'Jaayi ta' },
     scanAnalyzing: { fr: 'Analyse en cours…', en: 'Analyzing…', dz: 'Kalan be tuma la…' },
     scanResult: { fr: 'Medicaments detectes', en: 'Detected medications', dz: 'Furaw sorora' },
+    // Parapharmacy
+    paraTitle: { fr: 'Produits Parapharmacie', en: 'Parapharmacy Products', dz: 'Para-furaw' },
+    paraSubtitle: { fr: 'Prenez soin de vous au meilleur prix', en: 'Take care of yourself at the best price', dz: 'I yere laka fura ye' },
+    paraPromoTitle: { fr: 'Mois de la Sante & Beaute', en: 'Health & Beauty Month', dz: 'Kelenya ani Ceyelen kalo' },
+    paraPromoDesc: { fr: "Jusqu'a -25% sur les vitamines et soins du visage.", en: 'Up to -25% on vitamins and face care.', dz: 'Dogo don 25% vitaminiw la.' },
+    paraCategories: { fr: 'Categories', en: 'Categories', dz: 'Suguw' },
+    catBaby: { fr: 'Bebe, enfant et maternite', en: 'Baby, child and maternity', dz: 'Denmisenn fura' },
+    catTeeth: { fr: 'Bouche et dents', en: 'Mouth and teeth', dz: 'Da ani nyinn fura' },
+    catHair: { fr: 'Cheveux', en: 'Hair care', dz: 'Kunsigi fura' },
+    catBody: { fr: 'Corps', en: 'Body care', dz: 'Fari fura' },
+    catMedical: { fr: 'Materiel medical', en: 'Medical equipment', dz: 'Dokotoro minanw' },
+    catHealth: { fr: 'Sante', en: 'Health', dz: 'Kelenya' },
+    catSexy: { fr: 'Sexualite et intimite', en: 'Sexuality and intimacy', dz: 'Muso ani tce ko' },
+    catFace: { fr: 'Visage', en: 'Face care', dz: 'Nya fura' },
+    catVeterinary: { fr: 'Veterinaire', en: 'Veterinary', dz: 'Bagon fura' },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

@@ -17,6 +17,7 @@ import {
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useHealthAI } from '@/hooks/useHealthAI';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ChatMessage {
   id: string;
@@ -62,10 +63,33 @@ export const Chatbot: React.FC<ChatbotProps> = ({
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [chips, setChips] = useState<string[]>(DEFAULT_CHIPS);
+  const [patientContext, setPatientContext] = useState<{ name?: string; allergies?: string }>({});
 
   const { toast } = useToast();
+  const { user, profile } = useAuth();
   const { getLocalResponse } = useHealthAI();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // ── Fetch Extended Context ──────────────────────────────
+  useEffect(() => {
+    const fetchExtendedContext = async () => {
+      if (user?.id && profile?.role === 'patient') {
+        const { data } = await supabase
+          .from('patients')
+          .select('allergies')
+          .eq('user_id', user.id)
+          .single();
+
+        setPatientContext({
+          name: profile.name || undefined,
+          allergies: data?.allergies || undefined
+        });
+      } else if (profile?.name) {
+        setPatientContext({ name: profile.name });
+      }
+    };
+    fetchExtendedContext();
+  }, [user, profile]);
 
   // ── Online/offline detection ────────────────────────────
   useEffect(() => {
@@ -140,7 +164,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({
 
     if (!isOnline) {
       // Offline — always use local AI
-      const { message, suggestedChips } = getLocalResponse(content);
+      const { message, suggestedChips } = getLocalResponse(content, patientContext);
       botContent = message;
       if (suggestedChips) setChips(suggestedChips);
       usedOffline = true;
@@ -150,7 +174,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({
       if (edgeResponse) {
         botContent = edgeResponse;
       } else {
-        const { message, suggestedChips } = getLocalResponse(content);
+        const { message, suggestedChips } = getLocalResponse(content, patientContext);
         botContent = message;
         if (suggestedChips) setChips(suggestedChips);
         usedOffline = true;
@@ -173,10 +197,14 @@ export const Chatbot: React.FC<ChatbotProps> = ({
     return (
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 z-50"
+        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 z-50 animate-pulse-gentle"
         size="icon"
       >
         <MessageCircle className="h-6 w-6" />
+        <span className="absolute -top-1 -right-1 flex h-4 w-4">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-4 w-4 bg-primary border-2 border-white"></span>
+        </span>
       </Button>
     );
   }
@@ -186,8 +214,8 @@ export const Chatbot: React.FC<ChatbotProps> = ({
   return (
     <Card
       className={`${isEmbedded
-          ? 'w-full h-full border-none shadow-none'
-          : 'fixed bottom-6 right-6 w-96 shadow-2xl z-50'
+        ? 'w-full h-full border-none shadow-none'
+        : 'fixed bottom-6 right-6 w-96 shadow-2xl z-50'
         } transition-all duration-300 ${!isEmbedded && isMinimized ? 'h-14 overflow-hidden' : !isEmbedded ? 'h-[520px]' : ''
         }`}
     >
@@ -195,7 +223,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({
       <CardHeader className="pb-2 border-b">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm flex items-center gap-2">
-            <div className="h-7 w-7 rounded-full overflow-hidden border border-primary/30 shadow-sm">
+            <div className={`h-7 w-7 rounded-full overflow-hidden border border-primary/30 shadow-sm ${isTyping ? 'animate-pulse' : ''}`}>
               <img
                 src="/leslie-avatar.png"
                 alt="Leslie"
@@ -207,8 +235,8 @@ export const Chatbot: React.FC<ChatbotProps> = ({
             {/* Online / offline indicator */}
             <span
               className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${isOnline
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-orange-100 text-orange-700'
+                ? 'bg-green-100 text-green-700'
+                : 'bg-orange-100 text-orange-700'
                 }`}
             >
               {isOnline ? (
@@ -252,15 +280,15 @@ export const Chatbot: React.FC<ChatbotProps> = ({
         <CardContent className="flex flex-col p-3 gap-3 h-[calc(100%-56px)]">
           <ScrollArea className="flex-1 pr-1">
             <div className="space-y-3">
-              {/* Quick chips — shown when only welcome message */}
-              {messages.length === 1 && (
-                <div className="grid grid-cols-2 gap-1.5 mb-3">
+              {/* Quick chips — shown when only welcome message OR specific suggestions active */}
+              {messages.length >= 1 && (
+                <div className="flex flex-wrap gap-1.5 mb-3 animate-in fade-in slide-in-from-top-2 duration-500">
                   {chips.map((chip) => (
                     <Button
                       key={chip}
                       variant="outline"
                       size="sm"
-                      className="text-xs h-auto py-2 whitespace-normal text-left justify-start leading-tight"
+                      className="text-[10px] h-7 px-3 rounded-full border-primary/20 hover:bg-primary/5 hover:border-primary transition-all whitespace-nowrap bg-white/50 backdrop-blur-sm shadow-sm"
                       onClick={() => sendMessage(chip)}
                     >
                       {chip}
@@ -289,16 +317,19 @@ export const Chatbot: React.FC<ChatbotProps> = ({
                       <div>
                         <div
                           className={`px-3 py-2 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${message.type === 'user'
-                              ? 'bg-primary text-primary-foreground rounded-br-sm'
-                              : 'bg-muted rounded-bl-sm'
+                            ? 'bg-primary text-primary-foreground rounded-br-sm'
+                            : 'bg-muted rounded-bl-sm shadow-sm'
                             }`}
-                          dangerouslySetInnerHTML={{
-                            __html: message.content.replace(
-                              /\*\*(.*?)\*\*/g,
-                              '<strong>$1</strong>'
-                            ),
-                          }}
-                        />
+                        >
+                          {/* Rich Text Rendering */}
+                          <div
+                            dangerouslySetInnerHTML={{
+                              __html: message.content
+                                .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-primary">$1</strong>')
+                                .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" class="text-blue-600 underline font-medium hover:text-blue-800 transition-colors">$1</a>')
+                            }}
+                          />
+                        </div>
                         {message.isOffline && message.type === 'bot' && (
                           <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1 pl-1">
                             <WifiOff className="h-2.5 w-2.5" />

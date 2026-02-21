@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
+import { supabase } from '@/integrations/supabase/client';
 import {
     RefreshCw,
     Calendar,
@@ -39,56 +40,75 @@ interface PrescriptionRenewalProps {
 }
 
 export function PrescriptionRenewal({ patientId }: PrescriptionRenewalProps) {
-    const [prescriptions, setPrescriptions] = useState<Prescription[]>([
-        {
-            id: '1',
-            medicationName: 'Metformine 500mg',
-            dosage: '500mg',
-            frequency: '2x/jour',
-            startDate: '2026-01-01',
-            endDate: '2026-03-01',
-            refillsRemaining: 2,
-            totalRefills: 6,
-            autoRenew: true,
-            lastRefillDate: '2026-02-01',
-            nextRefillDate: '2026-02-15',
-            prescribedBy: 'Dr. Kouassi',
-            status: 'active'
-        },
-        {
-            id: '2',
-            medicationName: 'Amlodipine 5mg',
-            dosage: '5mg',
-            frequency: '1x/jour',
-            startDate: '2025-12-15',
-            endDate: '2026-02-15',
-            refillsRemaining: 0,
-            totalRefills: 3,
-            autoRenew: false,
-            lastRefillDate: '2026-01-15',
-            nextRefillDate: '2026-02-10',
-            prescribedBy: 'Dr. Kouamé',
-            status: 'expiring'
-        },
-        {
-            id: '3',
-            medicationName: 'Oméprazole 20mg',
-            dosage: '20mg',
-            frequency: '1x/jour (matin)',
-            startDate: '2026-01-20',
-            endDate: '2026-04-20',
-            refillsRemaining: 4,
-            totalRefills: 4,
-            autoRenew: true,
-            prescribedBy: 'Dr. Bamba',
-            status: 'active'
+    const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (patientId) {
+            fetchPrescriptions();
         }
-    ]);
+    }, [patientId]);
+
+    const fetchPrescriptions = async () => {
+        try {
+            setLoading(true);
+            const { data, error } = await supabase
+                .from('prescriptions')
+                .select(`
+                    *,
+                    doctor:doctors(user_id, user_profiles(name))
+                `)
+                .eq('patient_id', patientId);
+
+            if (error) throw error;
+
+            if (data && data.length > 0) {
+                const formatted: Prescription[] = data.map((p: any) => {
+                    // Extract medications from JSON
+                    const meds = Array.isArray(p.medications) ? p.medications[0] : (p.medications || {});
+
+                    // Logic to determine status based on date
+                    const expiry = new Date(p.expires_at || p.created_at);
+                    const now = new Date();
+                    const daysToExpiry = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+                    let status: Prescription['status'] = 'active';
+                    if (p.status === 'pending_renewal') status = 'pending_renewal';
+                    else if (daysToExpiry < 0) status = 'expired';
+                    else if (daysToExpiry < 15) status = 'expiring';
+
+                    return {
+                        id: p.id,
+                        medicationName: meds.name || p.prescription_text.substring(0, 20) || 'Médicament',
+                        dosage: meds.dosage || 'N/A',
+                        frequency: meds.frequency || 'N/A',
+                        startDate: new Date(p.created_at).toISOString().split('T')[0],
+                        endDate: p.expires_at ? new Date(p.expires_at).toISOString().split('T')[0] : 'Inconnu',
+                        refillsRemaining: meds.refills_remaining ?? 2,
+                        totalRefills: meds.total_refills ?? 6,
+                        autoRenew: localStorage.getItem(`autorenew_${p.id}`) === 'true',
+                        prescribedBy: p.doctor?.user_profiles?.name || 'Dr. PharmaGo',
+                        status: status
+                    };
+                });
+                setPrescriptions(formatted);
+            } else {
+                // Fallback to mock if empty for demo
+                setPrescriptions(MOCK_PRESCRIPTIONS);
+            }
+        } catch (err) {
+            console.error('Error fetching prescriptions:', err);
+            setPrescriptions(MOCK_PRESCRIPTIONS);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const toggleAutoRenew = (prescriptionId: string) => {
         setPrescriptions(prev => prev.map(p => {
             if (p.id === prescriptionId) {
                 const newAutoRenew = !p.autoRenew;
+                localStorage.setItem(`autorenew_${p.id}`, String(newAutoRenew));
                 toast.success(
                     newAutoRenew
                         ? 'Renouvellement automatique activé'
@@ -100,15 +120,44 @@ export function PrescriptionRenewal({ patientId }: PrescriptionRenewalProps) {
         }));
     };
 
-    const requestRenewal = (prescription: Prescription) => {
-        setPrescriptions(prev => prev.map(p => {
-            if (p.id === prescription.id) {
-                return { ...p, status: 'pending_renewal' as const };
-            }
-            return p;
-        }));
-        toast.success(`Demande de renouvellement envoyée pour ${prescription.medicationName}`);
+    const requestRenewal = async (prescription: Prescription) => {
+        try {
+            const { error } = await supabase
+                .from('prescriptions')
+                .update({ status: 'pending_renewal' })
+                .eq('id', prescription.id);
+
+            if (error) throw error;
+
+            setPrescriptions(prev => prev.map(p => {
+                if (p.id === prescription.id) {
+                    return { ...p, status: 'pending_renewal' as const };
+                }
+                return p;
+            }));
+            toast.success(`Demande de renouvellement envoyée pour ${prescription.medicationName}`);
+        } catch (err) {
+            toast.error('Erreur lors de la demande');
+        }
     };
+
+    // Keep MOCK_PRESCRIPTIONS at the bottom as a constant
+    const MOCK_PRESCRIPTIONS: Prescription[] = [
+        {
+            id: 'mock-1',
+            medicationName: 'Metformine 500mg',
+            dosage: '500mg',
+            frequency: '2x/jour',
+            startDate: '2026-01-01',
+            endDate: '2026-03-01',
+            refillsRemaining: 2,
+            totalRefills: 6,
+            autoRenew: true,
+            prescribedBy: 'Dr. Kouassi',
+            status: 'active'
+        }
+    ];
+
 
     const getStatusBadge = (status: Prescription['status']) => {
         const styles = {
@@ -167,21 +216,21 @@ export function PrescriptionRenewal({ patientId }: PrescriptionRenewalProps) {
                     <div
                         key={prescription.id}
                         className={`p-4 rounded-xl border transition-all hover:shadow-md ${prescription.status === 'expiring'
-                                ? 'bg-amber-50/50 border-amber-200'
-                                : prescription.status === 'expired'
-                                    ? 'bg-red-50/50 border-red-200'
-                                    : 'bg-white border-slate-200'
+                            ? 'bg-amber-50/50 border-amber-200'
+                            : prescription.status === 'expired'
+                                ? 'bg-red-50/50 border-red-200'
+                                : 'bg-white border-slate-200'
                             }`}
                     >
                         <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center gap-3">
                                 <div className={`p-2 rounded-lg ${prescription.status === 'expiring' || prescription.status === 'expired'
-                                        ? 'bg-amber-100'
-                                        : 'bg-purple-100'
+                                    ? 'bg-amber-100'
+                                    : 'bg-purple-100'
                                     }`}>
                                     <Pill className={`h-5 w-5 ${prescription.status === 'expiring' || prescription.status === 'expired'
-                                            ? 'text-amber-600'
-                                            : 'text-purple-600'
+                                        ? 'text-amber-600'
+                                        : 'text-purple-600'
                                         }`} />
                                 </div>
                                 <div>

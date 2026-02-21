@@ -117,6 +117,8 @@ export const PharmacyDashboardNew = () => {
     })
 
     const [inventory, setInventory] = useState<any[]>([])
+    const [pendingOrders, setPendingOrders] = useState<any[]>([])
+    const [availableDrivers, setAvailableDrivers] = useState<any[]>([])
     const [salesData, setSalesData] = useState<SaleData[]>([
         {
             id: '1',
@@ -235,17 +237,27 @@ export const PharmacyDashboardNew = () => {
                 }))
             }
 
-            // Fetch user count (system users)
-            const { count: userCount } = await supabase
-                .from('user_profiles')
-                .select('*', { count: 'exact', head: true })
+            // Fetch Pending Orders for the specific tab
+            const { data: pendingData } = await supabase
+                .from('orders')
+                .select(`
+                    *,
+                    patients:patient_id (
+                        user_profiles:user_id (name)
+                    )
+                `)
+                .eq('pharmacy_id', pharmacy.id)
+                .in('status', ['pending', 'preparing', 'ready'])
+                .order('created_at', { ascending: false })
 
-            if (userCount !== null) {
-                setStats(prev => ({
-                    ...prev,
-                    systemUsers: userCount
-                }))
+            if (pendingData) {
+                setPendingOrders(pendingData)
             }
+
+            // Fetch Drivers
+            const { DriverService } = await import('@/services/DriverService')
+            const drivers = await DriverService.getAvailableDrivers()
+            setAvailableDrivers(drivers)
 
         } catch (error) {
             console.error('Error loading pharmacy dashboard:', error)
@@ -259,6 +271,40 @@ export const PharmacyDashboardNew = () => {
         setSearchQuery(query)
         // Filter sales data based on search query
         // Implementation here
+    }
+
+    const handleAssignDriver = async (orderId: string, driverId: string) => {
+        try {
+            const { DriverService } = await import('@/services/DriverService')
+            await DriverService.assignDriverToOrder(orderId, driverId)
+            toast.success("Livreur assigné !")
+            fetchDashboardData()
+        } catch (error) {
+            toast.error("Erreur d'assignation")
+        }
+    }
+
+    const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
+        try {
+            const { error } = await supabase
+                .from('orders')
+                .update({ status: newStatus })
+                .eq('id', orderId)
+
+            if (error) throw error
+
+            setPendingOrders(prev => prev.map(order =>
+                order.id === orderId ? { ...order, status: newStatus } : order
+            ))
+
+            toast.success(`Statut mis à jour: ${newStatus}`)
+
+            // Also refresh stats if needed
+            fetchDashboardData()
+        } catch (error) {
+            console.error('Error updating status:', error)
+            toast.error("Erreur lors de la mise à jour")
+        }
     }
 
     const handleUpdateStock = async (id: string, newQuantity: number) => {
@@ -1029,40 +1075,87 @@ export const PharmacyDashboardNew = () => {
                     activeMenu === 'Orders' && (
                         <div className="p-8 space-y-6">
                             <div className="flex justify-between items-center">
-                                <h2 className="text-2xl font-bold text-slate-900">Order Validation</h2>
+                                <h2 className="text-2xl font-bold text-slate-900">Gestion des Commandes</h2>
+                                <Button variant="outline" size="sm" onClick={fetchDashboardData}>
+                                    Actualiser
+                                </Button>
                             </div>
                             <div className="space-y-4">
-                                {[1, 2, 3].map((i) => (
-                                    <Card key={i} className="border-slate-200">
+                                {pendingOrders.map((order) => (
+                                    <Card key={order.id} className="border-slate-200 hover:shadow-md transition-shadow">
                                         <CardContent className="p-6 flex items-center justify-between">
                                             <div className="flex items-center gap-4">
-                                                <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
-                                                    ORD
+                                                <div className={`h-12 w-12 rounded-full flex items-center justify-center font-bold
+                                                    ${order.status === 'pending' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>
+                                                    {order.id.substring(0, 3).toUpperCase()}
                                                 </div>
                                                 <div>
-                                                    <h4 className="font-bold text-lg">Order #{2390 + i}</h4>
-                                                    <p className="text-sm text-slate-500">Patient: John Doe • 3 items</p>
+                                                    <h4 className="font-bold text-lg">Commande #{order.id.substring(0, 8).toUpperCase()}</h4>
+                                                    <p className="text-sm text-slate-500">
+                                                        Patient: {order.patients?.user_profiles?.name || 'Anonyme'} • {order.payment_method}
+                                                    </p>
+                                                    <Badge className="mt-1" variant="outline">{order.status}</Badge>
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <div className="text-right mr-4">
-                                                    <p className="font-bold text-lg">$ 45.00</p>
-                                                    <p className="text-xs text-slate-500">Pending Validation</p>
+                                                    <p className="font-bold text-lg">{order.total?.toLocaleString()} FCFA</p>
+                                                    <p className="text-xs text-slate-500">{new Date(order.created_at).toLocaleTimeString()}</p>
                                                 </div>
-                                                <Button className="bg-green-600 hover:bg-green-700 text-white">
-                                                    <CheckCircle className="h-4 w-4 mr-2" /> Validate
-                                                </Button>
-                                                <Button variant="outline" className="border-red-200 text-red-600 hover:bg-red-50">
-                                                    <XCircle className="h-4 w-4 mr-2" /> Reject
+
+                                                {order.status === 'pending' && (
+                                                    <Button
+                                                        className="bg-green-600 hover:bg-green-700 text-white"
+                                                        onClick={() => handleUpdateOrderStatus(order.id, 'preparing')}
+                                                    >
+                                                        <CheckCircle className="h-4 w-4 mr-2" /> Préparer
+                                                    </Button>
+                                                )}
+
+                                                {order.status === 'preparing' && (
+                                                    <Button
+                                                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                                                        onClick={() => handleUpdateOrderStatus(order.id, 'ready')}
+                                                    >
+                                                        <Package className="h-4 w-4 mr-2" /> Prête
+                                                    </Button>
+                                                )}
+
+                                                {order.status === 'ready' && (
+                                                    <div className="flex gap-2">
+                                                        <Select onValueChange={(v) => handleAssignDriver(order.id, v)}>
+                                                            <SelectTrigger className="w-40 bg-slate-900 text-white border-0">
+                                                                <Truck className="h-4 w-4 mr-2" />
+                                                                <SelectValue placeholder="Assigner Livreur" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {availableDrivers.map(d => (
+                                                                    <SelectItem key={d.id} value={d.id}>
+                                                                        {d.name} ({d.rating}⭐)
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                )}
+
+                                                <Button variant="ghost" size="icon" className="text-red-600 hover:bg-red-50">
+                                                    <XCircle className="h-4 w-4" />
                                                 </Button>
                                             </div>
                                         </CardContent>
                                     </Card>
                                 ))}
+                                {pendingOrders.length === 0 && (
+                                    <div className="text-center py-12 text-slate-400 bg-white rounded-2xl border border-dashed">
+                                        Aucune commande en cours
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )
                 }
+
             </main >
         </div >
     )

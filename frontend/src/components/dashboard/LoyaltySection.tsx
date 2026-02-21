@@ -5,9 +5,10 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, Gift, Star, Zap, Clock, ChevronRight, Lock, User, Flame, Medal } from "lucide-react";
 import { toast } from "sonner";
+import { useLoyalty } from "@/hooks/useLoyalty";
 
 export const LoyaltySection = () => {
-    const [points, setPoints] = useState(1250);
+    const { points, addPoints, redeemPoints } = useLoyalty();
     const [tier] = useState("Gold");
 
     const rewards = [
@@ -52,14 +53,10 @@ export const LoyaltySection = () => {
         { id: 3, name: "Eco-Responsable", icon: <Zap className="h-4 w-4" />, color: "bg-green-100 text-green-600" },
     ];
 
-    const handleRedeem = (reward: any) => {
-        if (points >= reward.cost) {
-            setPoints(prev => prev - reward.cost);
-            toast.success(`Récompense "${reward.name}" débloquée !`, {
-                description: "Retrouvez votre code dans votre portefeuille."
-            });
-        } else {
-            toast.error("Points insuffisants");
+    const handleRedeem = async (reward: any) => {
+        const success = await redeemPoints(reward.cost, reward.name);
+        if (success) {
+            // Additional logic if needed
         }
     };
 

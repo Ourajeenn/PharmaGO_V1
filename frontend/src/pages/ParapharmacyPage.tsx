@@ -11,6 +11,11 @@ import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { CartDrawer } from "@/components/cart/CartDrawer";
+import { PharmacyService } from "@/services/PharmacyService";
+import { Medicine } from "@/lib/supabase";
+import { Loader2 } from "lucide-react";
+import { useEffect } from "react";
+import { useI18n, type TranslationKey } from "@/hooks/useI18n";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -85,13 +90,48 @@ const ParapharmacyPage = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [priceSort, setPriceSort] = useState("default");
   const [currentPage, setCurrentPage] = useState(1);
+  const [products, setProducts] = useState<(Medicine & { price: number, rating: number, image: string, inStock: boolean })[]>([]);
+  const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
+  const { t, lang: currentLang } = useI18n();
+
+  const translatedCategories = useMemo(() => [
+    { name: t('catBaby'), id: 'catBaby' },
+    { name: t('catTeeth'), id: 'catTeeth' },
+    { name: t('catHair'), id: 'catHair' },
+    { name: t('catBody'), id: 'catBody' },
+    { name: t('catMedical'), id: 'catMedical' },
+    { name: t('catHealth'), id: 'catHealth' },
+    { name: t('catSexy'), id: 'catSexy' },
+    { name: t('catFace'), id: 'catFace' },
+    { name: t('catVeterinary'), id: 'catVeterinary' },
+  ], [t]);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+      const data = await PharmacyService.getParapharmacyProducts();
+      // Enforce some mock values for display if DB fields are missing
+      const enrichedData = data.map(p => ({
+        ...p,
+        price: (p as any).price || Math.floor(2000 + Math.random() * 15000),
+        rating: (p as any).rating || (4 + Math.random()),
+        image: (p as any).image || "https://images.unsplash.com/photo-1559594482-e824888be1de?w=500&q=80",
+        inStock: true
+      }));
+      setProducts(enrichedData as any[]);
+      setLoading(false);
+    };
+    fetchProducts();
+  }, []);
 
   const filteredProducts = useMemo(() => {
-    return mockProducts
+    return products
       .filter(product => {
         const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
+        // Simple mapping for demo, usually categories would be IDs in DB
+        const matchesCategory = selectedCategory === "all" || product.category === selectedCategory ||
+          translatedCategories.find(c => c.id === selectedCategory)?.name === product.category;
         return matchesSearch && matchesCategory;
       })
       .sort((a, b) => {
@@ -101,21 +141,14 @@ const ParapharmacyPage = () => {
       });
   }, [searchTerm, selectedCategory, priceSort]);
 
-  const featuredProducts = useMemo(() => mockProducts.filter(p => p.featured), []);
+  const featuredProducts = useMemo(() => products.slice(0, 4), [products]);
 
   const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
   const paginatedProducts = filteredProducts.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-  const handleAddToCart = (product: typeof mockProducts[0]) => {
+  const handleAddToCart = (product: Medicine & { price: number }) => {
     addToCart({
-      medicine: {
-        id: product.id.toString(),
-        name: product.name,
-        description: product.category,
-        category: product.category,
-        requires_prescription: false,
-        manufacturer: '', generic_name: '', dosage: '', form: '', created_at: '', updated_at: ''
-      },
+      medicine: product,
       quantity: 1,
       pharmacy_id: 'mock-pharmacy',
       pharmacy_name: 'Parapharmacie PharmaGo',
@@ -135,7 +168,7 @@ const ParapharmacyPage = () => {
             className="flex items-center gap-2 mb-6 hover:bg-primary/10 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            Retour à l'accueil
+            {t('back')}
           </Button>
 
           {/* Hero Promo Section */}
@@ -147,10 +180,10 @@ const ParapharmacyPage = () => {
             <div className="relative px-8 py-12 flex flex-col md:flex-row items-center justify-between gap-8">
               <div className="md:w-1/2 space-y-4">
                 <Badge className="bg-yellow-400 text-blue-900 border-none px-3 py-1 font-bold">OFFRE SPÉCIALE</Badge>
-                <h1 className="text-4xl md:text-5xl font-black leading-tight">Mois de la Santé & Beauté</h1>
-                <p className="text-blue-100 text-lg">Jusqu'à <span className="text-white font-bold text-2xl">-25%</span> sur les vitamines et soins du visage. Livraison offerte dès 15 000 FCFA.</p>
+                <h1 className="text-4xl md:text-5xl font-black leading-tight">{t('paraPromoTitle')}</h1>
+                <p className="text-blue-100 text-lg">{t('paraPromoDesc')} {currentLang === 'fr' ? 'Livraison offerte dès 15 000 FCFA.' : (currentLang === 'en' ? 'Free delivery over 15,000 FCFA.' : '')}</p>
                 <div className="flex gap-4 pt-2">
-                  <Button className="bg-white text-blue-700 hover:bg-blue-50 font-bold px-8 py-6 rounded-xl">Profiter maintenant</Button>
+                  <Button className="bg-white text-blue-700 hover:bg-blue-50 font-bold px-8 py-6 rounded-xl">{t('confirm')}</Button>
                 </div>
               </div>
               <div className="md:w-1/3 flex justify-center">
@@ -165,8 +198,8 @@ const ParapharmacyPage = () => {
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-12">
             <div>
-              <h2 className="text-3xl font-bold">Produits Parapharmacie</h2>
-              <p className="text-muted-foreground">Prenez soin de vous au meilleur prix</p>
+              <h2 className="text-3xl font-bold">{t('paraTitle')}</h2>
+              <p className="text-muted-foreground">{t('paraSubtitle')}</p>
             </div>
             <Card className="p-2 border-primary/20 bg-primary/5">
               <div className="flex items-center gap-2 px-3 py-1">
@@ -182,18 +215,24 @@ const ParapharmacyPage = () => {
               <Sparkles className="h-5 w-5 text-yellow-500" />
               <h3 className="text-xl font-bold">Produits Vedettes</h3>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {featuredProducts.map(product => (
-                <div key={`featured-${product.id}`} className="group cursor-pointer">
-                  <div className="relative aspect-square rounded-xl overflow-hidden mb-3 border bg-white">
-                    <img src={product.image} alt={product.name} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
-                    <Badge className="absolute top-2 left-2 bg-yellow-400 text-blue-900 border-none text-[10px]">COUP DE COEUR</Badge>
+            {loading ? (
+              <div className="flex justify-center p-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {featuredProducts.map(product => (
+                  <div key={`featured-${product.id}`} className="group cursor-pointer">
+                    <div className="relative aspect-square rounded-xl overflow-hidden mb-3 border bg-white">
+                      <img src={(product as any).image} alt={product.name} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                      <Badge className="absolute top-2 left-2 bg-yellow-400 text-blue-900 border-none text-[10px]">COUP DE COEUR</Badge>
+                    </div>
+                    <h4 className="font-semibold text-sm truncate">{product.name}</h4>
+                    <p className="font-bold text-primary">{(product.price || 0).toLocaleString()} F</p>
                   </div>
-                  <h4 className="font-semibold text-sm truncate">{product.name}</h4>
-                  <p className="font-bold text-primary">{product.price.toLocaleString()} F</p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -220,15 +259,15 @@ const ParapharmacyPage = () => {
                         className="w-full justify-start"
                         onClick={() => { setSelectedCategory('all'); setCurrentPage(1); }}
                       >
-                        Tout
+                        {t('navHome')}
                       </Button>
-                      {categories.map(cat => (
+                      {translatedCategories.map(cat => (
                         <Button
-                          key={cat.name}
-                          variant={selectedCategory === cat.name ? 'default' : 'ghost'}
+                          key={cat.id}
+                          variant={selectedCategory === cat.id ? 'default' : 'ghost'}
                           size="sm"
                           className="w-full justify-start truncate"
-                          onClick={() => { setSelectedCategory(cat.name); setCurrentPage(1); }}
+                          onClick={() => { setSelectedCategory(cat.id); setCurrentPage(1); }}
                         >
                           {cat.name}
                         </Button>
@@ -256,47 +295,55 @@ const ParapharmacyPage = () => {
 
             {/* Main Product Area */}
             <div className="lg:col-span-3 space-y-8">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {paginatedProducts.map(product => (
-                  <Card key={product.id} className="hover:shadow-lg transition-all overflow-hidden group border-none shadow-sm flex flex-col">
-                    <div className="relative aspect-[4/3] overflow-hidden bg-slate-50">
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
-                      {!product.inStock && (
-                        <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center">
-                          <Badge variant="destructive" className="px-3">Rupture</Badge>
+              {loading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[1, 2, 3, 4, 5, 6].map(i => (
+                    <div key={i} className="h-64 rounded-2xl bg-slate-100 animate-pulse" />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {paginatedProducts.map(product => (
+                    <Card key={product.id} className="hover:shadow-lg transition-all overflow-hidden group border-none shadow-sm flex flex-col">
+                      <div className="relative aspect-[4/3] overflow-hidden bg-slate-50">
+                        <img
+                          src={(product as any).image}
+                          alt={product.name}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                        {!(product as any).inStock && (
+                          <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center">
+                            <Badge variant="destructive" className="px-3">Rupture</Badge>
+                          </div>
+                        )}
+                      </div>
+                      <CardContent className="p-4 flex flex-1 flex-col">
+                        <Badge variant="outline" className="text-[9px] uppercase tracking-wider mb-2 w-fit bg-slate-50 text-slate-500">
+                          {product.category}
+                        </Badge>
+                        <h3 className="font-bold mb-1 truncate flex-1">{product.name}</h3>
+                        <div className="flex items-center gap-1 mb-3">
+                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                          <span className="text-xs font-semibold">{(product as any).rating.toFixed(1)}</span>
                         </div>
-                      )}
-                    </div>
-                    <CardContent className="p-4 flex flex-1 flex-col">
-                      <Badge variant="outline" className="text-[9px] uppercase tracking-wider mb-2 w-fit bg-slate-50 text-slate-500">
-                        {product.category}
-                      </Badge>
-                      <h3 className="font-bold mb-1 truncate flex-1">{product.name}</h3>
-                      <div className="flex items-center gap-1 mb-3">
-                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                        <span className="text-xs font-semibold">{product.rating}</span>
-                      </div>
-                      <div className="flex items-center justify-between mt-auto pt-2 border-t">
-                        <span className="text-lg font-black text-primary">
-                          {product.price.toLocaleString()} F
-                        </span>
-                        <Button
-                          size="sm"
-                          className="rounded-xl h-8 w-8 p-0"
-                          disabled={!product.inStock}
-                          onClick={() => handleAddToCart(product)}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                        <div className="flex items-center justify-between mt-auto pt-2 border-t">
+                          <span className="text-lg font-black text-primary">
+                            {(product.price || 0).toLocaleString()} F
+                          </span>
+                          <Button
+                            size="sm"
+                            className="rounded-xl h-8 w-8 p-0"
+                            disabled={!(product as any).inStock}
+                            onClick={() => handleAddToCart(product)}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
 
               {/* Pagination */}
               {totalPages > 1 && (
