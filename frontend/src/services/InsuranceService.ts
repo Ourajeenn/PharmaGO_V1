@@ -17,6 +17,7 @@ export const InsuranceService = {
             // For now, we return a hardcoded list linked to the Ivorian context
             // In the future, this should fetch from a 'insurance_partners' table
             return [
+                { id: 'cmu', name: 'CMU (Couverture Maladie Universelle)', defaultCoverage: 70 },
                 { id: 'mugefci', name: 'MUGEF-CI', defaultCoverage: 70 },
                 { id: 'nsia', name: 'NSIA Vie Assurances', defaultCoverage: 80 },
                 { id: 'axa', name: 'AXA Côte d\'Ivoire', defaultCoverage: 75 },

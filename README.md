@@ -1,63 +1,119 @@
-# Welcome to PharmaGo Express
+# 🏥 PharmaGo Express - Plateforme Intégrée de Santé
 
-## Project Information
+PharmaGo Express est une solution complète de gestion de la chaîne pharmaceutique et de livraison de médicaments, conçue pour connecter patients, médecins, pharmacies, livreurs et assurances au sein d'un écosystème unique, sécurisé et performant.
 
-**Project**: PharmaGo Express - Pharmacy Delivery Platform
+---
 
-## 📚 Documentation
+## 🏗️ Architecture Technique Complète
 
-Detailed guides for data extraction and project specifics can be found in the [docs](./docs/) folder:
-- [AIRP Medication Extraction](./docs/README_AIRP_EXTRACTION.md)
-- [AIRP Pharmacy Extraction](./docs/README_AIRP_PHARMACIES.md)
+L'application repose sur une architecture moderne **Headless** et **Serverless (Microservices)**, privilégiant la scalabilité et la réactivité en temps réel.
 
-## Edit Locally
+### 1. Stack Technologique
 
-**Use Your IDE**
+#### **Frontend (SPA)**
+- **Framework** : [React](https://reactjs.org/) + [Vite](https://vitejs.dev/) (Build ultra-rapide)
+- **Langage** : [TypeScript](https://www.typescriptlang.org/) (Typage strict)
+- **UI & UX** : [Tailwind CSS](https://tailwindcss.com/), [Shadcn UI](https://ui.shadcn.com/), [Framer Motion](https://www.framer.com/motion/)
+- **Gestion d'État** : TanStack Query (Server State), React Context (Global State)
+- **Optimisation** : Chargement différé (Dynamic Imports) pour les bibliothèques lourdes (Tesseract.js, jsPDF).
 
-You can work on this project using your preferred IDE.
+#### **Backend (Supabase Ecosystem)**
+- **Base de Données** : PostgreSQL (Relationnel, Extensible)
+- **Authentification** : Supabase Auth (JWT, Gestion des sessions)
+- **Stockage Objets** : Supabase Storage (S3-compatible pour ordonnances et visuels)
+- **Temps Réel** : Supabase Realtime (WebSockets pour GPS, Chat, Notifications)
+- **Logique Serveur** : Edge Functions (Deno deploy) pour les traitements lourds et intégrations tierces.
 
-**Edit and Save**
+---
 
-Make changes using your IDE and save them.
+## 👥 Profils Utilisateurs & Permissions
 
-The `.git` folder contains all the git information needed.
+PharmaGo gère 5 types de profils distincts avec une segmentation stricte des accès via **RLS (Row Level Security)**.
 
-### Development
+### Matrice des Rôles
 
-```sh
-# Install dependencies
+| Fonctionnalité | Patient | Livreur | Assurance | Pharmacie | Médecin |
+|----------------|---------|---------|-----------|-----------|---------|
+| Commander produits | ✅ | ❌ | ❌ | ✅ | ❌ |
+| Créer ordonnances | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Valider ordonnances | ❌ | ❌ | ❌ | ✅ | ❌ |
+| Effectuer livraisons | ❌ | ✅ | ❌ | ❌ | ❌ |
+| Tiers payant | ❌ | ❌ | ✅ | ✅ | ❌ |
+| Consulter Dossier Médical | ✅ | ❌ | ✅ | ✅ | ✅ |
+| Géolocalisation Temps Réel | ✅ | ✅ | ❌ | ✅ | ❌ |
+| Messagerie Sécurisée | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+---
+
+## 🛠️ Modules Clés & Spécificités
+
+### 1. Hub de Messagerie Unifié (Unified Messaging Hub)
+- **Messagerie sécurisée** entre tous les rôles.
+- **Real-time** : Réception instantanée via WebSockets.
+- **Design Premium** : Interface avec glassmorphism et micro-animations.
+
+### 2. Assistant Santé IA (Leslie)
+- **Support Vocal** : Commandes via `VoiceCommandControl`.
+- **Analyse Médicale** : Analyse proactive des métriques de santé du patient.
+- **Chatbot Intelligent** : Réponses basées sur une base de connaissances médicale.
+
+### 3. Système de Panier & Commandes
+- **Calcul Dynamique** : Gestion des taxes, remises et frais de livraison.
+- **Tiers Payant** : Intégration automatique des taux de remboursement selon l'assurance.
+- **Visualisation** : Interface premium avec images de fond dynamiques.
+
+### 4. Suivi de Livraison & GPS
+- **Maps Interactives** : Intégration [Leaflet](https://leafletjs.com/) pour la géolocalisation.
+- **Tracking Livreur** : Mise à jour en temps réel des coordonnées GPS.
+
+---
+
+## 🔒 Sécurité & Performance
+
+### Row Level Security (RLS)
+Chaque requête API est filtrée nativement par PostgreSQL. Un utilisateur (JWT) ne peut voir que ce qui lui appartient (`auth.uid() = user_id`).
+
+### Optimisation Bundle (Lazy Loading)
+Pour maintenir un chargement initial rapide (< 2s), les modules lourds sont importés dynamiquement :
+- **OCR (Tesseract.js)** : Uniquement lors du scan d'ordonnance.
+- **PDF Engine (jsPDF)** : Uniquement lors de l'export de factures ou rapports.
+
+---
+
+## 🔄 Synchronisation de Données (AIRP & Pratik-CI)
+
+L'application intègre des flux de données automatisés pour garantir des informations à jour.
+
+- **Extraction AIRP** : Scrapers Python pour récupérer les bases médicamenteuses officiellement agréées.
+- **Pratik-CI Sync** : Synchronisation automatique (toutes les 6h) des **Pharmacies de Garde** via Selenium (contournement anti-bot).
+
+---
+
+## 🚀 Guide de Développement & Déploiement
+
+### Installation Locale
+```bash
+# Installation
 npm install
 
-# Run the development server
+# Lancement
 npm run dev
 
-# Build for production
+# Build Production
 npm run build
 ```
 
-## Technologies
+### Déploiement
+- **Frontend** : Déployable sur Vercel, Netlify ou Cloudflare Pages via le build static.
+- **Backend (Docker)** : Option de déploiement via Docker Compose pour une infrastructure auto-hébergée (recommandé pour la souveraineté des données de santé).
 
-This project is built with .NET stack using:
+---
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 📚 Structure de Documentation (Archive)
+Pour des guides détaillés, reportez-vous aux sections spécifiques conservées dans `docs/` :
+- `DOCKER_DEPLOYMENT_GUIDE.md` : Guide d'infrastructure.
+- `SECURITY_README.md` : Détails techniques des politiques RLS SQL.
+- `PHARMACIES_GARDE_INTEGRATION.md` : Guide de synchronisation des pharmacies.
 
-## Deploy to Production
-
-You can deploy this project to various hosting platforms:
-
-- Vercel
-- Netlify
-- GitHub Pages
-- Any static hosting service
-
-## Can I connect a custom domain to this project?
-
-Yes! You can connect a custom domain to any deployment of this project.
-
-For popular hosting platforms:
-- **Vercel**: [Custom domains guide](https://vercel.com/docs/concepts/projects/custom-domains)
-- **Netlify**: [Custom domains guide](https://docs.netlify.com/domains-https/custom-domains/)
+---
+*Généré pour PharmaGo Express - Février 2026*

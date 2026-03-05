@@ -1,89 +1,58 @@
-import Header from "@/components/Header";
-import HeroSection from "@/components/HeroSection";
-import ImageSlider from "@/components/ImageSlider";
-import ProductGrid from "@/components/ProductGrid";
-import PharmacyGuard from "@/components/PharmacyGuard";
-import BecomeDelivery from "@/components/BecomeDelivery";
-import Footer from "@/components/Footer";
-import HowItWorks from "@/components/HowItWorks";
-import Testimonials from "@/components/Testimonials";
-import SEO from "@/components/SEO";
+import Header from "@/components/core/Header";
+import Footer from "@/components/core/Footer";
+import HeroSection from "@/components/home/HeroSection";
+import HowItWorks from "@/components/home/HowItWorks";
+import Testimonials from "@/components/home/Testimonials";
+import ProductGrid from "@/components/home/ProductGrid";
+import MobileAppShowcase from "@/components/home/MobileAppShowcase";
+import GetStartedSection from "@/components/home/GetStartedSection";
+import ProductSlider from "@/components/home/ProductSlider";
+import ImageSlider from "@/components/ui/ImageSlider";
+import ServiceGrid from "@/components/home/ServiceGrid";
+import PharmacyGuard from "@/components/maps/PharmacyGuard";
+import SplineBackground from "@/components/home/SplineBackground";
 
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Sparkles } from "lucide-react";
+export default function Index() {
+    return (
+        <div className="min-h-screen relative">
+            <SplineBackground />
+            <Header />
+            <main>
+                {/* 1. Hero Section (Search + Carousel + 3 Cards) */}
+                <HeroSection
+                    titlePrefix="Votre santé,"
+                    titleHighlight="livrée chez vous"
+                    subtitle="Accédez à tous vos services de santé en un clic. Livraison express, téléconsultation et suivi personnalisé."
+                />
 
-import GetStartedSection from "@/components/GetStartedSection";
-import MobileAppShowcase from "@/components/MobileAppShowcase";
+                {/* 2. Dernières sorties (Product Slider) */}
+                <ProductSlider />
 
-const Index = () => {
-  const navigate = useNavigate();
-  return (
-    <div className="min-h-screen bg-transparent relative">
-      <SEO
-        title="PharmaGo - Pharmacie en Ligne Abidjan | Livraison 24h"
-        description="Commandez vos médicaments en ligne avec PharmaGo. Livraison rapide 24h/24 à Abidjan, consultation IA gratuite, plus de 100 pharmacies partenaires. Votre santé, notre priorité."
-        keywords="pharmacie en ligne Abidjan, livraison médicaments Côte d'Ivoire, pharmacie de garde, ordonnance en ligne, téléconsultation, e-santé CI"
-        url="https://pharmago.ci"
-      />
+                {/* 3. Comment ça marche ? */}
+                <HowItWorks />
 
-      {/* Spline 3D Background - Hidden on mobile for performance */}
-      <div className="spline-container fixed top-0 left-0 w-full h-full -z-20 overflow-hidden pointer-events-none hidden md:block">
-        <iframe
-          src="https://my.spline.design/celestialflowabstractdigitalform-ObUlVgj70g2y4bbx5vBKSfxN/"
-          frameBorder="0"
-          width="100%"
-          height="100%"
-          id="aura-spline"
-          title="Spline 3D Background"
-          className="scale-110 opacity-60"
-          loading="lazy"
-        />
-      </div>
+                {/* 4. Offres & Promotions */}
+                <ImageSlider />
 
-      {/* Mesh Gradient Overlay for consistent premium feel */}
-      <div className="fixed top-0 left-0 w-full h-full -z-10 mesh-gradient opacity-40 pointer-events-none" />
+                {/* 5. Service Grid */}
+                <ServiceGrid />
 
-      <Header />
+                {/* 6. Médicaments & Produits de Santé (Catalog) */}
+                <ProductGrid />
 
-      <main className="relative z-10 space-y-24 pb-20">
-        <HeroSection />
+                {/* 7. Pharmacies de Garde */}
+                <PharmacyGuard />
 
-        <div className="container mx-auto px-4">
-          <HowItWorks />
+                {/* 8. Application Mobile */}
+                <MobileAppShowcase />
+
+                {/* 9. Témoignages */}
+                <Testimonials />
+
+                {/* 10. Call to Action */}
+                <GetStartedSection />
+            </main>
+            <Footer />
         </div>
-
-        <ImageSlider />
-
-        <div className="container mx-auto px-4">
-          <ProductGrid />
-        </div>
-
-        <PharmacyGuard />
-
-        <div className="container mx-auto px-4">
-          <Testimonials />
-        </div>
-
-        <MobileAppShowcase />
-        <BecomeDelivery />
-        <GetStartedSection />
-      </main>
-
-      {/* Floating button to new homepage */}
-      <div className="fixed bottom-24 right-4 z-50">
-        <Button
-          onClick={() => navigate('/home-v2')}
-          size="lg"
-          className="h-12 w-12 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-xl shadow-orange-500/20 transition-all duration-300 hover:scale-110 font-black flex items-center justify-center text-white border-none p-0"
-        >
-          V2
-        </Button>
-      </div>
-
-      <Footer />
-    </div>
-  );
-};
-
-export default Index;
+    );
+}

@@ -9,10 +9,10 @@ interface LoyaltyCardProps {
 }
 
 const LEVELS = [
-    { name: 'Bronze', min: 0, max: 500, color: '#CD7F32', gradient: 'from-amber-700 to-amber-500', perks: ['5% de réduction', 'Livraison prioritaire'] },
-    { name: 'Argent', min: 500, max: 1500, color: '#C0C0C0', gradient: 'from-slate-400 to-slate-300', perks: ['10% de réduction', 'Livraison offerte (1x/mois)', 'Support prioritaire'] },
-    { name: 'Or', min: 1500, max: 4000, color: '#FFD700', gradient: 'from-yellow-500 to-amber-400', perks: ['15% de réduction', 'Livraison offerte illimitée', 'Accès médecins premium'] },
-    { name: 'Platine', min: 4000, max: Infinity, color: '#E5E4E2', gradient: 'from-slate-300 via-white to-slate-300', perks: ['20% de réduction', 'Livraison express offerte', 'Consultation vidéo offerte', 'Hotline dédiée 24/7'] },
+    { name: 'Bronze', min: 0, max: 500, color: '#CD7F32', gradient: 'from-[#8B4513] via-[#CD7F32] to-[#A0522D]', perks: ['5% de réduction', 'Livraison prioritaire'] },
+    { name: 'Argent', min: 500, max: 1500, color: '#C0C0C0', gradient: 'from-[#708090] via-[#C0C0C0] to-[#E6E6FA配套]', perks: ['10% de réduction', 'Livraison offerte (1x/mois)', 'Support prioritaire'] },
+    { name: 'Or', min: 1500, max: 4000, color: '#FFD700', gradient: 'from-[#B8860B] via-[#FFD700] to-[#FFFACD]', perks: ['15% de réduction', 'Livraison offerte illimitée', 'Accès médecins premium'] },
+    { name: 'Platine', min: 4000, max: Infinity, color: '#E5E4E2', gradient: 'from-[#2F4F4F] via-[#E5E4E2] to-[#F5F5F5]', perks: ['20% de réduction', 'Livraison express offerte', 'Consultation vidéo offerte', 'Hotline dédiée 24/7'] },
 ];
 
 const REWARDS = [
@@ -40,54 +40,62 @@ export function LoyaltyCard({ points = 420, totalSpent = 84000 }: LoyaltyCardPro
     return (
         <div className="space-y-4">
             {/* Level Card */}
-            <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${currentLevel.gradient} p-5 text-white shadow-lg`}>
-                {/* decorative circles */}
-                <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full bg-white/10" />
-                <div className="absolute -bottom-8 -left-4 w-24 h-24 rounded-full bg-white/5" />
+            <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${currentLevel.gradient} p-7 text-white shadow-2xl transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] group`}>
+                {/* mesh gradient overlays */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 transition-transform duration-1000 group-hover:scale-110" />
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
 
-                <div className="relative">
-                    <div className="flex items-start justify-between mb-4">
-                        <div>
-                            <p className="text-xs font-medium text-white/70 uppercase tracking-widest">Niveau fidélité</p>
-                            <h2 className="text-3xl font-black mt-0.5 drop-shadow">{currentLevel.name}</h2>
+                <div className="relative z-10">
+                    <div className="flex items-start justify-between mb-6">
+                        <div className="space-y-1">
+                            <p className="text-[10px] font-black text-white/60 uppercase tracking-[0.2em]">Status Privilège</p>
+                            <h2 className="text-4xl font-black tracking-tight drop-shadow-lg">{currentLevel.name}</h2>
                         </div>
-                        <div className="p-2.5 bg-white/20 rounded-xl backdrop-blur-sm">
-                            <Trophy className="h-7 w-7" />
+                        <div className="p-3 bg-white/10 border border-white/20 rounded-2xl backdrop-blur-md shadow-inner transition-transform duration-500 group-hover:rotate-12">
+                            <Trophy className="h-8 w-8 text-white drop-shadow" />
                         </div>
                     </div>
 
-                    {/* Points */}
-                    <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-3 mb-4">
-                        <div className="flex items-end gap-1.5">
-                            <span className="text-4xl font-black leading-none">{points.toLocaleString()}</span>
-                            <span className="text-sm text-white/80 mb-1">points</span>
+                    {/* Points Section */}
+                    <div className="bg-white/10 border border-white/10 backdrop-blur-xl rounded-2xl p-5 mb-6 shadow-xl overflow-hidden group/points relative">
+                        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover/points:translate-x-full transition-transform duration-1000" />
+                        <div className="flex items-end gap-2">
+                            <span className="text-5xl font-black leading-none drop-shadow-md tracking-tighter">{points.toLocaleString()}</span>
+                            <span className="text-sm font-bold text-white/70 mb-1 uppercase tracking-widest">Points</span>
                         </div>
-                        <p className="text-xs text-white/60 mt-0.5">
-                            {totalSpent.toLocaleString()} FCFA dépensés · 1 point = 10 FCFA
-                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                            <Badge variant="outline" className="text-[10px] bg-white/5 border-white/20 text-white/80 font-bold backdrop-blur">
+                                {totalSpent.toLocaleString()} FCFA CUMULÉS
+                            </Badge>
+                            <span className="text-[10px] text-white/40 font-medium">1pt = 10 FCFA</span>
+                        </div>
                     </div>
 
-                    {/* Progress to next level */}
+                    {/* Progress with custom styling */}
                     {nextLevel && (
-                        <div>
-                            <div className="flex justify-between text-xs text-white/70 mb-1.5">
-                                <span>{currentLevel.name}</span>
-                                <span>
-                                    {(nextLevel.min - points).toLocaleString()} pts pour {nextLevel.name}
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-white/70">
+                                <span className="flex items-center gap-1.5">
+                                    <Zap className="h-3 w-3 fill-white/20" />
+                                    Objectif {nextLevel.name}
+                                </span>
+                                <span className="text-white">
+                                    Plus que {(nextLevel.min - points).toLocaleString()} pts
                                 </span>
                             </div>
-                            <div className="w-full h-2.5 bg-white/20 rounded-full overflow-hidden">
+                            <div className="relative w-full h-3 bg-black/20 rounded-full overflow-hidden p-0.5 border border-white/5 shadow-inner">
                                 <div
-                                    className="h-full bg-white rounded-full transition-all duration-700"
+                                    className="h-full bg-gradient-to-r from-white/40 via-white to-white/60 rounded-full transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(255,255,255,0.5)]"
                                     style={{ width: `${progressToNext}%` }}
                                 />
                             </div>
                         </div>
                     )}
                     {!nextLevel && (
-                        <Badge className="bg-white/30 text-white border-white/40 text-xs">
-                            🏆 Niveau maximum atteint
-                        </Badge>
+                        <div className="flex items-center gap-2 bg-white/20 backdrop-blur-md border border-white/30 rounded-full px-4 py-2 w-fit">
+                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 animate-pulse" />
+                            <span className="text-xs font-black uppercase tracking-widest italic">Légende PharmaGo</span>
+                        </div>
                     )}
                 </div>
             </div>

@@ -1,8 +1,8 @@
-import SEO from "@/components/SEO";
+import SEO from "@/components/core/SEO";
 import { pagesSEO } from "@/config/seo";
 import { useNavigate } from "react-router-dom";
 import { PharmacyMapSection } from "@/components/maps/PharmacyMapSection";
-import Header from "@/components/Header";
+import Header from "@/components/core/Header";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 

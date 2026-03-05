@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
-import { COMMUNES } from '@/data/pharmacies'
+
+const COMMUNES = ['Toutes', 'Plateau', 'Cocody', 'Marcory', 'Yopougon', 'Abobo', 'Treichville']
 
 interface PharmacyFiltersProps {
     selectedCommune: string

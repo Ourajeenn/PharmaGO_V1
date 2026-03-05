@@ -41,6 +41,7 @@ export interface Patient {
     email?: string;
     address?: string;
     city?: string;
+    relationship?: string; // Relation avec le titulaire du compte (Moi, Enfant, etc.)
     chronicDiseases?: string[];
     allergies?: string[]; // Simplified list for profile
     treatmentsSummary?: string[]; // Simplified list of current meds

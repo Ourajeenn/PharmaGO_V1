@@ -1,5 +1,4 @@
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
+// jsPDF is loaded dynamically to avoid bloating the main bundle (~500KB)
 
 interface Medicine {
   id: number
@@ -18,19 +17,22 @@ interface Medicine {
   manufacturer?: string
 }
 
-export const exportComparisonToPDF = (medicines: Medicine[]) => {
+export const exportComparisonToPDF = async (medicines: Medicine[]) => {
+  const { default: jsPDF } = await import('jspdf')
+  const { default: autoTable } = await import('jspdf-autotable')
+
   const doc = new jsPDF()
-  
+
   // Header
   doc.setFontSize(20)
   doc.setTextColor(34, 197, 94) // Green color
   doc.text('Comparaison de Médicaments', 105, 20, { align: 'center' })
-  
+
   doc.setFontSize(10)
   doc.setTextColor(100, 100, 100)
   doc.text(`Date: ${new Date().toLocaleDateString('fr-FR')}`, 105, 28, { align: 'center' })
   doc.text(`Nombre de médicaments: ${medicines.length}`, 105, 34, { align: 'center' })
-  
+
   let yPosition = 45
 
   // General Information Table

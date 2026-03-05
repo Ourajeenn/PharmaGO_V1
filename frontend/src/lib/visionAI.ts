@@ -1,5 +1,5 @@
-// OpenAI Vision API Integration for Prescription Analysis
 import { analyzeWithOCR, type PrescriptionAnalysis as OCRAnalysis } from './prescriptionOCR';
+import { supabase } from './supabase';
 
 interface PrescriptionAnalysis {
     medications: Array<{
@@ -17,73 +17,25 @@ interface PrescriptionAnalysis {
 }
 
 class VisionAI {
-    private apiKey: string;
-    private baseUrl = 'https://api.openai.com/v1/chat/completions';
+    // API Key removed for security; calls will now be made via Supabase Edge Functions.
 
-    constructor(apiKey: string) {
-        this.apiKey = apiKey;
+    constructor() {
     }
 
     // Analyze prescription image
     async analyzePrescription(imageBase64: string): Promise<PrescriptionAnalysis> {
-        // If no API key, go straight to Tesseract OCR
-        if (!this.apiKey) {
-            return this._ocrFallback(imageBase64);
-        }
-
         try {
-            const response = await fetch(this.baseUrl, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${this.apiKey}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    model: 'gpt-4-vision-preview',
-                    messages: [
-                        {
-                            role: 'system',
-                            content: `Tu es un assistant médical spécialisé dans l'analyse d'ordonnances.
-Analyse l'image de l'ordonnance et extrait les informations suivantes au format JSON:
-- Liste des médicaments avec nom, dosage, fréquence, durée
-- Nom du médecin si visible
-- Nom du patient si visible
-- Date de l'ordonnance
-- Avertissements potentiels
-- Interactions médicamenteuses possibles
-
-Important: Réponds uniquement avec du JSON valide.`,
-                        },
-                        {
-                            role: 'user',
-                            content: [
-                                {
-                                    type: 'image_url',
-                                    image_url: {
-                                        url: `data:image/jpeg;base64,${imageBase64}`,
-                                    },
-                                },
-                                {
-                                    type: 'text',
-                                    text: 'Analyse cette ordonnance médicale et extrais toutes les informations pertinentes.',
-                                },
-                            ],
-                        },
-                    ],
-                    max_tokens: 1000,
-                }),
+            const { data, error } = await supabase.functions.invoke('analyze-prescription', {
+                body: { action: 'analyze', imageBase64 }
             });
 
-            if (!response.ok) {
-                throw new Error(`API request failed: ${response.statusText}`);
-            }
+            if (error) throw error;
+            if (!data || !data.content) throw new Error("No content received from Edge Function");
 
-            const data = await response.json();
-            const content = data.choices[0].message.content;
-            const analysis = JSON.parse(content);
+            const analysis = JSON.parse(data.content);
             return analysis;
         } catch (error) {
-            console.warn('[VisionAI] OpenAI call failed, falling back to Tesseract OCR:', error);
+            console.warn('[VisionAI] Edge Function call failed, falling back to Tesseract OCR:', error);
             return this._ocrFallback(imageBase64);
         }
     }
@@ -103,33 +55,15 @@ Important: Réponds uniquement avec du JSON valide.`,
     // Check medication interactions
     async checkInteractions(medications: string[]): Promise<string[]> {
         try {
-            const response = await fetch(this.baseUrl, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${this.apiKey}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    model: 'gpt-4',
-                    messages: [
-                        {
-                            role: 'system',
-                            content: 'Tu es un pharmacien expert en interactions médicamenteuses. Analyse la liste de médicaments et identifie toutes les interactions potentielles.',
-                        },
-                        {
-                            role: 'user',
-                            content: `Vérifie les interactions entre ces médicaments: ${medications.join(', ')}. Réponds uniquement avec une liste d'avertissements.`,
-                        },
-                    ],
-                    max_tokens: 500,
-                }),
+            const { data, error } = await supabase.functions.invoke('analyze-prescription', {
+                body: { action: 'check_interactions', medications }
             });
 
-            const data = await response.json();
-            const content = data.choices[0].message.content;
+            if (error) throw error;
+            if (!data || !data.content) return [];
 
             // Parse interactions
-            const interactions = content
+            const interactions = data.content
                 .split('\n')
                 .filter((line: string) => line.trim().length > 0);
 
@@ -143,32 +77,14 @@ Important: Réponds uniquement avec du JSON valide.`,
     // Suggest alternative medications
     async suggestAlternatives(medicationName: string): Promise<string[]> {
         try {
-            const response = await fetch(this.baseUrl, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${this.apiKey}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    model: 'gpt-4',
-                    messages: [
-                        {
-                            role: 'system',
-                            content: 'Tu es un pharmacien expert. Suggère des alternatives génériques ou similaires pour les médicaments.',
-                        },
-                        {
-                            role: 'user',
-                            content: `Suggère des alternatives pour ${medicationName}. Réponds avec une liste de max 5 alternatives avec une brève explication.`,
-                        },
-                    ],
-                    max_tokens: 300,
-                }),
+            const { data, error } = await supabase.functions.invoke('analyze-prescription', {
+                body: { action: 'suggest_alternatives', medicationName }
             });
 
-            const data = await response.json();
-            const content = data.choices[0].message.content;
+            if (error) throw error;
+            if (!data || !data.content) return [];
 
-            const alternatives = content
+            const alternatives = data.content
                 .split('\n')
                 .filter((line: string) => line.trim().length > 0 && line.includes('-'));
 
@@ -194,8 +110,6 @@ Important: Réponds uniquement avec du JSON valide.`,
 }
 
 // Create singleton instance
-export const visionAI = new VisionAI(
-    import.meta.env.VITE_OPENAI_API_KEY || ''
-);
+export const visionAI = new VisionAI();
 
 export default visionAI;

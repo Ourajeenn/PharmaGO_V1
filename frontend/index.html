@@ -85,6 +85,18 @@
       debugLog.innerHTML += '<div>Unhandled rejection: ' + event.reason + '</div>';
     };
   </script>
+  <script>
+    window.addEventListener('error', function (e) {
+      if (e.error) {
+        document.body.innerHTML = '<div style="color:red;font-size:24px;position:fixed;top:0;left:0;z-index:99999999;background:white;padding:20px;width:100vw;height:100vh;overflow:auto;"><h2>ERROR: ' + e.error.message + '</h2><pre>' + e.error.stack + '</pre></div>' + document.body.innerHTML;
+      }
+    });
+    window.addEventListener('unhandledrejection', function (e) {
+      if (e.reason && e.reason.stack) {
+        document.body.innerHTML = '<div style="color:red;font-size:24px;position:fixed;top:50px;left:0;z-index:99999999;background:white;padding:20px;width:100vw;height:100vh;overflow:auto;"><h2>UNHANDLED PROMISE: ' + e.reason.message + '</h2><pre>' + e.reason.stack + '</pre></div>' + document.body.innerHTML;
+      }
+    });
+  </script>
   <script type="module" src="/src/main.tsx"></script>
 
 </body>

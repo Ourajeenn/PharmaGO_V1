@@ -114,9 +114,27 @@ export class VoiceAssistant {
         this.synthesis.cancel();
 
         const utterance = new SpeechSynthesisUtterance(text);
+        
+        // Find a suitable empathetic voice (preferably female/premium French)
+        // Note: browser voices load asynchronously, this works best on second use or if preloaded
+        const voices = this.synthesis.getVoices();
+        const frenchVoices = voices.filter(v => v.lang.startsWith('fr'));
+        const preferredVoice = frenchVoices.find(v => 
+            v.name.includes('Google français') || 
+            v.name.includes('Premium') || 
+            v.name.includes('Female') ||
+            v.name.includes('Amelie') ||
+            v.name.includes('Thomas') === false // Avoid some harsh default voices if possible
+        ) || frenchVoices[0];
+        
+        if (preferredVoice) {
+            utterance.voice = preferredVoice;
+        }
+
         utterance.lang = lang;
-        utterance.rate = 1.0;
-        utterance.pitch = 1.0;
+        // Adjust for a more empathetic, calm, and human-like delivery
+        utterance.rate = 0.95; // Slightly slower for empathy and clarity
+        utterance.pitch = 1.05; // Slightly higher/softer pitch
         utterance.volume = 1.0;
 
         this.synthesis.speak(utterance);

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import PaymentSystem from "@/components/PaymentSystem";
+import PaymentSystem from "@/components/payment/PaymentSystem";
 import { useNavigate } from "react-router-dom";
 
 const PaymentPage = () => {

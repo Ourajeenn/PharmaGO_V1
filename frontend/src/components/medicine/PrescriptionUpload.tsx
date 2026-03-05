@@ -1,11 +1,12 @@
 import { useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, X, CheckCircle, Shield, Sparkles, Brain, Loader2, ArrowRight, ShoppingCart, Star } from "lucide-react";
+import { Upload, FileText, X, CheckCircle, Shield, Sparkles, Brain, Loader2, ArrowRight, ShoppingCart, Star, AlertTriangle, Info } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { visionAI } from "@/lib/visionAI";
 import { useCart } from "@/contexts/CartContext";
+import { useECarnet } from "@/contexts/ECarnetContext";
 
 interface PrescriptionUploadProps {
   onUpload?: (file: File) => void;
@@ -13,6 +14,7 @@ interface PrescriptionUploadProps {
 
 const PrescriptionUpload = ({ onUpload }: PrescriptionUploadProps) => {
   const { addToCart } = useCart();
+  const { currentPatient, addPrescriptionData } = useECarnet();
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -26,6 +28,10 @@ const PrescriptionUpload = ({ onUpload }: PrescriptionUploadProps) => {
       duration: string;
       confidence: number;
     }>;
+    doctorName?: string;
+    date?: string;
+    warnings: string[];
+    interactions: string[];
     confidence?: number;
   } | null>(null);
 
@@ -93,6 +99,10 @@ const PrescriptionUpload = ({ onUpload }: PrescriptionUploadProps) => {
 
       setAnalysisResult({
         medications: result.medications,
+        doctorName: result.doctorName,
+        date: result.date,
+        warnings: result.warnings || [],
+        interactions: result.interactions || [],
         confidence: Math.round(result.medications.reduce((acc, m) => acc + (m.confidence || 0.8), 0) / (result.medications.length || 1) * 100)
       });
 
@@ -135,6 +145,20 @@ const PrescriptionUpload = ({ onUpload }: PrescriptionUploadProps) => {
     toast.success(`${analysisResult.medications.length} médicaments ajoutés au panier`);
   };
 
+  const handleSaveToCarnet = async () => {
+    if (!analysisResult || !currentPatient) {
+      toast.error("Veuillez sélectionner un profil patient d'abord");
+      return;
+    }
+
+    await addPrescriptionData(
+      currentPatient.id,
+      analysisResult.medications,
+      analysisResult.doctorName,
+      analysisResult.date
+    );
+  };
+
   const handleRemove = () => {
     setFile(null);
     setPreview(null);
@@ -149,8 +173,9 @@ const PrescriptionUpload = ({ onUpload }: PrescriptionUploadProps) => {
   };
 
   return (
-    <Card className="border-2 border-dashed hover:border-primary transition-all">
-      <CardContent className="p-6">
+    <Card className="group relative border-none bg-white/40 backdrop-blur-md rounded-[2rem] overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-indigo-100 transition-all duration-700">
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+      <CardContent className="p-10 relative z-10">
         <input
           ref={fileInputRef}
           type="file"
@@ -162,22 +187,36 @@ const PrescriptionUpload = ({ onUpload }: PrescriptionUploadProps) => {
         {!file ? (
           <div
             onClick={handleClick}
-            className="cursor-pointer text-center py-8"
+            className="cursor-pointer text-center py-6 group/zone"
           >
-            <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Upload className="h-8 w-8 text-primary" />
+            <div className="relative w-24 h-24 mx-auto mb-8">
+              <div className="absolute inset-0 bg-indigo-600/10 rounded-[2rem] rotate-6 group-hover/zone:rotate-12 transition-transform duration-500"></div>
+              <div className="absolute inset-0 bg-indigo-600/5 rounded-[2rem] -rotate-3 group-hover/zone:-rotate-6 transition-transform duration-500"></div>
+              <div className="relative w-full h-full bg-white rounded-[2rem] shadow-lg flex items-center justify-center text-indigo-600 border border-indigo-50 group-hover/zone:scale-105 transition-transform duration-500">
+                <Upload className="h-10 w-10 group-hover/zone:-translate-y-1 transition-transform" />
+              </div>
             </div>
-            <h3 className="font-semibold mb-2">Téléverser votre ordonnance</h3>
-            <p className="text-sm text-muted-foreground mb-2">
-              Formats acceptés: JPG, PNG, PDF (max 5MB)
+
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-3">Déposez votre ordonnance</h3>
+            <p className="text-slate-500 font-medium mb-8 max-w-sm mx-auto">
+              Glissez-déposez ou parcourez vos fichiers (JPG, PNG, PDF • max 5MB)
             </p>
-            <p className="text-xs text-green-600 flex items-center justify-center gap-1 mb-4">
-              <Shield className="h-3 w-3" />
-              Validation sécurisée • Chiffrement AES-256
-            </p>
-            <Button variant="outline" type="button" disabled={uploading}>
-              {uploading ? "Validation en cours..." : "Choisir un fichier"}
-            </Button>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Button
+                variant="default"
+                type="button"
+                disabled={uploading}
+                className="rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black px-8 h-12 shadow-xl shadow-slate-200 capitalize tracking-wide"
+              >
+                {uploading ? (
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                ) : (
+                  <FileText className="h-5 w-5 mr-2" />
+                )}
+                {uploading ? "Sécurisation..." : "Sélectionner un fichier"}
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
@@ -226,15 +265,11 @@ const PrescriptionUpload = ({ onUpload }: PrescriptionUploadProps) => {
                     <Brain className="h-6 w-6" />
                   </div>
                   <div>
-                    <h4 className="font-black uppercase tracking-tighter text-purple-900 leading-none">Analyse Intelligente</h4>
-                    <p className="text-[10px] font-bold text-purple-600 uppercase tracking-widest">Vision AI v4.0</p>
-                  </div>
-                  <div className="ml-auto text-[10px] bg-green-500 text-white px-3 py-1 rounded-full font-black uppercase tracking-[0.1em] shadow-md">
-                    {analysisResult.confidence}% Confiance
+                    <h4 className="font-black uppercase tracking-tighter text-purple-900 leading-none">Analyse Ordonnance</h4>
                   </div>
                 </div>
 
-                <div className="space-y-2 mb-6">
+                <div className="space-y-2 mb-6 max-h-48 overflow-y-auto pr-2">
                   {analysisResult.medications.map((med, idx) => (
                     <div key={idx} className="bg-white/80 p-3 rounded-xl border border-purple-100 shadow-sm flex items-center justify-between group hover:border-purple-300 transition-all">
                       <div className="flex-1">
@@ -246,22 +281,48 @@ const PrescriptionUpload = ({ onUpload }: PrescriptionUploadProps) => {
                   ))}
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                {/* Warnings & Interactions */}
+                {(analysisResult.warnings.length > 0 || analysisResult.interactions.length > 0) && (
+                  <div className="space-y-3 mb-6">
+                    {analysisResult.interactions.map((inter, idx) => (
+                      <div key={idx} className="bg-red-50 border border-red-100 p-3 rounded-xl flex items-start gap-2 text-red-700">
+                        <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                        <p className="text-[10px] font-bold leading-tight">{inter}</p>
+                      </div>
+                    ))}
+                    {analysisResult.warnings.map((warn, idx) => (
+                      <div key={idx} className="bg-amber-50 border border-amber-100 p-3 rounded-xl flex items-start gap-2 text-amber-700">
+                        <Info className="h-4 w-4 mt-0.5 shrink-0" />
+                        <p className="text-[10px] font-medium leading-tight">{warn}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Button
+                    onClick={handleSaveToCarnet}
                     variant="outline"
-                    onClick={handleRemove}
-                    className="rounded-xl border-2 border-slate-200 font-bold h-12"
+                    className="rounded-xl border-2 border-purple-200 text-purple-700 font-bold h-12 hover:bg-purple-50"
                   >
-                    Annuler
+                    <Book className="h-4 w-4 mr-2" />
+                    Sauver au Carnet
                   </Button>
                   <Button
                     onClick={handleAddToCart}
                     className="rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-black uppercase tracking-widest h-12 shadow-lg shadow-purple-200 group"
                   >
                     <ShoppingCart className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" />
-                    Panier
+                    Commander
                   </Button>
                 </div>
+                <Button
+                  variant="ghost"
+                  onClick={handleRemove}
+                  className="w-full mt-3 text-slate-500 text-xs font-bold uppercase tracking-widest h-10"
+                >
+                  Scanner un autre fichier
+                </Button>
               </div>
             ) : null}
 

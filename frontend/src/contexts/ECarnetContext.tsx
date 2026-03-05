@@ -14,6 +14,7 @@ import {
     MedicalDocument,
     Alert,
     PatientSummary,
+    EmergencyContact,
 } from '@/types/ecarnet';
 import { toast } from 'sonner';
 
@@ -37,9 +38,15 @@ interface ECarnetContextType {
     getPatientVaccinations: (patientId: string) => Vaccination[];
     addVaccination: (vax: Omit<Vaccination, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
 
+    // Emergency Contact Methods
+    getPatientEmergencyContacts: (patientId: string) => EmergencyContact[];
+    addEmergencyContact: (contact: Omit<EmergencyContact, 'id'> & { patientId: string }) => Promise<void>;
+    deleteEmergencyContact: (id: string) => Promise<void>;
+
     // Specific Getters
     getPatientAlerts: (patientId: string) => Alert[];
     getPatientSummary: (patientId: string) => PatientSummary | null;
+    addPrescriptionData: (patientId: string, medications: Array<{ name: string, dosage: string, duration: string, frequency: string }>, doctorName?: string, date?: string) => Promise<void>;
 }
 
 const ECarnetContext = createContext<ECarnetContextType | undefined>(undefined);
@@ -50,6 +57,7 @@ export const ECarnetProvider: React.FC<{ children: ReactNode }> = ({ children })
     const [patients, setPatients] = useState<Patient[]>([]);
     const [vaccinations, setVaccinations] = useState<Vaccination[]>([]);
     const [medicalVisits, setMedicalVisits] = useState<MedicalVisit[]>([]);
+    const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>([]);
     const [alerts, setAlerts] = useState<Alert[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -76,6 +84,7 @@ export const ECarnetProvider: React.FC<{ children: ReactNode }> = ({ children })
                 phone: p.phone,
                 email: p.email,
                 address: p.address,
+                relationship: p.relationship || 'Moi',
                 insuranceType: (p.insurance_type as any) || 'standard',
                 emergencyContacts: [], // Needs separate table or JSONB
                 createdAt: p.created_at,
@@ -90,11 +99,25 @@ export const ECarnetProvider: React.FC<{ children: ReactNode }> = ({ children })
             // 2. Fetch specific E-Carnet data for all patients of this user
             const patientIds = mappedPatients.map(p => p.id);
             if (patientIds.length > 0) {
-                const [vaxRes, visitsRes, alertsRes] = await Promise.all([
+                const [vaxRes, visitsRes, alertsRes, contactsRes] = await Promise.all([
                     supabase.from('vaccinations').select('*').in('patient_id', patientIds),
                     supabase.from('medical_visits').select('*').in('patient_id', patientIds),
-                    supabase.from('medical_alerts').select('*').in('patient_id', patientIds)
+                    supabase.from('medical_alerts').select('*').in('patient_id', patientIds),
+                    supabase.from('emergency_contacts').select('*').in('patient_id', patientIds)
                 ]);
+
+                // Update mapping in mappedPatients if needed, but we keep them in separate states for now
+                // Actually, let's update mappedPatients to include their contacts if we want them nested
+                const allContacts = (contactsRes.data || []).map(c => ({
+                    id: c.id,
+                    patientId: c.patient_id,
+                    name: c.name,
+                    relationship: c.relationship,
+                    phone: c.phone,
+                    email: c.email,
+                    isPrimary: c.is_primary
+                }));
+                setEmergencyContacts(allContacts);
 
                 setVaccinations((vaxRes.data || []).map(v => ({
                     id: v.id,
@@ -136,8 +159,11 @@ export const ECarnetProvider: React.FC<{ children: ReactNode }> = ({ children })
                 })));
             }
         } catch (error: any) {
-            console.error('Error refreshing E-Carnet data:', error);
-            toast.error("Erreur de synchronisation Cloud");
+            // Prevent showing error on initial empty load or auth issues
+            if (user && error.code !== 'PGRST116') {
+                console.error('Error refreshing E-Carnet data:', error);
+                toast.error("Problème de synchronisation Cloud. Vérifiez votre connexion.");
+            }
         } finally {
             setLoading(false);
         }
@@ -159,6 +185,7 @@ export const ECarnetProvider: React.FC<{ children: ReactNode }> = ({ children })
                     gender: patientData.gender,
                     blood_type: patientData.bloodGroup,
                     address: patientData.address,
+                    relationship: patientData.relationship,
                     insurance_type: patientData.insuranceType
                 })
                 .select()
@@ -190,7 +217,8 @@ export const ECarnetProvider: React.FC<{ children: ReactNode }> = ({ children })
                     name: updates.firstName && updates.lastName ? `${updates.firstName} ${updates.lastName}` : undefined,
                     birth_date: updates.dateOfBirth,
                     blood_type: updates.bloodGroup,
-                    address: updates.address
+                    address: updates.address,
+                    relationship: updates.relationship
                 })
                 .eq('id', id);
 
@@ -233,6 +261,7 @@ export const ECarnetProvider: React.FC<{ children: ReactNode }> = ({ children })
                     recommendations: visitData.recommendations,
                     next_visit_date: visitData.nextVisitDate,
                     vital_signs: visitData.vitalSigns ? JSON.stringify(visitData.vitalSigns) : null,
+                    prescriptions: visitData.prescriptions ? JSON.stringify(visitData.prescriptions) : null,
                 })
                 .select()
                 .single();
@@ -302,6 +331,48 @@ export const ECarnetProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     const getPatientAlerts = (patientId: string) => alerts.filter(a => a.patientId === patientId);
 
+    const getPatientEmergencyContacts = (patientId: string) =>
+        emergencyContacts.filter(c => (c as any).patientId === patientId);
+
+    const addEmergencyContact = async (contactData: Omit<EmergencyContact, 'id'> & { patientId: string }) => {
+        try {
+            const { data, error } = await supabase
+                .from('emergency_contacts')
+                .insert({
+                    patient_id: contactData.patientId,
+                    name: contactData.name,
+                    relationship: contactData.relationship,
+                    phone: contactData.phone,
+                    email: contactData.email,
+                    is_primary: contactData.isPrimary
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            const newContact: EmergencyContact = {
+                ...contactData,
+                id: data.id,
+            };
+            setEmergencyContacts(prev => [...prev, newContact]);
+            toast.success("Contact d'urgence ajouté");
+        } catch (err: any) {
+            toast.error("Erreur lors de l'ajout du contact");
+        }
+    };
+
+    const deleteEmergencyContact = async (id: string) => {
+        try {
+            const { error } = await supabase.from('emergency_contacts').delete().eq('id', id);
+            if (error) throw error;
+            setEmergencyContacts(prev => prev.filter(c => c.id !== id));
+            toast.success("Contact supprimé");
+        } catch (err: any) {
+            toast.error("Erreur lors de la suppression");
+        }
+    };
+
     const getPatientSummary = (patientId: string): PatientSummary | null => {
         const patient = patients.find(p => p.id === patientId);
         if (!patient) return null;
@@ -324,6 +395,59 @@ export const ECarnetProvider: React.FC<{ children: ReactNode }> = ({ children })
         };
     };
 
+    const addPrescriptionData = async (
+        patientId: string,
+        medications: Array<{ name: string, dosage: string, duration: string, frequency: string }>,
+        doctorName?: string,
+        date?: string
+    ) => {
+        try {
+            const visitDate = date ? new Date(date).toISOString() : new Date().toISOString();
+            const { data, error } = await supabase
+                .from('medical_visits')
+                .insert({
+                    patient_id: patientId,
+                    visit_date: visitDate,
+                    visit_type: 'Consultation',
+                    doctor_name: doctorName || 'Médecin Inconnu',
+                    reason: 'Analyse d\'ordonnance (Scan IA)',
+                    prescriptions: JSON.stringify(medications.map(m => ({
+                        medication: m.name,
+                        dosage: m.dosage,
+                        duration: m.duration,
+                        instructions: m.frequency
+                    })))
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            const newVisit: MedicalVisit = {
+                id: data.id,
+                patientId: patientId,
+                visitDate: visitDate,
+                visitType: 'Consultation',
+                doctorName: doctorName || 'Médecin Inconnu',
+                reason: 'Analyse d\'ordonnance (Scan IA)',
+                prescriptions: medications.map(m => ({
+                    medication: m.name,
+                    dosage: m.dosage,
+                    duration: m.duration,
+                    instructions: m.frequency
+                })),
+                createdAt: data.created_at,
+                updatedAt: data.updated_at,
+            };
+
+            setMedicalVisits(prev => [newVisit, ...prev]);
+            toast.success("Données de l'ordonnance ajoutées au carnet");
+        } catch (error: any) {
+            console.error('Error adding prescription data:', error);
+            toast.error("Impossible d'ajouter les données au carnet");
+        }
+    };
+
     return (
         <ECarnetContext.Provider value={{
             currentPatient,
@@ -338,8 +462,12 @@ export const ECarnetProvider: React.FC<{ children: ReactNode }> = ({ children })
             addMedicalVisit,
             getPatientVaccinations,
             addVaccination,
+            getPatientEmergencyContacts,
+            addEmergencyContact,
+            deleteEmergencyContact,
             getPatientAlerts,
-            getPatientSummary
+            getPatientSummary,
+            addPrescriptionData
         }}>
             {children}
         </ECarnetContext.Provider>

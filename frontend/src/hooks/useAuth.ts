@@ -39,6 +39,7 @@ export const useAuth = () => {
       setLastError(null)
 
       // 1. Récupérer le profil utilisateur depuis public.user_profiles
+      // eslint-disable-next-line prefer-const
       let { data: profileData, error: profileError } = await supabase
         .from('user_profiles')
         .select('*')

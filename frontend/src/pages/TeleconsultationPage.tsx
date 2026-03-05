@@ -38,8 +38,8 @@ interface Doctor {
     nextSlot: string;
 }
 
-// Mock data fallback if DB is empty
-const MOCK_DOCTORS: Doctor[] = [
+// Fallback doctors list if DB is empty
+const FALLBACK_DOCTORS: Doctor[] = [
     {
         id: '1',
         name: 'Dr. Kouamé Assoua',
@@ -93,11 +93,11 @@ export default function TeleconsultationPage() {
                     }));
                     setDoctors(formatted);
                 } else {
-                    setDoctors(MOCK_DOCTORS);
+                    setDoctors(FALLBACK_DOCTORS);
                 }
             } catch (err) {
                 console.error('Teleconsultation: error fetching doctors', err);
-                setDoctors(MOCK_DOCTORS);
+                setDoctors(FALLBACK_DOCTORS);
             } finally {
                 setLoading(false);
             }

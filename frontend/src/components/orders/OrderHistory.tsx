@@ -12,12 +12,16 @@ import {
   CreditCard,
   FileText,
   Eye,
-  Star
+  Star,
+  Search,
+  QrCode
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { generateInvoicePDF } from '@/lib/invoicePdf';
 import { toast } from 'sonner';
 import ReviewDialog from '@/components/reviews/ReviewDialog';
+import { DeliveryQRCode } from './DeliveryQRCode';
+import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
@@ -39,6 +43,9 @@ export const OrderHistory = ({ userId, userName, userEmail }: OrderHistoryProps)
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [reviewTarget, setReviewTarget] = useState<{ name: string; id: string } | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [qrOpen, setQrOpen] = useState(false);
+  const [qrOrder, setQrOrder] = useState<any>(null);
 
   const openReview = (order: any) => {
     setReviewTarget({
@@ -86,6 +93,17 @@ export const OrderHistory = ({ userId, userName, userEmail }: OrderHistoryProps)
       setLoading(false);
     }
   };
+
+  const filteredOrders = orders.filter(order => {
+    if (!searchTerm) return true;
+    const lowerSearch = searchTerm.toLowerCase();
+
+    // Search in order items (medicine names)
+    return order.order_items?.some((item: any) =>
+      item.medicines?.name?.toLowerCase().includes(lowerSearch) ||
+      item.medicines?.generic_name?.toLowerCase().includes(lowerSearch)
+    );
+  });
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
@@ -183,17 +201,44 @@ export const OrderHistory = ({ userId, userName, userEmail }: OrderHistoryProps)
             <Package className="h-5 w-5" />
             Historique des commandes ({orders.length})
           </CardTitle>
+          <div className="flex flex-col sm:flex-row gap-3 w-full">
+            <div className="relative flex-1 max-w-sm ml-auto">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Filtrer par médicament..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+                aria-label="Filtrer les commandes par nom de médicament"
+              />
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="whitespace-nowrap"
+              disabled={orders.length === 0}
+              onClick={() => {
+                orders.forEach(order => handleDownloadInvoice(order));
+                toast.success(`${orders.length} facture(s) téléchargée(s)`);
+              }}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Toutes les factures
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          {orders.length === 0 ? (
+          {filteredOrders.length === 0 ? (
             <div className="text-center py-8">
               <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">Aucune commande pour le moment</p>
+              <p className="text-muted-foreground">
+                {searchTerm ? "Aucun médicament correspondant trouvé" : "Aucune commande pour le moment"}
+              </p>
             </div>
           ) : (
             <ScrollArea className="h-[600px] pr-4">
               <div className="space-y-4">
-                {orders.map((order) => (
+                {filteredOrders.map((order) => (
                   <Card key={order.id} className="border-l-4" style={{ borderLeftColor: `var(--${getStatusColor(order.status)})` }}>
                     <CardContent className="pt-6">
                       <div className="flex items-start justify-between mb-4">
@@ -266,6 +311,18 @@ export const OrderHistory = ({ userId, userName, userEmail }: OrderHistoryProps)
                           >
                             <Eye className="h-4 w-4 mr-2" />
                             Détails
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setQrOrder(order);
+                              setQrOpen(true);
+                            }}
+                            className="text-primary border-primary/30 hover:bg-primary/5"
+                          >
+                            <QrCode className="h-4 w-4 mr-2" />
+                            QR Code
                           </Button>
                           <Button
                             variant="outline"
@@ -381,6 +438,20 @@ export const OrderHistory = ({ userId, userName, userEmail }: OrderHistoryProps)
           )}
         </DialogContent>
       </Dialog>
+
+      {/* QR Code Dialog */}
+      <Dialog open={qrOpen} onOpenChange={setQrOpen}>
+        <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-transparent border-none shadow-none">
+          {qrOrder && (
+            <DeliveryQRCode
+              orderId={qrOrder.id}
+              pharmacyName={qrOrder.pharmacies?.name}
+              status={getStatusLabel(qrOrder.status)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Review Dialog */}
       <ReviewDialog
         isOpen={reviewOpen}

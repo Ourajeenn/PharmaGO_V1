@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import Header from "@/components/core/Header";
+import Footer from "@/components/core/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,47 +40,7 @@ const categories = [
   { name: "Vétérinaire", products: ["Antiparasitaires", "Compléments animaux", "Soins dentaires", "Vitamines"] }
 ];
 
-const mockProducts = [
-  // Bébé
-  { id: 1, name: "Couches Pampers T3", category: "Bébé, enfant et maternité", price: 8500, rating: 4.8, inStock: true, featured: true, image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&q=80" },
-  { id: 7, name: "Lait Guigoz 1er âge", category: "Bébé, enfant et maternité", price: 6200, rating: 4.9, inStock: true, image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&q=80" },
-  { id: 8, name: "Biberon Avent 260ml", category: "Bébé, enfant et maternité", price: 4500, rating: 4.7, inStock: true, image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&q=80" },
-  { id: 9, name: "Liniment Oléo-calcaire", category: "Bébé, enfant et maternité", price: 3800, rating: 4.6, inStock: true, image: "https://images.unsplash.com/photo-1559594482-e824888be1de?w=500&q=80" },
-
-  // Bouche
-  { id: 2, name: "Dentifrice Signal White", category: "Bouche et dents", price: 1500, rating: 4.5, inStock: true, image: "https://images.unsplash.com/photo-1559594482-e824888be1de?w=500&q=80" },
-  { id: 10, name: "Brosse à dents Oral-B", category: "Bouche et dents", price: 2100, rating: 4.4, inStock: true, image: "https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=500&q=80" },
-  { id: 11, name: "Bain de bouche Listerine", category: "Bouche et dents", price: 3400, rating: 4.8, inStock: true, image: "https://images.unsplash.com/photo-1559594482-e824888be1de?w=500&q=80" },
-
-  // Cheveux
-  { id: 3, name: "Shampoing L'Oréal", category: "Cheveux", price: 3200, rating: 4.7, inStock: true, image: "https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=500&q=80" },
-  { id: 12, name: "Masque Kérastase", category: "Cheveux", price: 18500, rating: 4.9, inStock: true, featured: true, image: "https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=500&q=80" },
-
-  // Corps
-  { id: 4, name: "Gel douche Dove", category: "Corps", price: 2100, rating: 4.6, inStock: true, image: "https://images.unsplash.com/photo-1559594482-e824888be1de?w=500&q=80" },
-  { id: 13, name: "Déodorant Nivea Men", category: "Corps", price: 1800, rating: 4.3, inStock: true, image: "https://images.unsplash.com/photo-1559594482-e824888be1de?w=500&q=80" },
-  { id: 14, name: "Lait corps Mixa", category: "Corps", price: 4200, rating: 4.7, inStock: true, image: "https://images.unsplash.com/photo-1559594482-e824888be1de?w=500&q=80" },
-
-  // Matériel
-  { id: 5, name: "Thermomètre digital", category: "Matériel médical", price: 4500, rating: 4.9, inStock: true, featured: true, image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&q=80" },
-  { id: 15, name: "Tensiomètre Omron", category: "Matériel médical", price: 35000, rating: 4.9, inStock: true, image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&q=80" },
-  { id: 16, name: "Boîte de Pansements", category: "Matériel médical", price: 2500, rating: 4.5, inStock: true, image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&q=80" },
-
-  // Santé
-  { id: 6, name: "Vitamine C 1000mg", category: "Santé", price: 3500, rating: 4.7, inStock: true, image: "https://images.unsplash.com/photo-1584017945366-b97b0e9b1179?w=500&q=80" },
-  { id: 17, name: "Magnésium B6", category: "Santé", price: 5400, rating: 4.8, inStock: true, featured: true, image: "https://images.unsplash.com/photo-1584017945366-b97b0e9b1179?w=500&q=80" },
-  { id: 18, name: "Fer + Acide Folique", category: "Santé", price: 4200, rating: 4.6, inStock: false, image: "https://images.unsplash.com/photo-1584017945366-b97b0e9b1179?w=500&q=80" },
-
-  // Visage
-  { id: 19, name: "Crème Hydratante Avène", category: "Visage", price: 9500, rating: 4.9, inStock: true, image: "https://images.unsplash.com/photo-1559594482-e824888be1de?w=500&q=80" },
-  { id: 20, name: "Sérum Vitamine C La Roche-Posay", category: "Visage", price: 21000, rating: 4.8, inStock: true, image: "https://images.unsplash.com/photo-1559594482-e824888be1de?w=500&q=80" },
-  { id: 21, name: "Eau Micellaire Bioderma", category: "Visage", price: 6800, rating: 4.7, inStock: true, image: "https://images.unsplash.com/photo-1559594482-e824888be1de?w=500&q=80" },
-
-  // Sexualité
-  { id: 22, name: "Préservatifs Durex x12", category: "Sexualité et intimité", price: 3500, rating: 4.8, inStock: true, image: "https://images.unsplash.com/photo-1559594482-e824888be1de?w=500&q=80" },
-  { id: 23, name: "Test de grossesse Clearblue", category: "Sexualité et intimité", price: 4500, rating: 4.9, inStock: true, image: "https://images.unsplash.com/photo-1559594482-e824888be1de?w=500&q=80" },
-  { id: 24, name: "Gel lubrifiant Manix", category: "Sexualité et intimité", price: 5200, rating: 4.6, inStock: true, image: "https://images.unsplash.com/photo-1559594482-e824888be1de?w=500&q=80" },
-];
+const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1559594482-e824888be1de?w=500&q=80";
 
 const ITEMS_PER_PAGE = 9;
 
@@ -116,7 +76,7 @@ const ParapharmacyPage = () => {
         ...p,
         price: (p as any).price || Math.floor(2000 + Math.random() * 15000),
         rating: (p as any).rating || (4 + Math.random()),
-        image: (p as any).image || "https://images.unsplash.com/photo-1559594482-e824888be1de?w=500&q=80",
+        image: (p as any).image || FALLBACK_IMAGE,
         inStock: true
       }));
       setProducts(enrichedData as any[]);

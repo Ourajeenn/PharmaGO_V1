@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { auditService } from "@/services/AuditService";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface PaymentModalProps {
     isOpen: boolean;
@@ -21,6 +23,7 @@ const PaymentModal = ({ isOpen, onClose, totalAmount }: PaymentModalProps) => {
     const [paymentMethod, setPaymentMethod] = useState("om");
     const [isProcessing, setIsProcessing] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+    const { user } = useAuth();
 
     // Form State (Epic 2 - ORDER-02)
     const [deliveryMode, setDeliveryMode] = useState<'delivery' | 'pickup'>('delivery');
@@ -76,6 +79,40 @@ const PaymentModal = ({ isOpen, onClose, totalAmount }: PaymentModalProps) => {
         });
 
         toast.success("Paiement confirmé par l'opérateur !");
+
+        // Real Database Persistence (Epic 2 - ORDER-03)
+        try {
+            if (user) {
+                // Group items by pharmacy to create separate or consolidated orders
+                // For simplicity now, we create one order per pharmacy
+                const grouped = items.reduce((acc, item) => {
+                    if (!acc[item.pharmacy_id]) acc[item.pharmacy_id] = [];
+                    acc[item.pharmacy_id].push(item);
+                    return acc;
+                }, {} as any);
+
+                for (const [pharmacyId, pharmacyItems] of Object.entries(grouped)) {
+                    const subtotal = (pharmacyItems as any).reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+
+                    const { error: orderError } = await supabase
+                        .from('orders')
+                        .insert({
+                            patient_id: user.id,
+                            pharmacy_id: pharmacyId,
+                            status: 'ready', // Immediately available for drivers
+                            total: subtotal + 1000,
+                            delivery_address: deliveryMode === 'delivery' ? deliveryInfo.address : ' retrait en pharmacie',
+                            items: pharmacyItems,
+                            created_at: new Date().toISOString()
+                        });
+
+                    if (orderError) throw orderError;
+                }
+            }
+        } catch (error) {
+            console.error("Error creating order:", error);
+            toast.error("Erreur lors de la création de la commande");
+        }
 
         // Clear cart and close after delay
         setTimeout(() => {

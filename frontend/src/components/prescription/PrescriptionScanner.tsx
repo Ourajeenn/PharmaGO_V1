@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { createWorker } from 'tesseract.js';
+// tesseract.js is loaded dynamically to reduce initial bundle
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Camera, Upload, Check, AlertCircle } from 'lucide-react';
@@ -19,6 +19,7 @@ export const PrescriptionScanner = ({ onScanComplete }: PrescriptionScannerProps
         setIsProcessing(true);
         setProgress(0);
         try {
+            const { createWorker } = await import('tesseract.js');
             const worker = await createWorker('fra', 1, {
                 logger: m => {
                     if (m.status === 'recognizing text') {

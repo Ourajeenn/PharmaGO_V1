@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { MedicineService } from "@/services/MedicineService";
 import { Medicine } from "@/lib/supabase";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import SEO from '@/components/SEO';
+import Header from "@/components/core/Header";
+import Footer from "@/components/core/Footer";
+import SEO from '@/components/core/SEO';
 import { pagesSEO } from '@/config/seo';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -63,26 +63,9 @@ const categories = [
   { name: "Homéopathie", products: ["Granules", "Doses", "Complexes homéopathiques", "Teintures mères"] }
 ];
 
-const mockProducts = [
-  { id: 1, name: "Doliprane 1000mg", category: "Douleurs et fièvre", price: 2500, rating: 4.8, inStock: true, prescription: true, image: dolipraneImg, images: [dolipraneImg, dolipraneBoxImg, pillsDetailImg], description: "Antalgique et antipyrétique efficace contre les douleurs et la fièvre", composition: "Paracétamol 1000mg", dosage: "1 comprimé toutes les 6 heures, maximum 4 comprimés par jour", sideEffects: ["Réactions allergiques rares", "Atteinte hépatique en cas de surdosage"], manufacturer: "Sanofi" },
-  { id: 2, name: "Spasfon", category: "Appareil digestif", price: 3200, rating: 4.7, inStock: true, prescription: false, image: spasfonImg, images: [spasfonImg, spasfonBoxImg], description: "Antispasmodique pour le traitement des douleurs abdominales", composition: "Phloroglucinol 80mg", dosage: "2 comprimés 3 fois par jour", sideEffects: ["Réactions cutanées", "Troubles digestifs légers"], manufacturer: "Teva Santé" },
-  { id: 3, name: "Imodium", category: "Appareil digestif", price: 2800, rating: 4.6, inStock: true, prescription: false, image: imodiumImg, images: [imodiumImg, pillsDetailImg], description: "Traitement symptomatique des diarrhées aiguës", composition: "Lopéramide 2mg", dosage: "2 gélules au début, puis 1 gélule après chaque selle liquide", sideEffects: ["Constipation", "Nausées", "Ballonnements"], manufacturer: "Johnson & Johnson" },
-  { id: 4, name: "Amoxicilline 500mg", category: "Médicaments sur ordonnance", price: 4200, rating: 4.9, inStock: true, prescription: true, image: amoxicillineImg, images: [amoxicillineImg, amoxicillineBoxImg, pillsDetailImg], description: "Antibiotique à large spectre pour infections bactériennes", composition: "Amoxicilline 500mg", dosage: "1 gélule 3 fois par jour pendant 7 à 10 jours", sideEffects: ["Diarrhée", "Éruptions cutanées", "Candidose"], manufacturer: "Mylan" },
-  { id: 5, name: "Oscillococcinum", category: "Homéopathie", price: 3500, rating: 4.5, inStock: true, prescription: false, image: homeopathieImg, images: [homeopathieImg], description: "Médicament homéopathique traditionnellement utilisé en cas d'état grippal", composition: "Anas Barbariae Hepatis et Cordis Extractum 200K", dosage: "1 dose le plus tôt possible, à renouveler si nécessaire", sideEffects: [], manufacturer: "Boiron" },
-  { id: 6, name: "Spray nasal", category: "ORL (nez, gorge, oreilles)", price: 1800, rating: 4.4, inStock: true, prescription: false, image: sprayNasalImg, images: [sprayNasalImg], description: "Décongestionne et nettoie les voies nasales", composition: "Eau de mer isotonique", dosage: "2 à 3 pulvérisations par narine, 3 fois par jour", sideEffects: ["Irritation nasale légère"], manufacturer: "Laboratoires Gilbert" },
-  { id: 7, name: "Efferalgan 1000mg", category: "Douleurs et fièvre", price: 2600, rating: 4.8, inStock: true, prescription: true, image: efferalganImg, images: [efferalganImg, pillsDetailImg], description: "Paracétamol effervescent pour soulager douleurs et fièvre", composition: "Paracétamol 1000mg", dosage: "1 comprimé toutes les 6 heures, max 4 par jour", sideEffects: ["Réactions cutanées rares"], manufacturer: "UPSA" },
-  { id: 8, name: "Advil 400mg", category: "Douleurs et fièvre", price: 3100, rating: 4.7, inStock: true, prescription: false, image: advilImg, images: [advilImg, pillsDetailImg], description: "Anti-inflammatoire non stéroïdien, soulage la douleur et la fièvre", composition: "Ibuprofène 400mg", dosage: "1 comprimé 3 fois par jour au cours des repas", sideEffects: ["Brûlures d'estomac", "Nausées"], manufacturer: "Pfizer" },
-  { id: 9, name: "Vitamine C UPSA", category: "Forme, vitamines et minéraux", price: 2200, rating: 4.6, inStock: true, prescription: false, image: vitaminCImg, images: [vitaminCImg], description: "Traitement de la fatigue passagère", composition: "Acide ascorbique 1000mg", dosage: "1 comprimé par jour, de préférence le matin", sideEffects: ["Agitation légère si pris le soir"], manufacturer: "UPSA" },
-];
-
-const parapharmacieProducts = [
-  { id: 101, name: "Crème hydratante visage", category: "Cosmétiques", price: 8500, rating: 4.7, inStock: true, image: faceCreamImg, description: "Hydratation intense 24h" },
-  { id: 102, name: "Sérum anti-âge", category: "Cosmétiques", price: 15000, rating: 4.8, inStock: true, image: dolipraneImg, description: "Réduit les rides et ridules" },
-  { id: 111, name: "Shampooing fortifiant", category: "Cosmétiques", price: 7500, rating: 4.7, inStock: true, image: shampooImg, description: "Renforce les cheveux" },
-  { id: 201, name: "Dentifrice blancheur", category: "Hygiène", price: 2800, rating: 4.7, inStock: true, image: sprayNasalImg, description: "Blanchit et protège" },
-  { id: 301, name: "Lait corporel bébé", category: "Bébé & Maman", price: 6500, rating: 4.9, inStock: true, image: homeopathieImg, description: "Hydrate et protège" },
-  { id: 401, name: "Multivitamines", category: "Compléments", price: 8500, rating: 4.7, inStock: true, image: spasfonImg, description: "Vitalité et énergie" },
-];
+// Fallback images if not provided in DB
+const FALLBACK_MED_IMAGE = dolipraneImg;
+const FALLBACK_PARA_IMAGE = vitaminCImg;
 
 const MedicinesPage = () => {
   const navigate = useNavigate();
@@ -140,11 +123,10 @@ const MedicinesPage = () => {
           };
         };
 
-        setMedicines(data.length > 0 ? data.map(mapToUI) : mockProducts.slice(0, pageSize));
-        setMedTotal(count || (data.length === 0 ? mockProducts.length : 0));
+        setMedicines(data.map(mapToUI));
+        setMedTotal(count || data.length);
       } catch (error) {
         console.error("Error loading medicines:", error);
-        setMedicines(mockProducts.slice(0, pageSize));
       } finally {
         setLoading(false);
       }
@@ -180,11 +162,10 @@ const MedicinesPage = () => {
           productType: item.product_type
         });
         const combinedPara = [...suppResult.data, ...phytoResult.data].map(mapToUI);
-        setAllParapharmacie(combinedPara.length > 0 ? combinedPara : parapharmacieProducts.slice(0, pageSize));
-        setParaTotal((suppResult.count + phytoResult.count) || (combinedPara.length === 0 ? parapharmacieProducts.length : 0));
+        setAllParapharmacie(combinedPara);
+        setParaTotal(suppResult.count + phytoResult.count);
       } catch (error) {
         console.error("Error loading parapharmacie:", error);
-        setAllParapharmacie(parapharmacieProducts.slice(0, pageSize));
       } finally {
         setLoading(false);
       }
@@ -404,7 +385,11 @@ const MedicinesPage = () => {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              isInComparison(product.id) ? removeFromComparison(product.id) : addToComparison(product);
+                              if (isInComparison(product.id)) {
+                                removeFromComparison(product.id);
+                              } else {
+                                addToComparison(product);
+                              }
                             }}
                             className={`absolute bottom-4 right-4 w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${isInComparison(product.id)
                               ? 'bg-primary text-white border-primary shadow-lg'

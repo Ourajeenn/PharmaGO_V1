@@ -2,7 +2,7 @@ import { InsurerAuthForm } from '@/components/auth/InsurerAuthForm'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useEffect } from 'react'
-import Preloader from '@/components/Preloader'
+import Preloader from '@/components/core/Preloader'
 
 export default function InsurerAuth() {
   const navigate = useNavigate()

@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import {
   MapPin,
   Package,
+  Activity,
   Truck,
   CheckCircle,
   Clock,
@@ -25,6 +26,7 @@ import { RealtimeChat } from '@/components/chat/RealtimeChat';
 import { fr } from 'date-fns/locale';
 import usePushNotifications from '@/hooks/usePushNotifications';
 import { Bell, BellOff, Info } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface TrackingInfo {
   id: string;
@@ -66,6 +68,10 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const prevStatusRef = useRef<string | null>(null);
   const [showChat, setShowChat] = useState(false);
+
+  // 🚚 Logistics Intelligence (Sprint 31)
+  const [trafficIndex, setTrafficIndex] = useState(1.0); // 1.0 = Fluid, 2.0 = Heavy
+  const [isTrafficDense, setIsTrafficDense] = useState(false);
 
   // ── Demo mode mock data ──────────────────────────────────────────────────
   const DEMO_STATUSES = ['pending', 'confirmed', 'preparing', 'ready', 'assigned', 'picked_up', 'delivered'];
@@ -207,17 +213,34 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
     channelRef.current = orderChannel;
   }, [orderId]);
 
+  // ── Traffic Simulation logic (ticks every 30s) ─────────────────────────
+  useEffect(() => {
+    const updateTraffic = () => {
+      const hour = new Date().getHours();
+      // Peak hours: 8-9h and 17-19h (Abidjan Traffic)
+      const isPeak = (hour >= 8 && hour <= 9) || (hour >= 17 && hour <= 19);
+      const newIndex = isPeak ? 1.5 + Math.random() * 0.5 : 1.0 + Math.random() * 0.3;
+      setTrafficIndex(newIndex);
+      setIsTrafficDense(newIndex > 1.4);
+    };
+    updateTraffic();
+    const interval = setInterval(updateTraffic, 30_000);
+    return () => clearInterval(interval);
+  }, []);
+
   // ── ETA countdown (ticks every minute) ────────────────────────────────
   useEffect(() => {
     const computeEta = () => {
       if (!trackingInfo?.estimated_arrival) { setEtaMinutes(null); return; }
-      const mins = differenceInMinutes(parseISO(trackingInfo.estimated_arrival), new Date());
-      setEtaMinutes(mins > 0 ? mins : 0);
+      const baseMins = differenceInMinutes(parseISO(trackingInfo.estimated_arrival), new Date());
+      // Apply traffic multiplier
+      const adjustedMins = Math.round(baseMins * trafficIndex);
+      setEtaMinutes(adjustedMins > 0 ? adjustedMins : 0);
     };
     computeEta();
     const interval = setInterval(computeEta, 60_000);
     return () => clearInterval(interval);
-  }, [trackingInfo?.estimated_arrival]);
+  }, [trackingInfo?.estimated_arrival, trafficIndex]);
 
   useEffect(() => {
     if (orderId === 'demo' || (!orderId && !loading)) {
@@ -350,10 +373,21 @@ export const OrderTracking: React.FC<{ orderId: string }> = ({ orderId }) => {
               <div><p className="text-muted-foreground">Pharmacie</p><p className="font-medium">{trackingInfo.pharmacy_name}</p></div>
               <div><p className="text-muted-foreground">Commande passée</p><p className="font-medium">{new Date(trackingInfo.created_at).toLocaleDateString()}</p></div>
               {trackingInfo.estimated_arrival && (
-                <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-center">
-                  <p className="text-xs text-muted-foreground mb-0.5">Arrivée estimée</p>
+                <div className={cn(
+                  "border rounded-lg p-3 text-center transition-all duration-500",
+                  isTrafficDense ? "bg-amber-50 border-amber-200" : "bg-primary/5 border-primary/20"
+                )}>
+                  <p className="text-xs text-muted-foreground mb-0.5 flex items-center justify-center gap-1">
+                    Arrivée estimée
+                    {isTrafficDense && <Activity className="h-3 w-3 text-amber-500 animate-pulse" />}
+                  </p>
                   {etaMinutes !== null && etaMinutes > 0 ? (
-                    <p className="font-bold text-primary text-lg">Dans {etaMinutes} min</p>
+                    <div className="space-y-0.5">
+                      <p className={cn("font-bold text-lg", isTrafficDense ? "text-amber-600" : "text-primary")}>
+                        Dans {etaMinutes} min
+                      </p>
+                      {isTrafficDense && <p className="text-[9px] font-bold text-amber-600/80 uppercase tracking-tighter">Trafic dense à Abidjan</p>}
+                    </div>
                   ) : etaMinutes === 0 ? (
                     <p className="font-bold text-green-600 text-lg">Arrivée imminente !</p>
                   ) : (

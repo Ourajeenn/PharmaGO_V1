@@ -2,7 +2,7 @@ import { PatientAuthForm } from '@/components/auth/PatientAuthForm'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useEffect } from 'react'
-import Preloader from '@/components/Preloader'
+import Preloader from '@/components/core/Preloader'
 
 export default function PatientAuth() {
   const navigate = useNavigate()

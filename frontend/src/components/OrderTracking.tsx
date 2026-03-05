@@ -18,11 +18,19 @@ import {
   CheckCircle,
   Star,
   CreditCard,
-  Loader2
+  Loader2,
+  QrCode
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { LiveMap } from "@/components/tracking/LiveMap";
+import { DeliveryQRCode } from "./orders/DeliveryQRCode";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger
+} from "@/components/ui/dialog";
 
 interface Order {
   id: string;
@@ -161,6 +169,14 @@ const OrderTracking = ({ onBackToHome }: OrderTrackingProps) => {
             quantity,
             unit_price,
             medicines:medicine_id (name)
+          ),
+          delivery_tracking (
+            status,
+            current_lat,
+            current_lng,
+            driver_profiles:driver_id (
+              user_profiles:user_id (name, phone)
+            )
           )
         `)
         .eq('patient_id', user?.id)
@@ -169,28 +185,40 @@ const OrderTracking = ({ onBackToHome }: OrderTrackingProps) => {
       if (error) throw error;
 
       if (ordersData) {
-        const formattedOrders: Order[] = ordersData.map((o: any) => ({
-          id: o.id,
-          status: o.status,
-          pharmacy: {
-            name: o.pharmacies?.user_profiles?.name || 'Pharmacie',
-            address: o.pharmacies?.user_profiles?.address || 'Adresse non spécifiée',
-            phone: o.pharmacies?.user_profiles?.phone || ''
-          },
-          items: o.order_items?.map((item: any) => ({
-            id: item.id,
-            name: item.medicines?.name || 'Médicament',
-            quantity: item.quantity,
-            price: item.unit_price
-          })) || [],
-          total: o.total || 0,
-          deliveryFee: 1500, // Fixed for now or fetch from setting
-          estimatedDelivery: "---",
-          deliveryAddress: o.delivery_address || 'À domicile',
-          orderTime: new Date(o.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          paymentMethod: o.payment_method || 'Orange Money',
-          paymentStatus: o.payment_status === 'paid' ? 'paid' : 'pending'
-        }));
+        const formattedOrders: Order[] = ordersData.map((o: any) => {
+          const tracking = o.delivery_tracking?.[0];
+          return {
+            id: o.id,
+            status: o.status,
+            pharmacy: {
+              name: o.pharmacies?.user_profiles?.name || 'Pharmacie',
+              address: o.pharmacies?.user_profiles?.address || 'Adresse non spécifiée',
+              phone: o.pharmacies?.user_profiles?.phone || ''
+            },
+            driver: tracking?.driver_profiles ? {
+              name: tracking.driver_profiles.user_profiles?.name || 'Chauffeur',
+              phone: tracking.driver_profiles.user_profiles?.phone || '',
+              rating: 4.8, // Default rating
+              location: {
+                lat: tracking.current_lat || 5.3364,
+                lng: tracking.current_lng || -4.0266
+              }
+            } : undefined,
+            items: o.order_items?.map((item: any) => ({
+              id: item.id,
+              name: item.medicines?.name || 'Médicament',
+              quantity: item.quantity,
+              price: item.unit_price
+            })) || [],
+            total: o.total || 0,
+            deliveryFee: 1500,
+            estimatedDelivery: "---",
+            deliveryAddress: o.delivery_address || 'À domicile',
+            orderTime: new Date(o.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            paymentMethod: o.payment_method || 'Orange Money',
+            paymentStatus: o.payment_status === 'paid' ? 'paid' : 'pending'
+          };
+        });
         setOrders(formattedOrders);
         if (!selectedOrder && formattedOrders.length > 0) {
           setSelectedOrder(formattedOrders[0]);
@@ -341,7 +369,7 @@ const OrderTracking = ({ onBackToHome }: OrderTrackingProps) => {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                         <div>
                           <h4 className="font-semibold mb-2">Montant total</h4>
                           <p className="text-2xl font-bold text-primary">
@@ -357,6 +385,23 @@ const OrderTracking = ({ onBackToHome }: OrderTrackingProps) => {
                           <p className="text-lg font-semibold text-secondary">
                             {selectedOrder.estimatedDelivery}
                           </p>
+                        </div>
+                        <div className="flex items-end">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button className="w-full gap-2">
+                                <QrCode className="h-4 w-4" />
+                                QR Code
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-transparent border-none shadow-none">
+                              <DeliveryQRCode
+                                orderId={selectedOrder.id}
+                                pharmacyName={selectedOrder.pharmacy.name}
+                                status={selectedOrder.status}
+                              />
+                            </DialogContent>
+                          </Dialog>
                         </div>
                       </div>
                     </CardContent>
@@ -403,54 +448,51 @@ const OrderTracking = ({ onBackToHome }: OrderTrackingProps) => {
                     </CardContent>
                   </Card>
 
-                  {/* Driver Info & Actions */}
+                  {/* Driver Info & Actions & LIVE MAP */}
                   {selectedOrder.driver && selectedOrder.status === 'in_transit' && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Truck className="h-5 w-5" />
-                          Votre livreur
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                              <span className="text-xl">👨‍💼</span>
-                            </div>
-                            <div>
-                              <h4 className="font-semibold">{selectedOrder.driver.name}</h4>
-                              <div className="flex items-center gap-1">
-                                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                                <span className="text-sm">{selectedOrder.driver.rating}</span>
+                    <div className="space-y-6">
+                      <LiveMap
+                        driverLocation={selectedOrder.driver.location}
+                        destinationLocation={{ lat: 5.3484, lng: -4.0197 }} // Placeholder for actual delivery lat/lng
+                        onDirectionsClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${selectedOrder.driver?.location.lat},${selectedOrder.driver?.location.lng}`, '_blank')}
+                      />
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <Truck className="h-5 w-5" />
+                            Votre livreur
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                                <span className="text-xl">👨‍💼</span>
+                              </div>
+                              <div>
+                                <h4 className="font-semibold">{selectedOrder.driver.name}</h4>
+                                <div className="flex items-center gap-1">
+                                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                                  <span className="text-sm">{selectedOrder.driver.rating}</span>
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => callDriver(selectedOrder.driver!.phone)}
-                            >
-                              <Phone className="h-4 w-4 mr-2" />
-                              Appeler
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openInWaze(
-                                selectedOrder.driver!.location.lat,
-                                selectedOrder.driver!.location.lng
-                              )}
-                            >
-                              <Navigation className="h-4 w-4 mr-2" />
-                              Waze
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => callDriver(selectedOrder.driver!.phone)}
+                              >
+                                <Phone className="h-4 w-4 mr-2" />
+                                Appeler
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                        </CardContent>
+                      </Card>
+                    </div>
                   )}
 
                   {/* Delivery Address */}

@@ -7,8 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import Header from "@/components/core/Header";
+import Footer from "@/components/core/Footer";
 import {
     TrendingUp,
     ShoppingCart,

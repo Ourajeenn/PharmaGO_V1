@@ -29,14 +29,13 @@ export const RealtimeChat: React.FC<RealtimeChatProps> = ({ orderId, recipientId
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [isLoading, setIsLoading] = useState(true);
+    const { notify } = usePushNotifications();
     const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (!user) return;
 
         fetchMessages();
-
-        const { notify } = usePushNotifications();
 
         // Subscribe to real-time messages
         const channel = supabase
@@ -52,8 +51,7 @@ export const RealtimeChat: React.FC<RealtimeChatProps> = ({ orderId, recipientId
 
                 // Trigger push notification if message is from someone else
                 if (newMsg.sender_id !== user.id) {
-                    notify('delivered', newMsg.order_id || 'new_message'); // Using 'delivered' as a generic message template for now or custom
-                    // Actually, let's use a better template if possible, or just raw title
+                    notify('delivered', newMsg.order_id || 'new_message');
                 }
 
                 scrollToBottom();

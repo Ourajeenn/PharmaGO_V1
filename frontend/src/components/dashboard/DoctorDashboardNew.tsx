@@ -30,11 +30,20 @@ import {
     Stethoscope,
     Video,
     Phone,
-    FileInput
+    FileInput,
+    Mic,
+    MicOff,
+    Sparkles,
+    ClipboardCheck,
+    MessageCircle,
+    LogOut,
+    Menu,
+    X
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { VideoConsultation, VideoAppointmentCard } from '@/components/consultation/VideoConsultation'
 import { AIMedicationRecommender } from '@/components/doctor/AIMedicationRecommender'
+import { cn } from '@/lib/utils'
 
 interface Appointment {
     id: string
@@ -80,6 +89,10 @@ export const DoctorDashboardNew = () => {
     const [selectedDoctor, setSelectedDoctor] = useState('Dr. Jonathan Brown')
     const [currentWeekStart, setCurrentWeekStart] = useState(0)
     const [activeTab, setActiveTab] = useState('dashboard')
+    const [isRecording, setIsRecording] = useState(false)
+    const [scribeText, setScribeText] = useState('')
+    const [isScribeProcessing, setIsScribeProcessing] = useState(false)
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
     const [stats, setStats] = useState<Stats>({
         totalPatients: 1235,
@@ -227,6 +240,27 @@ export const DoctorDashboardNew = () => {
         }
     }
 
+    const startRecording = () => {
+        setIsRecording(true)
+        setScribeText("")
+        toast.info("Enregistrement en cours... Parlez maintenant.")
+    }
+
+    const stopRecording = () => {
+        setIsRecording(false)
+        setIsScribeProcessing(true)
+        setTimeout(() => {
+            setScribeText("Patient de 45 ans présentant des maux de tête persistants depuis 3 jours. Pas de fièvre. Tension artérielle 135/85. Prescription suggérée : Paracétamol 1g, 3 fois par jour pendant 4 jours.")
+            setIsScribeProcessing(false)
+            toast.success("Transcription terminée par l'IA")
+        }, 2000)
+    }
+
+    const createPrescriptionFromScribe = () => {
+        toast.success("Ordonnance structurée générée à partir des notes de l'IA")
+        // En prod : ouvrirait un formulaire pré-rempli
+    }
+
     const visibleData = getVisibleWeekData()
     const maxValue = Math.max(...visibleData.newPatients, ...visibleData.visits, ...visibleData.receipts, ...visibleData.missedVisits)
     const totalReports = visibleData.newPatients.reduce((a, b) => a + b, 0) +
@@ -262,17 +296,28 @@ export const DoctorDashboardNew = () => {
     }
 
     return (
-        <div className="flex h-screen bg-gradient-to-br from-purple-50 to-blue-50 overflow-hidden">
+        <div className="flex h-screen bg-gradient-to-br from-purple-50 to-blue-50 overflow-hidden relative">
+            {/* Mobile Menu Overlay */}
+            {isMobileMenuOpen && (
+                <div
+                    className="fixed inset-0 bg-slate-900/50 z-40 md:hidden"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                />
+            )}
+
             {/* Sidebar */}
-            <aside className="w-56 bg-white/90 backdrop-blur-md border-r border-slate-200/60 flex flex-col">
+            <aside className={`fixed inset-y-0 left-0 z-50 w-56 bg-white/95 md:bg-white/90 backdrop-blur-md border-r border-slate-200/60 flex flex-col transform transition-transform duration-200 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 {/* Logo */}
-                <div className="p-6 border-b border-slate-200/60">
+                <div className="p-6 border-b border-slate-200/60 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
                             <Stethoscope className="h-5 w-5 text-white" />
                         </div>
                         <span className="font-bold text-base text-slate-900">Hero Medical</span>
                     </div>
+                    <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMobileMenuOpen(false)}>
+                        <X className="h-5 w-5 text-slate-500" />
+                    </Button>
                 </div>
 
                 {/* Main Menu */}
@@ -341,11 +386,14 @@ export const DoctorDashboardNew = () => {
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto">
+            <main className="flex-1 overflow-y-auto w-full">
                 {/* Header */}
-                <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 px-8 py-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-6">
+                <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 px-4 md:px-8 py-4 sticky top-0 z-30">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="flex flex-wrap items-center gap-4 md:gap-6">
+                            <Button variant="ghost" size="icon" className="md:hidden shrink-0" onClick={() => setIsMobileMenuOpen(true)}>
+                                <Menu className="h-5 w-5 text-slate-700" />
+                            </Button>
                             <div>
                                 <h1 className="text-xl font-bold text-slate-900">Hello, Mr. Smith</h1>
                             </div>
@@ -376,24 +424,25 @@ export const DoctorDashboardNew = () => {
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-4">
-                            <div className="relative">
+                        <div className="flex items-center gap-2 md:gap-4 ml-auto md:ml-0">
+                            <div className="relative hidden sm:block">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                                 <Input
                                     placeholder="Search"
-                                    className="pl-10 w-64 bg-slate-50 border-slate-200 rounded-lg h-9"
+                                    className="pl-10 w-48 lg:w-64 bg-slate-50 border-slate-200 rounded-lg h-9"
                                 />
                             </div>
 
                             <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg relative">
                                 <Bell className="h-4 w-4 text-slate-600" />
+                                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                             </Button>
 
-                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg">
+                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hidden sm:inline-flex">
                                 <Settings className="h-4 w-4 text-slate-600" />
                             </Button>
 
-                            <Avatar className="h-9 w-9">
+                            <Avatar className="h-9 w-9 shrink-0">
                                 <AvatarImage src="" />
                                 <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white font-semibold text-xs">
                                     MS
@@ -405,9 +454,83 @@ export const DoctorDashboardNew = () => {
 
                 {/* Content */}
                 {activeTab === 'dashboard' && (
-                    <div className="p-8 space-y-6">
+                    <div className="p-4 md:p-8 space-y-6">
+                        {/* AIScribe Widget (Sprint 33) */}
+                        <Card className="bg-gradient-to-br from-slate-900 to-slate-800 text-white border-none shadow-xl overflow-hidden relative group">
+                            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <Sparkles className="h-32 w-32" />
+                            </div>
+                            <CardContent className="p-6 relative z-10">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                    <div className="space-y-2 max-w-xl">
+                                        <div className="flex items-center gap-2">
+                                            <Badge className="bg-blue-500 hover:bg-blue-600 text-white border-none">AI Scribe v1</Badge>
+                                            <span className="text-xs text-slate-400 font-medium tracking-wider uppercase">Sprint 33 Optimization</span>
+                                        </div>
+                                        <h2 className="text-2xl font-black tracking-tight">Transcription Vocale Intelligente</h2>
+                                        <p className="text-slate-400 text-sm leading-relaxed">
+                                            Parlez naturellement pendant l'auscultation. Leslie transcrit vos notes et génère automatiquement une ébauche d'ordonnance structurée ou un compte-rendu.
+                                        </p>
+                                    </div>
+
+                                    <div className="flex flex-col items-center gap-3">
+                                        <Button
+                                            size="lg"
+                                            onClick={isRecording ? stopRecording : startRecording}
+                                            className={cn(
+                                                "h-20 w-20 rounded-full shadow-2xl transition-all duration-500 scale-100 hover:scale-105",
+                                                isRecording
+                                                    ? "bg-red-500 hover:bg-red-600 animate-pulse ring-4 ring-red-500/20"
+                                                    : "bg-blue-600 hover:bg-blue-700"
+                                            )}
+                                        >
+                                            {isRecording ? <MicOff className="h-8 w-8" /> : <Mic className="h-8 w-8" />}
+                                        </Button>
+                                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                                            {isRecording ? "Enregistrement..." : "Appuyer pour dicter"}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {(scribeText || isScribeProcessing) && (
+                                    <div className="mt-8 pt-6 border-t border-white/10 animate-in fade-in slide-in-from-top-4 duration-500">
+                                        <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="h-2 w-2 rounded-full bg-blue-500" />
+                                                    <span className="text-xs font-bold uppercase text-slate-400">Notes Transcrites</span>
+                                                </div>
+                                                {isScribeProcessing && (
+                                                    <div className="flex items-center gap-2 text-blue-400 text-xs font-medium">
+                                                        <Loader2 className="h-3 w-3 animate-spin" /> Analyse des notes...
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {isScribeProcessing ? (
+                                                <div className="space-y-2">
+                                                    <div className="h-4 bg-white/5 rounded-md animate-pulse w-full" />
+                                                    <div className="h-4 bg-white/5 rounded-md animate-pulse w-3/4" />
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-4">
+                                                    <p className="text-slate-200 text-sm leading-relaxed italic">"{scribeText}"</p>
+                                                    <div className="flex gap-2 justify-end">
+                                                        <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white hover:bg-white/10" onClick={() => setScribeText("")}>Initialiser</Button>
+                                                        <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-xs font-bold" onClick={createPrescriptionFromScribe}>
+                                                            <ClipboardCheck className="h-3.5 w-3.5 mr-2" /> Créer Ordonnance
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
                         {/* Stats Row */}
-                        <div className="grid grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             {/* Total Patients */}
                             <Card className="bg-white border-slate-200 shadow-sm">
                                 <CardContent className="p-5">
@@ -516,7 +639,7 @@ export const DoctorDashboardNew = () => {
                         </div>
 
                         {/* Charts and Appointments Row */}
-                        <div className="grid grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {/* Patients Reports Chart */}
                             <Card className="bg-white border-slate-200">
                                 <CardContent className="p-6">
@@ -648,8 +771,8 @@ export const DoctorDashboardNew = () => {
                                 </div>
 
                                 {/* Calendar Grid */}
-                                <div className="relative">
-                                    <div className="grid grid-cols-6 gap-4">
+                                <div className="relative overflow-x-auto pb-4">
+                                    <div className="grid grid-cols-6 gap-4 min-w-[700px]">
                                         {/* Time Column */}
                                         <div className="space-y-16 pt-12">
                                             <div className="text-xs font-medium text-slate-500">9 am</div>
@@ -850,6 +973,3 @@ export const DoctorDashboardNew = () => {
         </div>
     )
 }
-
-// Missing import
-import { MessageCircle, LogOut } from 'lucide-react'

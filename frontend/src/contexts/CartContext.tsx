@@ -3,6 +3,8 @@ import { Medicine } from '@/lib/supabase';
 import { mvpStocks } from '@/data/mvpMockData';
 import { toast } from "sonner";
 import { InsurancePartner } from '@/services/InsuranceService';
+import { familyService } from '@/services/familyService';
+import { checkDrugInteractions } from '@/services/drugInteractionService';
 
 export interface CartItem {
   medicine: Medicine;
@@ -64,8 +66,27 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('pharmagoCart', JSON.stringify(items));
   }, [items]);
 
-  const addToCart = (newItem: CartItem) => {
-    // Stock Check Logic (Epic 2 - MED-02 / ORDER-01)
+  const addToCart = async (newItem: CartItem) => {
+    // 1. Drug Interaction Check (Feature 4 - Familial Profile)
+    try {
+      const familyProfiles = await familyService.getFamilyProfiles('user-1');
+      // Let's assume the order is for the main user (first profile) for MVP, or we can check against all
+      if (familyProfiles.length > 0) {
+        const warning = checkDrugInteractions(familyProfiles[0], [newItem.medicine.name]);
+        if (warning) {
+          if (warning.level === 'danger' && warning.preventCheckout) {
+            toast.error(`Alerte Médicale: ${warning.message}`, { duration: 8000 });
+            return; // Block adding to cart
+          } else {
+            toast.warning(`Attention: ${warning.message}`, { duration: 6000 });
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Failed interaction check", e);
+    }
+
+    // 2. Stock Check Logic (Epic 2 - MED-02 / ORDER-01)
     const stockEntry = mvpStocks.find(s => s.pharmacyId === newItem.pharmacy_id && s.medicineId === newItem.medicine.id);
     const maxStock = stockEntry ? stockEntry.quantity : 99; // Default to 99 if not found in mock
 

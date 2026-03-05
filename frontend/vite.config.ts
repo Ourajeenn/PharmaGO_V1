@@ -15,15 +15,28 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   build: {
-    target: 'es2015',
+    target: 'esnext',
+    minify: 'esbuild',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-ui': ['framer-motion', 'lucide-react', 'clsx', 'tailwind-merge'],
+          'vendor-charts': ['recharts'],
+          'vendor-maps': ['leaflet', 'react-leaflet'],
+          'vendor-db': ['@supabase/supabase-js', '@tanstack/react-query'],
+          'vendor-utils': ['date-fns', 'axios', 'zod'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
   },
   plugins: [
     react(),
-    VitePWA({
+    process.env.VITE_PWA !== 'false' && VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       devOptions: {
-        enabled: true
+        enabled: false
       },
       manifest: {
         name: 'PharmaGo Express',
@@ -54,9 +67,9 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // Increased to 10MB for larger bundles
         runtimeCaching: [
-          // Supabase API — NetworkFirst (fallback to cache when offline)
+          // Supabase API — NetworkFirst for critical data
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
             handler: 'NetworkFirst',
@@ -64,12 +77,24 @@ export default defineConfig(({ mode }) => ({
               cacheName: 'supabase-api-cache',
               expiration: {
                 maxEntries: 100,
-                maxAgeSeconds: 60 * 5, // 5 minutes
+                maxAgeSeconds: 60 * 60, // 1 hour
               },
-              networkTimeoutSeconds: 4,
+              networkTimeoutSeconds: 5,
             },
           },
-          // Google Fonts — CacheFirst (stable assets)
+          // Medicine Data — StaleWhileRevalidate for fast offline searches
+          {
+            urlPattern: /.*\/rest\/v1\/(medicines|pharmacy_inventory).*/i,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'medicine-data-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24, // 24 hours
+              },
+            },
+          },
+          // Google Fonts — CacheFirst
           {
             urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
             handler: 'CacheFirst',

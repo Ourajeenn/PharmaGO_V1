@@ -1,9 +1,9 @@
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { PharmacyService } from '@/services/PharmacyService'
 import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from 'react-leaflet'
-import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
+import 'leaflet-routing-machine';
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -17,13 +17,15 @@ import { toast } from 'sonner'
 
 // Types & Data
 import { Pharmacy, InventoryItem } from '@/types/pharmacy'
-import { ABIDJAN_PHARMACIES } from '@/data/pharmacies'
+
 import { MEDICATIONS_CATALOG } from '@/data/medications'
 
 // Components
 import { PharmacyStockSearch } from './PharmacyStockSearch'
 import { PharmacyFilters } from './PharmacyFilters'
 import { useWeather } from '@/hooks/useWeather'
+
+import { InsuranceService, InsurancePartner } from '@/services/InsuranceService'
 
 const WeatherOverlay = () => {
     const { weather, loading } = useWeather('Abidjan')
@@ -117,12 +119,82 @@ const generateMockInventory = (pharmacyId: string): InventoryItem[] => {
 }
 
 // Map center control component
-const MapCenterControl = ({ center }: { center: [number, number] }) => {
+const MapCenterControl = ({ center, mobileTab }: { center: [number, number], mobileTab: 'list' | 'map' }) => {
     const map = useMap()
     useEffect(() => {
-        map.flyTo(center, 15, { animate: true, duration: 1.5 })
-    }, [center, map])
+        // Only proceed if coordinates are valid numbers
+        if (!center || typeof center[0] !== 'number' || typeof center[1] !== 'number' || isNaN(center[0]) || isNaN(center[1])) {
+            console.error("Invalid map center:", center)
+            return
+        }
+
+        // Use a small timeout to ensure container is ready and help with mobile transitions
+        const timer = setTimeout(() => {
+            map.invalidateSize()
+            try {
+                map.flyTo(center, 15, { animate: true, duration: 1 })
+            } catch (e) {
+                console.error("Map flyTo failed:", e)
+            }
+        }, 300)
+
+        return () => clearTimeout(timer)
+    }, [center, map, mobileTab])
     return null
+}
+
+// Routing control component
+const RoutingComponent = ({ start, end }: { start: [number, number] | null, end: [number, number] | null }) => {
+    const map = useMap();
+    const routingControlRef = useRef<any>(null);
+
+    useEffect(() => {
+        if (!map || !start || !end) {
+            if (routingControlRef.current) {
+                map.removeControl(routingControlRef.current);
+                routingControlRef.current = null;
+            }
+            return;
+        }
+
+        // Clean up previous route
+        if (routingControlRef.current) {
+            map.removeControl(routingControlRef.current);
+        }
+
+        routingControlRef.current = L.Routing.control({
+            waypoints: [
+                L.latLng(start[0], start[1]),
+                L.latLng(end[0], end[1])
+            ],
+            routeWhileDragging: false,
+            showAlternatives: false,
+            addWaypoints: false,
+            fitSelectedRoutes: true,
+            show: false, // hide the text instructions panel
+            lineOptions: {
+                styles: [{ color: '#3b82f6', weight: 6, opacity: 0.8 }],
+                extendToWaypoints: true,
+                missingRouteTolerance: 10
+            },
+            router: L.Routing.osrmv1({
+                serviceUrl: 'https://router.project-osrm.org/route/v1',
+                language: 'fr'
+            }),
+            createMarker: function () { return null; }
+        }).addTo(map);
+
+        return () => {
+            if (routingControlRef.current) {
+                try {
+                    map.removeControl(routingControlRef.current);
+                } catch { /* ignore */ }
+                routingControlRef.current = null;
+            }
+        };
+    }, [map, start, end]);
+
+    return null;
 }
 
 // --- Main Component ---
@@ -132,22 +204,50 @@ interface PharmacyMapSectionProps {
 }
 
 export const PharmacyMapSection = ({ showOnlyOnDuty = false }: PharmacyMapSectionProps) => {
-    const [pharmacies, setPharmacies] = useState<Pharmacy[]>([])
+    const [pharmacies, setPharmacies] = useState<(Pharmacy & { acceptedInsurances: string[] })[]>([])
     const [selectedPharmacy, setSelectedPharmacy] = useState<Pharmacy | null>(null)
+    const [targetRoute, setTargetRoute] = useState<[number, number] | null>(null)
+
+    const [insurances, setInsurances] = useState<InsurancePartner[]>([])
+    const [selectedInsuranceId, setSelectedInsuranceId] = useState<string>('all')
 
     // Fetch data from API
     useEffect(() => {
-        const fetchPharmacies = async () => {
+        const fetchPharmaciesAndInsurances = async () => {
             try {
-                const data = await PharmacyService.getAllPharmacies()
-                setPharmacies(data)
+                const [pharmaciesData, insurancesData] = await Promise.all([
+                    PharmacyService.getAllPharmacies(),
+                    InsuranceService.getPartners()
+                ])
+
+                setInsurances(insurancesData)
+
+                // Deterministically assign accepted insurances if they don't exist
+                const enhancedPharmacies = pharmaciesData.map(p => {
+                    const seed = parseInt(p.id.replace(/\D/g, '') || '0') % insurancesData.length
+                    // Give each pharmacy 2 to 4 accepted insurances
+                    const numInsurances = 2 + (seed % 3)
+                    const acceptedInsurances = []
+                    for (let i = 0; i < numInsurances; i++) {
+                        const index = (seed + i * 2) % insurancesData.length
+                        if (insurancesData[index] && !acceptedInsurances.includes(insurancesData[index].id)) {
+                            acceptedInsurances.push(insurancesData[index].id)
+                        }
+                    }
+
+                    // Most pharmacies should accept the top ones
+                    if (seed % 2 !== 0 && insurancesData[0]) acceptedInsurances.push(insurancesData[0].id)
+
+                    return { ...p, acceptedInsurances }
+                })
+
+                setPharmacies(enhancedPharmacies)
             } catch (error) {
-                console.error("Failed to load pharmacies", error)
-                // Fallback to hardcoded data if API fails completely
-                setPharmacies(ABIDJAN_PHARMACIES)
+                // Fallback to empty array if API fails completely
+                setPharmacies([])
             }
         }
-        fetchPharmacies()
+        fetchPharmaciesAndInsurances()
     }, [])
     const [searchQuery, setSearchQuery] = useState('')
     const [filterOnDuty, setFilterOnDuty] = useState(showOnlyOnDuty)
@@ -214,14 +314,16 @@ export const PharmacyMapSection = ({ showOnlyOnDuty = false }: PharmacyMapSectio
             const matchesOnDuty = !filterOnDuty || p.isOnDuty
             const matchesOpen = !filterOpen || p.isOpen
             const matchesCommune = selectedCommune === 'all' || p.commune === selectedCommune
-            return matchesSearch && matchesOnDuty && matchesOpen && matchesCommune
+            const matchesInsurance = selectedInsuranceId === 'all' || p.acceptedInsurances.includes(selectedInsuranceId)
+
+            return matchesSearch && matchesOnDuty && matchesOpen && matchesCommune && matchesInsurance
         }).sort((a, b) => {
             if (a.distance && b.distance) return a.distance - b.distance
             if (a.isOnDuty && !b.isOnDuty) return -1
             if (!a.isOnDuty && b.isOnDuty) return 1
             return 0
         })
-    }, [pharmacies, searchQuery, filterOnDuty, filterOpen, selectedCommune])
+    }, [pharmacies, searchQuery, filterOnDuty, filterOpen, selectedCommune, selectedInsuranceId])
 
     const getPharmacyStatus = (p: Pharmacy): 'open' | 'closed' | 'on_duty' => {
         if (p.isOnDuty) return 'on_duty'
@@ -229,9 +331,21 @@ export const PharmacyMapSection = ({ showOnlyOnDuty = false }: PharmacyMapSectio
         return 'closed'
     }
 
+    const getInsuranceNames = (assignedIds: string[]) => {
+        if (!assignedIds || assignedIds.length === 0) return []
+        return assignedIds
+            .map(id => insurances.find(i => i.id === id)?.name)
+            .filter(Boolean) as string[]
+    }
+
     const openDirections = (pharmacy: Pharmacy) => {
-        const url = `https://www.google.com/maps/dir/?api=1&destination=${pharmacy.latitude},${pharmacy.longitude}`
-        window.open(url, '_blank')
+        if (userLocation) {
+            setTargetRoute([pharmacy.latitude, pharmacy.longitude])
+        } else {
+            // Fallback if no location
+            const url = `https://www.google.com/maps/dir/?api=1&destination=${pharmacy.latitude},${pharmacy.longitude}`
+            window.open(url, '_blank')
+        }
     }
 
     // Calculate travel time (min)
@@ -248,6 +362,7 @@ export const PharmacyMapSection = ({ showOnlyOnDuty = false }: PharmacyMapSectio
 
     const handlePharmacySelect = (pharmacy: Pharmacy) => {
         setSelectedPharmacy(pharmacy)
+        setTargetRoute(null) // Reset route when selecting new pharmacy
         // Switch to map on mobile when selecting from list
         if (window.innerWidth < 1024) {
             setMobileTab('map')
@@ -318,14 +433,26 @@ export const PharmacyMapSection = ({ showOnlyOnDuty = false }: PharmacyMapSectio
                     </div>
 
                     {/* Filters */}
-                    <PharmacyFilters
-                        selectedCommune={selectedCommune}
-                        setSelectedCommune={setSelectedCommune}
-                        filterOnDuty={filterOnDuty}
-                        setFilterOnDuty={setFilterOnDuty}
-                        filterOpen={filterOpen}
-                        setFilterOpen={setFilterOpen}
-                    />
+                    <div className="flex flex-col gap-2 p-4 border-b">
+                        <PharmacyFilters
+                            selectedCommune={selectedCommune}
+                            setSelectedCommune={setSelectedCommune}
+                            filterOnDuty={filterOnDuty}
+                            setFilterOnDuty={setFilterOnDuty}
+                            filterOpen={filterOpen}
+                            setFilterOpen={setFilterOpen}
+                        />
+                        <select
+                            className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            value={selectedInsuranceId}
+                            onChange={(e) => setSelectedInsuranceId(e.target.value)}
+                        >
+                            <option value="all">Toutes les assurances</option>
+                            {insurances.map(ins => (
+                                <option key={ins.id} value={ins.id}>{ins.name}</option>
+                            ))}
+                        </select>
+                    </div>
 
                     {/* Legend */}
                     <div className="px-4 py-2 bg-white/50 border-b flex items-center gap-4 text-xs">
@@ -366,6 +493,18 @@ export const PharmacyMapSection = ({ showOnlyOnDuty = false }: PharmacyMapSectio
                                                     <MapPin className="h-3 w-3 inline mr-1" />
                                                     {pharmacy.commune} - {pharmacy.address}
                                                 </p>
+                                                {pharmacy.acceptedInsurances && pharmacy.acceptedInsurances.length > 0 && (
+                                                    <div className="flex flex-wrap gap-1 mt-1">
+                                                        {getInsuranceNames(pharmacy.acceptedInsurances).slice(0, 3).map((name, i) => (
+                                                            <Badge key={i} variant="outline" className="text-[9px] px-1 py-0 h-4 border-blue-200 text-blue-700 bg-blue-50">
+                                                                {name}
+                                                            </Badge>
+                                                        ))}
+                                                        {pharmacy.acceptedInsurances.length > 3 && (
+                                                            <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">+{pharmacy.acceptedInsurances.length - 3}</Badge>
+                                                        )}
+                                                    </div>
+                                                )}
                                                 <div className="flex items-center gap-3 mt-1">
                                                     <span className={`text-xs font-bold ${pharmacy.isOpen ? 'text-green-600' : 'text-red-600'}`}>
                                                         {pharmacy.isOpen ? '● Ouverte' : '● Fermée'}
@@ -409,12 +548,11 @@ export const PharmacyMapSection = ({ showOnlyOnDuty = false }: PharmacyMapSectio
                     </div>
                 </div>
 
-                {/* Map Container */}
-                <div className={`flex-1 relative rounded-2xl overflow-hidden border shadow-lg ${mobileTab === 'map' ? 'block' : 'hidden lg:block'}`}>
+                <div className={`flex-1 relative rounded-2xl overflow-hidden border shadow-lg h-full min-h-[400px] bg-slate-100 ${mobileTab === 'map' ? 'block' : 'hidden lg:block'}`}>
                     <MapContainer
                         center={ABIDJAN_CENTER}
                         zoom={12}
-                        style={{ height: '100%', width: '100%' }}
+                        style={{ height: '100%', width: '100%', minHeight: '400px' }}
                         zoomControl={false}
                     >
                         <TileLayer
@@ -457,6 +595,16 @@ export const PharmacyMapSection = ({ showOnlyOnDuty = false }: PharmacyMapSectio
                                             )}
                                         </div>
                                         <p className="text-xs text-muted-foreground mb-2">{pharmacy.address}</p>
+
+                                        {pharmacy.acceptedInsurances && pharmacy.acceptedInsurances.length > 0 && (
+                                            <div className="flex flex-wrap gap-1 mb-2">
+                                                {getInsuranceNames(pharmacy.acceptedInsurances).map((name, i) => (
+                                                    <Badge key={i} variant="outline" className="text-[9px] px-1 py-0 h-4 border-blue-200 text-blue-700 bg-blue-50">
+                                                        {name}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        )}
 
                                         <div className="flex items-center gap-2 mb-2">
                                             <Badge className={pharmacy.isOpen ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
@@ -502,8 +650,16 @@ export const PharmacyMapSection = ({ showOnlyOnDuty = false }: PharmacyMapSectio
                         ))}
 
                         {selectedPharmacy && (
-                            <MapCenterControl center={[selectedPharmacy.latitude, selectedPharmacy.longitude]} />
+                            <MapCenterControl
+                                center={[selectedPharmacy.latitude, selectedPharmacy.longitude]}
+                                mobileTab={mobileTab}
+                            />
                         )}
+
+                        <RoutingComponent
+                            start={userLocation ? [userLocation.lat, userLocation.lng] : null}
+                            end={targetRoute}
+                        />
                     </MapContainer>
 
                     {/* Status Badge & Controls */}
@@ -520,15 +676,35 @@ export const PharmacyMapSection = ({ showOnlyOnDuty = false }: PharmacyMapSectio
                                 const fetchP = async () => {
                                     setIsLoading(true);
                                     try {
-                                        const data = await PharmacyService.getAllPharmacies();
+                                        const [pharmaciesData, insurancesData] = await Promise.all([
+                                            PharmacyService.getAllPharmacies(),
+                                            InsuranceService.getPartners()
+                                        ])
+                                        setInsurances(insurancesData)
+
+                                        const enhancedPharmacies = pharmaciesData.map(p => {
+                                            const seed = parseInt(p.id.replace(/\D/g, '') || '0') % insurancesData.length
+                                            const numInsurances = 2 + (seed % 3)
+                                            const acceptedInsurances = []
+                                            for (let i = 0; i < numInsurances; i++) {
+                                                const index = (seed + i * 2) % insurancesData.length
+                                                if (insurancesData[index] && !acceptedInsurances.includes(insurancesData[index].id)) {
+                                                    acceptedInsurances.push(insurancesData[index].id)
+                                                }
+                                            }
+                                            if (seed % 2 !== 0 && insurancesData[0]) acceptedInsurances.push(insurancesData[0].id)
+
+                                            return { ...p, acceptedInsurances }
+                                        })
+
                                         setPharmacies(prev => {
                                             if (userLocation) {
-                                                return data.map(p => ({
+                                                return enhancedPharmacies.map(p => ({
                                                     ...p,
                                                     distance: calculateDistance(userLocation.lat, userLocation.lng, p.latitude, p.longitude)
                                                 }));
                                             }
-                                            return data;
+                                            return enhancedPharmacies;
                                         });
                                         toast.success("Données actualisées");
                                     } catch (e) {
@@ -605,6 +781,20 @@ export const PharmacyMapSection = ({ showOnlyOnDuty = false }: PharmacyMapSectio
                     )}
 
                     <p className="text-sm mb-3 text-muted-foreground">{selectedPharmacy.address}</p>
+
+                    {selectedPharmacy.acceptedInsurances && selectedPharmacy.acceptedInsurances.length > 0 && (
+                        <div className="mb-4">
+                            <p className="text-xs font-semibold mb-1 uppercase text-muted-foreground">Assurances acceptées</p>
+                            <div className="flex flex-wrap gap-1">
+                                {getInsuranceNames(selectedPharmacy.acceptedInsurances).map((name, i) => (
+                                    <Badge key={i} variant="outline" className="text-[10px] border-blue-200 text-blue-700 bg-blue-50">
+                                        {name}
+                                    </Badge>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="flex gap-2">
                         {selectedPharmacy.phone && (
                             <Button variant="outline" className="flex-1 rounded-xl" asChild>

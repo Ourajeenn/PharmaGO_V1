@@ -1,6 +1,6 @@
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
 
-export const supabase = supabaseClient as any;
+export const supabase = supabaseClient;
 
 export type UserRole = 'patient' | 'pharmacy' | 'driver' | 'admin' | 'doctor' | 'insurer'
 

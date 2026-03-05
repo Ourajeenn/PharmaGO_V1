@@ -26,10 +26,19 @@ import {
     Fingerprint,
     Shield,
     LogOut,
-    ChevronRight
+    ChevronRight,
+    Clock
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
+import {
+    Carousel,
+    CarouselContent,
+    CarouselItem,
+    CarouselNext,
+    CarouselPrevious,
+} from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
 
 interface Product {
     id: string
@@ -43,6 +52,48 @@ interface Product {
     discount?: number
     inStock?: boolean
 }
+
+const latestProducts = [{
+    id: "hero-1",
+    name: "Service Pharmacie",
+    price: 0,
+    category: "Qualité",
+    image: "/hero-carousel/pharma-black.png",
+    rating: 5.0,
+    inStock: true,
+    isNew: true,
+    description: "Conseils d'experts."
+}, {
+    id: "hero-2",
+    name: "Consultation en Ligne",
+    price: 0,
+    category: "Télésanté",
+    image: "/hero-carousel/consultation.png",
+    rating: 4.9,
+    inStock: true,
+    isNew: true,
+    description: "Parlez à un expert."
+}, {
+    id: "hero-3",
+    name: "Livraison Express",
+    price: 0,
+    category: "Rapidité",
+    image: "/hero-carousel/delivery-v2.png",
+    rating: 4.8,
+    inStock: true,
+    isNew: true,
+    description: "Livré en 45 min."
+}, {
+    id: "hero-5",
+    name: "Application Mobile",
+    price: 0,
+    category: "Innovation",
+    image: "/hero-carousel/app-v4.png",
+    rating: 5.0,
+    inStock: true,
+    isNew: true,
+    description: "Santé connectée."
+}];
 
 interface CartItem extends Product {
     quantity: number
@@ -196,6 +247,21 @@ export const PatientMobileInterface = () => {
     if (currentScreen === 'home') {
         return (
             <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 pb-24">
+                <style>
+                    {`
+                        @keyframes border-circulate-mobile {
+                            0% { stroke-dashoffset: 600; }
+                            100% { stroke-dashoffset: 0; }
+                        }
+                        .neon-path-mobile {
+                            stroke-dasharray: 75 525;
+                            animation: border-circulate-mobile 25s linear infinite;
+                        }
+                        .neon-path-mobile-1 { stroke: #00f2fe; animation-delay: 0s; }
+                        .neon-path-mobile-2 { stroke: #ff0080; animation-delay: -8.33s; }
+                        .neon-path-mobile-3 { stroke: #f7971e; animation-delay: -16.66s; }
+                    `}
+                </style>
                 {/* Mobile Container */}
                 <div className="max-w-md mx-auto bg-white/80 backdrop-blur-md min-h-screen shadow-2xl">
                     {/* Header */}
@@ -239,6 +305,61 @@ export const PatientMobileInterface = () => {
                                 <Search className="h-4 w-4" />
                             </button>
                         </div>
+                    </div>
+
+                    {/* Promotional Carousel */}
+                    <div className="px-4 mb-6">
+                        <Carousel
+                            className="w-full"
+                            plugins={[
+                                Autoplay({
+                                    delay: 4000,
+                                }),
+                            ]}
+                        >
+                            <CarouselContent>
+                                {latestProducts.map((product) => (
+                                    <CarouselItem key={product.id}>
+                                        <Card className="overflow-hidden border-none shadow-lg bg-white/40 backdrop-blur-md rounded-3xl relative p-0.5">
+                                            {/* Segmented Neon Border SVG Overlay */}
+                                            <div className="absolute inset-0 pointer-events-none z-20">
+                                                <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                                    <rect
+                                                        x="0.5" y="0.5" width="99" height="99"
+                                                        rx="12" ry="12"
+                                                        fill="none"
+                                                        strokeWidth="0.5"
+                                                        className="neon-path-mobile neon-path-mobile-1"
+                                                    />
+                                                    <rect
+                                                        x="0.5" y="0.5" width="99" height="99"
+                                                        rx="12" ry="12"
+                                                        fill="none"
+                                                        strokeWidth="0.5"
+                                                        className="neon-path-mobile neon-path-mobile-2"
+                                                    />
+                                                    <rect
+                                                        x="0.5" y="0.5" width="99" height="99"
+                                                        rx="12" ry="12"
+                                                        fill="none"
+                                                        strokeWidth="1"
+                                                        className="neon-path-mobile neon-path-mobile-3"
+                                                    />
+                                                </svg>
+                                            </div>
+
+                                            <div className="aspect-[16/9] relative">
+                                                <img
+                                                    src={product.image}
+                                                    alt={product.name}
+                                                    className="w-full h-full object-cover transition-transform duration-700 hover:scale-110"
+                                                />
+                                            </div>
+                                        </Card>
+                                    </CarouselItem>
+                                ))}
+                            </CarouselContent>
+                        </Carousel>
                     </div>
 
                     {/* Categories */}

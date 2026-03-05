@@ -11,6 +11,7 @@ export interface Pharmacy {
     rating?: number
     distance?: number
     inventory?: InventoryItem[]
+    acceptedInsurances?: string[]
 }
 
 export interface InventoryItem {

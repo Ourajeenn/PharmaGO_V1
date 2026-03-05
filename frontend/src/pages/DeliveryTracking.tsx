@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import Header from '@/components/core/Header';
+import Footer from '@/components/core/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { ArrowLeft, Phone, MessageSquare, MapPin, Navigation, Clock, CheckCircle
 import { Separator } from '@/components/ui/separator';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import ReviewDialog from '@/components/reviews/ReviewDialog';
+import { calculateOptimalRoute } from '@/services/stockRoutingService';
 
 const DeliveryTracking = () => {
     const navigate = useNavigate();
@@ -20,12 +21,38 @@ const DeliveryTracking = () => {
     const [hasNotifiedProximity, setHasNotifiedProximity] = useState(false);
     const [reviewOpen, setReviewOpen] = useState(false);
 
-    const steps = [
+    // Mock an order requiring multiple pharmacies
+    const userLoc = { latitude: 5.3364, longitude: -4.0267 }; // Plateau
+    const driverLoc = { latitude: 5.3033, longitude: -3.9877 }; // Marcory
+    const items = [
+        { itemId: "doli-1000", quantity: 2 },
+        { itemId: "amox-500", quantity: 1 }
+    ];
+
+    // We compute the optimal TSP route on load to show multi-pharmacy logistics
+    const [routingStats, setRoutingStats] = useState({ distance: 2.4, time: 15, stops: [] as any[] });
+
+    useEffect(() => {
+        const route = calculateOptimalRoute(userLoc, driverLoc, items);
+        setRoutingStats({
+            distance: Number((route.totalDistance / 1000).toFixed(1)),
+            time: route.estimatedTimeParams.travelMins + route.estimatedTimeParams.baseHandlingMins,
+            stops: route.stops
+        });
+        setDistance(Number((route.totalDistance / 1000).toFixed(1)));
+        setEstimatedTime(route.estimatedTimeParams.travelMins + route.estimatedTimeParams.baseHandlingMins);
+    }, []);
+
+    const dynamicSteps = [
         { title: "En attente", time: "14:30" },
         { title: "Payée", time: "14:32" },
-        { title: "Préparation", time: "14:35" },
-        { title: "En livraison", time: "14:45" },
-        { title: "Livrée", time: "15:10" }
+        { title: `Préparation (${routingStats.stops.length} pharmacies)`, time: "14:35" },
+        ...routingStats.stops.map((stop, i) => ({
+            title: `Collecte ${i + 1}: ${stop.pharmacyName}`,
+            time: `14:${40 + (i * 5)}`
+        })),
+        { title: "En route vers vous", time: "15:00" },
+        { title: "Livrée", time: "15:15" }
     ];
 
     useEffect(() => {
@@ -55,7 +82,7 @@ const DeliveryTracking = () => {
                 setEstimatedTime(remainingTime);
 
                 // Proximity Alert at 0.5km (approx 80% progress)
-                if (remainingDistance < 0.5 && !hasNotifiedProximity) {
+                if (remainingDistance < 0.5 && !hasNotifiedProximity && routingStats.distance > 0) {
                     notify('nearbyDelivery', 2, 'CMD-872');
                     setHasNotifiedProximity(true);
                 }
@@ -247,22 +274,27 @@ const DeliveryTracking = () => {
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-6 relative before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
-                                    {steps.map((step, index) => (
-                                        <div key={index} className="relative flex items-center gap-4">
-                                            <div className={`z-10 w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-500 ${index <= status
-                                                ? 'bg-primary border-primary text-primary-foreground scale-110'
-                                                : 'bg-white border-slate-200 text-slate-300'
-                                                }`}>
-                                                {index <= status ? <CheckCircle2 className="h-4 w-4" /> : <div className="h-2 w-2 rounded-full bg-slate-200" />}
+                                    {dynamicSteps.map((step, index) => {
+                                        // Align status with dynamic steps length
+                                        const isActive = index <= (status === 4 ? dynamicSteps.length - 1 : status * (dynamicSteps.length / 5));
+
+                                        return (
+                                            <div key={index} className="relative flex items-center gap-4">
+                                                <div className={`z-10 w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-500 ${isActive
+                                                    ? 'bg-primary border-primary text-primary-foreground scale-110'
+                                                    : 'bg-white border-slate-200 text-slate-300'
+                                                    }`}>
+                                                    {isActive ? <CheckCircle2 className="h-4 w-4" /> : <div className="h-2 w-2 rounded-full bg-slate-200" />}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className={`font-medium transition-colors ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>
+                                                        {step.title}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">{step.time}</p>
+                                                </div>
                                             </div>
-                                            <div className="flex-1">
-                                                <p className={`font-medium transition-colors ${index <= status ? 'text-foreground' : 'text-muted-foreground'}`}>
-                                                    {step.title}
-                                                </p>
-                                                <p className="text-xs text-muted-foreground">{step.time}</p>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        )
+                                    })}
                                 </div>
                             </CardContent>
                         </Card>

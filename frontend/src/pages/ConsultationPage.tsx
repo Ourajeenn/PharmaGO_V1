@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import ConsultationMenu from "@/components/consultation/ConsultationMenu";
-import Footer from "@/components/Footer";
+import Footer from "@/components/core/Footer";
+import Header from "@/components/core/Header";
 import MedicalChatDialog from "@/components/consultation/MedicalChatDialog";
 import AppointmentBookingDialog from "@/components/consultation/AppointmentBookingDialog";
 import { useNavigate } from 'react-router-dom';
@@ -43,6 +44,7 @@ const ConsultationPage = () => {
 
     return (
         <div className="min-h-screen bg-[#fcfcfd]">
+            <Header />
             {/* ... (main structure remains) */}
             <main className="container mx-auto px-4 py-8">
                 {/* ... (Header remains) */}

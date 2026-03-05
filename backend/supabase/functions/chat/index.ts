@@ -7,9 +7,20 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// In-memory rate limiter (For production, prefer Deno KV or Redis)
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_MAX = 5; // 5 requests per minute per IP
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+
 interface ChatRequest {
   message: string;
   conversationId?: string;
+  context?: {
+    name?: string;
+    allergies?: string;
+    metrics?: any;
+    lastVisit?: string;
+  };
 }
 
 interface Message {
@@ -23,7 +34,28 @@ serve(async (req) => {
   }
 
   try {
-    const { message, conversationId }: ChatRequest = await req.json();
+    // Basic Rate Limiting Check
+    const clientIp = req.headers.get("x-forwarded-for") || "unknown_ip";
+    const now = Date.now();
+    const rateRecord = rateLimitMap.get(clientIp);
+
+    if (rateRecord) {
+      if (now > rateRecord.resetAt) {
+        // Reset window
+        rateLimitMap.set(clientIp, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+      } else if (rateRecord.count >= RATE_LIMIT_MAX) {
+        return new Response(
+          JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "60" } }
+        );
+      } else {
+        rateLimitMap.set(clientIp, { count: rateRecord.count + 1, resetAt: rateRecord.resetAt });
+      }
+    } else {
+      rateLimitMap.set(clientIp, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    }
+
+    const { message, conversationId, context }: ChatRequest = await req.json();
 
     if (!message) {
       return new Response(
@@ -77,19 +109,33 @@ serve(async (req) => {
       content: msg.content,
     }));
 
-    // Call OpenAI API
-    const systemPrompt = `Tu es l'assistant virtuel de PharmaGo, une plateforme de livraison de médicaments en Côte d'Ivoire.
+    // Build Personalized System Prompt
+    let contextStr = "";
+    if (context) {
+      contextStr = `\n\nCONTEXTE PATIENT ACTUEL :
+- Nom : ${context.name || 'Inconnu'}
+- Allergies : ${context.allergies || 'Aucune identifiée'}
+- Dernières mesures : ${JSON.stringify(context.metrics || {})}
+- Dernière visite : ${context.lastVisit || 'Non renseignée'}`;
+    }
 
-Tu dois aider les utilisateurs avec :
-- Commander des médicaments
-- Trouver des pharmacies (ouvertes, de garde)
-- Suivre leurs commandes
-- Questions sur les paiements (Orange Money, Wave, Carte bancaire, Paiement à la livraison)
-- Télécharger des ordonnances
-- Questions sur la livraison et les frais
-- Informations sur les assurances (CMU, MUGEF-CI, CNPS)
-- Devenir livreur, médecin ou pharmacie partenaire
-- Urgences médicales
+    const systemPrompt = `Tu es Leslie, l'assistante virtuelle empathique, proactive et chaleureuse de PharmaGo, une plateforme de santé en Côte d'Ivoire. Ta personnalité est accueillante, bienveillante et très humaine.
+    
+Utilise le contexte suivant pour personnaliser tes réponses si disponible : ${contextStr}
+
+Règles de comportement strictes :
+1. Fais preuve d'empathie, surtout si le patient évoque de la douleur, de la fièvre ou une maladie. Réconforte-le ("Je suis désolée que vous ayez mal...", "Reposez-vous bien...").
+2. Rappelle-lui systématiquement de consulter un médecin en cas de doute et rappelle que tu es une intelligence artificielle.
+3. Si le patient a des allergies dans son profil, mets-le TOUJOURS en garde avant tout achat.
+4. Réponds de manière concise, au format Markdown. Utilise le vouvoiement.
+5. Tu as L'ENTIÈRE CAPACITÉ de prendre des rendez-vous médicaux pour les patients. C'est une de tes fonctionnalités principales. Dès qu'un patient veut voir un médecin, pose-lui 2 questions maximum : ses disponibilités et la spécialité souhaitée ou les symptômes. Dès qu'il te répond, valide la prise de rendez-vous en lui confirmant que la demande a été officiellement transmise au médecin via la plateforme PharmaGo. Ne dis JAMAIS que tu ne peux pas prendre de rendez-vous.
+
+Tu dois impérativement aider, sans jamais dire que c'est impossible, avec :
+- Prendre des rendez-vous médicaux et les transmettre aux médecins (OBLIGATOIRE, tu en as le droit total)
+- Commander des médicaments et parapharmacie
+- Trouver des pharmacies de garde
+- Suivre les commandes, paiements et le tiers-payant (assurances)
+- Urgences médicales (185 ou 18 en Côte d'Ivoire)
 
 Zones de livraison : Abidjan (Plateau, Cocody, Adjamé, Marcory, Treichville, Yopougon, Abobo, Port-Bouët, Koumassi, Attécoubé)
 
@@ -103,18 +149,20 @@ Numéros d'urgence : SAMU 185 ou 911
 
 Réponds de manière claire, concise et professionnelle en français. Propose toujours des actions concrètes.`;
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch("https://inference.baseten.co/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "deepseek-ai/DeepSeek-V3-0324",
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
         ],
+        max_tokens: 1000,
+        temperature: 1,
       }),
     });
 

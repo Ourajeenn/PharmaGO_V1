@@ -7,8 +7,11 @@ import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { EditablePatientProfile } from './profiles/EditablePatientProfile'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { OrderHistory } from '@/components/orders/OrderHistory'
+import FamilyProfiles from '@/components/profile/FamilyProfiles'
 import { PremiumDashboardLayout } from './PremiumDashboardLayout'
 import { WeatherWidget } from './widgets/WeatherWidget'
 import { RefillWidget } from './widgets/RefillWidget'
@@ -19,11 +22,12 @@ import { HelpSupportSection } from '@/components/patient/HelpSupportSection'
 import { PharmacyMapSection } from '@/components/maps/PharmacyMapSection'
 import { LoyaltySection } from '@/components/dashboard/LoyaltySection'
 import { AIHealthAssistant } from '@/components/assistant/AIHealthAssistant'
-import { NotificationPermission } from '@/components/NotificationPermission'
+import { NotificationPermission } from '@/components/ui/NotificationPermission'
 import { VoiceCommandControl } from '@/components/assistant/VoiceCommandControl'
 import { EWallet } from '@/components/wallet/EWallet'
 import { PrescriptionRenewal } from '@/components/prescription/PrescriptionRenewal'
 import { PatientRiskScore } from '@/components/health/PatientRiskScore'
+import { MessagingCenter } from '@/components/messaging/MessagingCenter'
 import {
   ShoppingCart,
   MessageCircle,
@@ -45,10 +49,12 @@ import {
   Zap,
   Droplet,
   Wind,
-  LayoutDashboard
+  LayoutDashboard,
+  Share2
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 import { useHealthAI } from '@/hooks/useHealthAI'
 import { PatientProfileWidget } from '@/components/dashboard/widgets/medicore/PatientProfileWidget'
 import { HealthMetricCard } from '@/components/dashboard/widgets/medicore/HealthMetricCard'
@@ -56,12 +62,16 @@ import { BodyMapWidget } from '@/components/dashboard/widgets/medicore/BodyMapWi
 import { NeuroActivityWidget } from '@/components/dashboard/widgets/medicore/NeuroActivityWidget'
 import { DoctorListWidget } from '@/components/dashboard/widgets/medicore/DoctorListWidget'
 import { AppointmentsWidget } from '@/components/dashboard/widgets/medicore/AppointmentsWidget'
+import { expatService, Currency, GlobalInsurancePolicy } from '@/services/ExpatService'
+import { Globe, FileDown } from 'lucide-react'
 
 export const PatientDashboard = () => {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
   const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking')
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false) // State for settings dialog
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [currency, setCurrency] = useState<Currency>('XOF')
+  const [globalPolicies, setGlobalPolicies] = useState<GlobalInsurancePolicy[]>(expatService.getGlobalPolicies())
 
   // Check API Health
   useEffect(() => {
@@ -118,6 +128,16 @@ export const PatientDashboard = () => {
     blood_pressure: { value: 'N/A', unit: 'mmHg' },
     spO2: { value: 'N/A', unit: '%' }
   })
+
+  // 🛡️ Personalized Health Thresholds (Sprint 30)
+  const [thresholds, setThresholds] = useState({
+    glucoseMax: 1.26,
+    glucoseMin: 0.70,
+    sysMax: 140,
+    diaMax: 90,
+    spO2Min: 95
+  })
+
   const [metricsHistory, setMetricsHistory] = useState<{
     glucose: any[],
     blood_pressure: any[],
@@ -143,21 +163,21 @@ export const PatientDashboard = () => {
 
     if (type === 'glucose') {
       const val = typeof value === 'string' ? parseFloat(value) : value
-      if (val > 1.26) return 'danger'
-      if (val < 0.70) return 'warning'
+      if (val > thresholds.glucoseMax) return 'danger'
+      if (val < thresholds.glucoseMin) return 'warning'
     }
     if (type === 'blood_pressure') {
       const parts = String(value).split('/')
       if (parts.length === 2) {
         const sys = parseInt(parts[0])
         const dia = parseInt(parts[1])
-        if (sys > 140 || dia > 90) return 'danger'
-        if (sys < 90) return 'warning'
+        if (sys > thresholds.sysMax || dia > thresholds.diaMax) return 'danger'
+        if (sys < 90) return 'warning' // Hypotension fallback
       }
     }
     if (type === 'spO2') {
       const val = typeof value === 'string' ? parseInt(value) : value
-      if (val < 95) return 'danger'
+      if (val < thresholds.spO2Min) return 'danger'
       if (val < 97) return 'warning'
     }
     return 'neutral'
@@ -210,7 +230,7 @@ export const PatientDashboard = () => {
         .eq('is_read', false)
 
       // 4. Fetch Health Metrics
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const { data: metricsData } = await (supabase as any)
         .from('health_metrics')
         .select('*')
@@ -220,7 +240,7 @@ export const PatientDashboard = () => {
       if (metricsData) {
         const latestMetrics = { ...metrics }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
         const glucose = metricsData.find((m: any) => m.metric_type === 'glucose' || m.type === 'glucose')
         if (glucose) {
           latestMetrics.glucose = {
@@ -229,7 +249,7 @@ export const PatientDashboard = () => {
           }
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
         const bp = metricsData.find((m: any) => m.metric_type === 'blood_pressure' || m.type === 'blood_pressure')
         if (bp) {
           const val = bp.value
@@ -239,7 +259,7 @@ export const PatientDashboard = () => {
           }
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
         const spo2 = metricsData.find((m: any) => m.metric_type === 'spO2' || m.type === 'spO2')
         if (spo2) {
           latestMetrics.spO2 = {
@@ -308,6 +328,20 @@ export const PatientDashboard = () => {
     )
   }
 
+  const shareHealthData = () => {
+    toast.success("Mesures santé partagées avec Dr. Konan Yves")
+    // In production: would emit a socket event or update a Realtime channel
+  }
+
+  const exportMedicalReport = async () => {
+    toast.loading("Génération du rapport médical multilingue...")
+    const fileName = await expatService.simulateMedicalReportPDF()
+    toast.dismiss()
+    toast.success(`Rapport généré : ${fileName}`, {
+      description: "Le document contient vos antécédents et métriques récents."
+    })
+  }
+
   return (
     <PremiumDashboardLayout activeTab="home" role="patient">
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -334,12 +368,14 @@ export const PatientDashboard = () => {
                 <TabsTrigger value="history" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Historique</TabsTrigger>
                 <TabsTrigger value="prescriptions" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Docs</TabsTrigger>
                 <TabsTrigger value="medical" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Dossier</TabsTrigger>
+                <TabsTrigger value="family" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm bg-rose-50/50 text-rose-700 font-bold"><User className="h-4 w-4 mr-2" /> Ma Famille</TabsTrigger>
                 <TabsTrigger value="reminders" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Rappels</TabsTrigger>
                 <TabsTrigger value="ewallet" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm bg-green-50/50 text-green-700">💳 Portefeuille</TabsTrigger>
                 <TabsTrigger value="renewals" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm bg-purple-50/50 text-purple-700">🔄 Renouvellement</TabsTrigger>
                 <TabsTrigger value="riskscore" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm bg-indigo-50/50 text-indigo-700">🧠 Score IA</TabsTrigger>
                 <TabsTrigger value="loyalty" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm text-amber-700 data-[state=active]:text-amber-700 bg-amber-50/50">Fidélité</TabsTrigger>
                 <TabsTrigger value="assistant" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm bg-blue-50/50 text-blue-700 data-[state=active]:text-blue-700 font-bold"><Sparkles className="h-3 w-3 mr-1" /> IA Assistant</TabsTrigger>
+                <TabsTrigger value="messages" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm bg-indigo-50/50 text-indigo-700 font-bold"><MessageCircle className="h-3 w-3 mr-1" /> Messages</TabsTrigger>
                 <TabsTrigger value="help" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Aide</TabsTrigger>
               </TabsList>
 
@@ -358,6 +394,82 @@ export const PatientDashboard = () => {
                   {/* Center Column: Metrics & Charts */}
                   <div className="col-span-12 lg:col-span-8 xl:col-span-6 space-y-6">
                     {/* Metrics Row */}
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="font-extrabold text-xl tracking-tight flex items-center gap-2">
+                        <Activity className="h-5 w-5 text-blue-500" />
+                        Métriques Temps Réel
+                      </h3>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <div className="flex items-center gap-4">
+                            <div className="flex bg-slate-100 p-1 rounded-xl">
+                              {(['XOF', 'EUR', 'USD'] as Currency[]).map((cur) => (
+                                <Button
+                                  key={cur}
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setCurrency(cur)}
+                                  className={cn("h-8 px-3 rounded-lg text-[10px] font-bold", currency === cur ? "bg-white shadow-sm text-blue-600" : "text-slate-500")}
+                                >
+                                  {cur}
+                                </Button>
+                              ))}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="rounded-xl border hover:bg-slate-50 relative"
+                            >
+                              <Settings className="h-5 w-5 text-slate-600" />
+                            </Button>
+                          </div>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[425px] glass-morphism border-white/40">
+                          <DialogHeader>
+                            <DialogTitle>Réglages des Seuils de Santé</DialogTitle>
+                            <CardDescription>
+                              Personnalisez les seuils d'alerte pour votre dashboard.
+                            </CardDescription>
+                          </DialogHeader>
+                          <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <Label htmlFor="glucose" className="col-span-2 text-xs">Glycémie Max (g/L)</Label>
+                              <Input
+                                id="glucose"
+                                type="number"
+                                step="0.01"
+                                value={thresholds.glucoseMax}
+                                onChange={(e) => setThresholds({ ...thresholds, glucoseMax: parseFloat(e.target.value) })}
+                                className="col-span-2 h-8"
+                              />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <Label htmlFor="sys" className="col-span-2 text-xs">Tension Syst. Max</Label>
+                              <Input
+                                id="sys"
+                                type="number"
+                                value={thresholds.sysMax}
+                                onChange={(e) => setThresholds({ ...thresholds, sysMax: parseInt(e.target.value) })}
+                                className="col-span-2 h-8"
+                              />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <Label htmlFor="spo2" className="col-span-2 text-xs">Oxygène Min (%)</Label>
+                              <Input
+                                id="spo2"
+                                type="number"
+                                value={thresholds.spO2Min}
+                                onChange={(e) => setThresholds({ ...thresholds, spO2Min: parseInt(e.target.value) })}
+                                className="col-span-2 h-8"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex justify-end">
+                            <Button size="sm" onClick={() => { }} className="rounded-xl">Enregistrer</Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <HealthMetricCard
                         title="Glycémie"
@@ -405,12 +517,21 @@ export const PatientDashboard = () => {
                               <p className="text-sm text-muted-foreground">Détection proactive d'anomalies & conseils personnalisés</p>
                             </div>
                           </div>
-                          <Button
-                            onClick={() => setAnalysis(analyzeHealthData(metrics))}
-                            className="rounded-xl px-6 bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200"
-                          >
-                            Lancer l'analyse
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => setAnalysis(analyzeHealthData(metrics))}
+                              className="rounded-xl px-6 bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200"
+                            >
+                              Lancer l'analyse
+                            </Button>
+                            <Button
+                              className="rounded-xl px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                              onClick={exportMedicalReport}
+                            >
+                              <FileDown className="h-4 w-4 mr-2" />
+                              Export PDF
+                            </Button>
+                          </div>
                         </div>
 
                         {analysis && (
@@ -477,7 +598,7 @@ export const PatientDashboard = () => {
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-2xl font-black text-foreground/80">{order.total.toLocaleString()} FCFA</p>
+                            <p className="text-2xl font-black text-foreground/80">{expatService.formatPrice(order.total, currency)}</p>
                             <p className="text-xs text-muted-foreground">Paiement : Mobile Money</p>
                           </div>
                         </div>
@@ -515,7 +636,11 @@ export const PatientDashboard = () => {
                               <Button className="flex-1 rounded-xl glass-morphism hover:bg-white/60 border-white/40 text-foreground" variant="outline">
                                 <MapPin className="h-4 w-4 mr-2 text-red-500" /> Suivre sur la carte
                               </Button>
-                              <Button className="flex-1 rounded-xl glass-morphism hover:bg-white/60 border-white/40 text-foreground" variant="outline">
+                              <Button
+                                className="flex-1 rounded-xl glass-morphism hover:bg-white/60 border-white/40 text-foreground"
+                                variant="outline"
+                                onClick={() => navigate('/messages')}
+                              >
                                 <MessageCircle className="h-4 w-4 mr-2 text-blue-500" /> Contacter
                               </Button>
                             </div>
@@ -597,6 +722,29 @@ export const PatientDashboard = () => {
               </TabsContent>
 
               <TabsContent value="wallet" className="outline-none">
+                {/* Global Insurances */}
+                {globalPolicies.map(policy => (
+                  <div key={policy.id} className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 group hover:border-blue-300 transition-all">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center border border-blue-100">
+                          {policy.provider === 'Cigna' ? <Globe className="h-5 w-5 text-blue-500" /> : <Shield className="h-5 w-5 text-emerald-500" />}
+                        </div>
+                        <div>
+                          <p className="font-bold text-sm text-slate-900">{policy.provider} International</p>
+                          <p className="text-[10px] text-slate-500 font-medium">#{policy.policyNumber}</p>
+                        </div>
+                      </div>
+                      <Badge className="bg-emerald-100 text-emerald-600 border-none text-[9px] font-bold">ACTIVE</Badge>
+                    </div>
+                    <div className="flex items-center justify-between mt-4">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">Couverture</span>
+                      <span className="text-xs font-black text-blue-600">{(policy.coverageRate * 100)}% Tiers-payant</span>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Default Wallet */}
                 <EWalletWidget />
                 <div className="mt-6">
                   <h3 className="text-lg font-bold mb-4">Historique des transactions</h3>
@@ -620,6 +768,10 @@ export const PatientDashboard = () => {
 
               <TabsContent value="medical" className="outline-none">
                 <MedicalRecordSection />
+              </TabsContent>
+
+              <TabsContent value="family" className="outline-none">
+                <FamilyProfiles />
               </TabsContent>
 
               <TabsContent value="reminders" className="outline-none">
@@ -648,6 +800,11 @@ export const PatientDashboard = () => {
 
               <TabsContent value="riskscore" className="outline-none">
                 <PatientRiskScore patientId={user?.id} />
+              </TabsContent>
+              <TabsContent value="messages" className="outline-none">
+                <div className="glass-card overflow-hidden h-[700px]">
+                  <MessagingCenter />
+                </div>
               </TabsContent>
             </Tabs>
           </div>

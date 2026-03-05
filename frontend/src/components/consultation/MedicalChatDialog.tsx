@@ -9,6 +9,7 @@ import { useVoiceAssistant } from "@/lib/voiceAssistant";
 import VoiceVisualizer from "./VoiceVisualizer";
 import DNABackground from "./DNABackground";
 import VirtualWaitingRoom from "./VirtualWaitingRoom";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Message {
     id: string;
@@ -31,6 +32,7 @@ const MedicalChatDialog = ({ isOpen, onClose }: MedicalChatDialogProps) => {
     const [currentView, setCurrentView] = useState<'chat' | 'waiting-room'>('chat');
     const [assignedDoctor, setAssignedDoctor] = useState("");
     const scrollRef = useRef<HTMLDivElement>(null);
+    const { profile } = useAuth();
 
     const {
         isListening,
@@ -52,7 +54,8 @@ const MedicalChatDialog = ({ isOpen, onClose }: MedicalChatDialogProps) => {
         if (isOpen && messages.length === 0) {
             // Initial greeting
             setIsTyping(true);
-            const greeting = "Bonjour, je suis Leslie. J'espère que vous allez bien ? Comment puis-je rendre votre visite agréable ? Quel est le motif de votre consultation aujourd'hui ?";
+            const userName = profile?.name ? ` ${profile.name}` : "";
+            const greeting = `Bonjour${userName}, je suis Leslie. J'espère que vous allez bien ? Comment puis-je rendre votre visite agréable ? Quel est le motif de votre consultation aujourd'hui ?`;
 
             setTimeout(() => {
                 addMessage('assistant', greeting);

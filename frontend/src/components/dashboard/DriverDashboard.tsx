@@ -107,6 +107,23 @@ export const DriverDashboard = () => {
   useEffect(() => {
     if (user?.id) {
       fetchDashboardData()
+
+      // Real-time listener for NEW and UPDATED orders (Sprint 39)
+      const channel = supabase
+        .channel('driver-missions')
+        .on(
+          'postgres_changes',
+          { event: '*', table: 'orders' },
+          () => {
+            console.log('Real-time order update detected, refreshing...')
+            fetchDashboardData()
+          }
+        )
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(channel)
+      }
     }
   }, [user])
 
@@ -520,26 +537,28 @@ export const DriverDashboard = () => {
 
           <TabsContent value="history" className="outline-none">
             <div className="glass-card overflow-hidden">
-              <Table>
-                <TableHeader className="bg-white/10">
-                  <TableRow className="border-white/20">
-                    <TableHead className="font-black uppercase text-[10px] tracking-widest">Date</TableHead>
-                    <TableHead className="font-black uppercase text-[10px] tracking-widest">ID</TableHead>
-                    <TableHead className="font-black uppercase text-[10px] tracking-widest">Client</TableHead>
-                    <TableHead className="font-black uppercase text-[10px] tracking-widest text-right">Gain</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {historyDeliveries.map((d) => (
-                    <TableRow key={d.id} className="border-white/10 hover:bg-white/20 transition-colors">
-                      <TableCell className="text-xs font-bold text-muted-foreground">{d.date}</TableCell>
-                      <TableCell className="font-bold">{d.orderId}</TableCell>
-                      <TableCell className="text-sm font-medium">{d.customer}</TableCell>
-                      <TableCell className="text-right font-black text-green-600">{d.fee} F</TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-white/10">
+                    <TableRow className="border-white/20">
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest whitespace-nowrap">Date</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest whitespace-nowrap">ID</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest whitespace-nowrap">Client</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest text-right whitespace-nowrap">Gain</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {historyDeliveries.map((d) => (
+                      <TableRow key={d.id} className="border-white/10 hover:bg-white/20 transition-colors">
+                        <TableCell className="text-xs font-bold text-muted-foreground whitespace-nowrap">{d.date}</TableCell>
+                        <TableCell className="font-bold whitespace-nowrap">{d.orderId}</TableCell>
+                        <TableCell className="text-sm font-medium whitespace-nowrap">{d.customer}</TableCell>
+                        <TableCell className="text-right font-black text-green-600 whitespace-nowrap">{d.fee} F</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           </TabsContent>
 

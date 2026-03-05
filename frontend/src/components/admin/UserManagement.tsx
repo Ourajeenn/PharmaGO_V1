@@ -192,99 +192,101 @@ export const UserManagement = ({ roleFilter = 'all' }: UserManagementProps) => {
                 </div>
             </div>
 
-            <div className="rounded-md border bg-white">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Utilisateur</TableHead>
-                            <TableHead>Contact</TableHead>
-                            <TableHead>Rôle</TableHead>
-                            <TableHead>Statut</TableHead>
-                            <TableHead>Date d'inscription</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {loading ? (
+            <div className="rounded-md border bg-white overflow-hidden">
+                <div className="overflow-x-auto">
+                    <Table>
+                        <TableHeader>
                             <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center">
-                                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                                </TableCell>
+                                <TableHead className="whitespace-nowrap">Utilisateur</TableHead>
+                                <TableHead className="whitespace-nowrap">Contact</TableHead>
+                                <TableHead className="whitespace-nowrap">Rôle</TableHead>
+                                <TableHead className="whitespace-nowrap">Statut</TableHead>
+                                <TableHead className="whitespace-nowrap">Date d'inscription</TableHead>
+                                <TableHead className="text-right whitespace-nowrap">Actions</TableHead>
                             </TableRow>
-                        ) : filteredUsers.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                                    Aucun utilisateur trouvé
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            filteredUsers.map((user) => (
-                                <TableRow key={user.id}>
-                                    <TableCell>
-                                        <div className="font-medium">{user.name || 'Sans nom'}</div>
-                                        <div className="text-xs text-muted-foreground font-mono">{user.id.slice(0, 8)}</div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="text-sm">{user.email || 'Email non renseigné'}</div>
-                                        <div className="text-xs text-muted-foreground">{user.phone}</div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge className={getRoleBadgeColor(user.role)}>
-                                            {user.role}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        {user.verified ? (
-                                            <Badge className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100 gap-1">
-                                                <CheckCircle className="h-3 w-3" /> Vérifié
-                                            </Badge>
-                                        ) : (
-                                            <Badge className="bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100 gap-1">
-                                                <XCircle className="h-3 w-3" /> Non vérifié
-                                            </Badge>
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        {new Date(user.created_at).toLocaleDateString()}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                                    <span className="sr-only">Ouvrir menu</span>
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                <DropdownMenuItem onClick={() => navigator.clipboard.writeText(user.id)}>
-                                                    Copier ID
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem onClick={() => handleVerifyUser(user.id, user.verified)}>
-                                                    <ShieldAlert className="mr-2 h-4 w-4" />
-                                                    {user.verified ? 'Révoquer' : 'Vérifier'}
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleEditUser(user)}>
-                                                    <UserCog className="mr-2 h-4 w-4" />
-                                                    Modifier Profil
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem
-                                                    className="text-red-600"
-                                                    onClick={() => handleDeleteUser(user.id)}
-                                                >
-                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                    Supprimer
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                        </TableHeader>
+                        <TableBody>
+                            {loading ? (
+                                <TableRow>
+                                    <TableCell colSpan={6} className="h-24 text-center">
+                                        <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
+                            ) : filteredUsers.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                                        Aucun utilisateur trouvé
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                filteredUsers.map((user) => (
+                                    <TableRow key={user.id}>
+                                        <TableCell>
+                                            <div className="font-medium">{user.name || 'Sans nom'}</div>
+                                            <div className="text-xs text-muted-foreground font-mono">{user.id.slice(0, 8)}</div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="text-sm">{user.email || 'Email non renseigné'}</div>
+                                            <div className="text-xs text-muted-foreground">{user.phone}</div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge className={getRoleBadgeColor(user.role)}>
+                                                {user.role}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            {user.verified ? (
+                                                <Badge className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100 gap-1">
+                                                    <CheckCircle className="h-3 w-3" /> Vérifié
+                                                </Badge>
+                                            ) : (
+                                                <Badge className="bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100 gap-1">
+                                                    <XCircle className="h-3 w-3" /> Non vérifié
+                                                </Badge>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            {new Date(user.created_at).toLocaleDateString()}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                                        <span className="sr-only">Ouvrir menu</span>
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                    <DropdownMenuItem onClick={() => navigator.clipboard.writeText(user.id)}>
+                                                        Copier ID
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem onClick={() => handleVerifyUser(user.id, user.verified)}>
+                                                        <ShieldAlert className="mr-2 h-4 w-4" />
+                                                        {user.verified ? 'Révoquer' : 'Vérifier'}
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleEditUser(user)}>
+                                                        <UserCog className="mr-2 h-4 w-4" />
+                                                        Modifier Profil
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem
+                                                        className="text-red-600"
+                                                        onClick={() => handleDeleteUser(user.id)}
+                                                    >
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        Supprimer
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
             </div>
 
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>

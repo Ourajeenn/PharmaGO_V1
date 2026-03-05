@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import Header from '../components/Header';
+import Header from '../components/core/Header';
 import { DataSaverProvider } from '../contexts/DataSaverContext';
 import * as useAuthHook from '../hooks/useAuth';
 
@@ -9,10 +9,10 @@ import * as useAuthHook from '../hooks/useAuth';
 vi.mock('../components/cart/CartDrawer', () => ({
     CartDrawer: () => <div data-testid="cart-drawer">Cart</div>
 }));
-vi.mock('../components/NotificationsPopover', () => ({
+vi.mock('../components/ui/NotificationsPopover', () => ({
     NotificationsPopover: () => <div data-testid="notifications">Notifications</div>
 }));
-vi.mock('../components/ThemeToggle', () => ({
+vi.mock('../components/core/ThemeToggle', () => ({
     ThemeToggle: () => <div data-testid="theme-toggle">Theme</div>
 }));
 

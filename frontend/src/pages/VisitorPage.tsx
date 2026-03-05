@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ShoppingCart, Eye, Search, MapPin, Globe, ArrowRight } from "lucide-react";
-import NetworkBackground from "@/components/NetworkBackground";
+import NetworkBackground from "@/components/core/NetworkBackground";
 
 const VisitorPage = () => {
   const navigate = useNavigate();
@@ -148,3 +148,4 @@ const VisitorPage = () => {
 };
 
 export default VisitorPage;
+

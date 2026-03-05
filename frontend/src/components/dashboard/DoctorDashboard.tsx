@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/integrations/supabase/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -42,9 +43,10 @@ import {
 import { toast } from 'sonner'
 import { PremiumDashboardLayout } from './PremiumDashboardLayout'
 import { DrugDatabaseSection } from '@/components/doctor/DrugDatabaseSection'
-import { SecureMessagingSection } from '@/components/doctor/SecureMessagingSection'
+import { MessagingCenter } from '@/components/messaging/MessagingCenter'
 
 export const DoctorDashboard = () => {
+  const navigate = useNavigate()
   const { user, profile } = useAuth()
   const [loading, setLoading] = useState(true)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
@@ -326,6 +328,14 @@ export const DoctorDashboard = () => {
                       <Button className="flex-1 rounded-xl bg-primary shadow-xl shadow-primary/20 font-bold text-xs" size="sm">
                         Consulter Dossier
                       </Button>
+                      <Button
+                        variant="outline"
+                        className="rounded-xl glass-morphism border-white/40 px-4"
+                        size="sm"
+                        onClick={() => navigate('/messages')}
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                      </Button>
                       <Button variant="outline" className="rounded-xl glass-morphism border-white/40 px-4" size="sm">
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -346,7 +356,9 @@ export const DoctorDashboard = () => {
           </TabsContent>
 
           <TabsContent value="messaging" className="outline-none">
-            <SecureMessagingSection />
+            <div className="glass-card overflow-hidden h-[700px]">
+              <MessagingCenter />
+            </div>
           </TabsContent>
 
           <TabsContent value="history" className="outline-none">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '@/components/Header';
+import Header from '@/components/core/Header';
 import { useECarnet } from '@/contexts/ECarnetContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,11 +17,15 @@ import {
     ArrowLeft, ArrowRight, User, FileText, Syringe, TrendingUp, AlertCircle,
     Calendar as CalendarIcon, FileHeart, Plus, Activity, Bell, Settings, MoreHorizontal, CheckCircle, Heart, Zap, Shield
 } from 'lucide-react';
-import ScrollReveal from '@/components/ScrollReveal';
+import ScrollReveal from '@/components/home/ScrollReveal';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import OrderHistory from '@/components/ecarnet/OrderHistory';
 import { PredictiveHealthService, RenewalAlert } from '@/services/PredictiveHealthService';
+import { PDFService } from '@/services/PDFService';
+import { NotificationService } from '@/services/NotificationService';
+import { toast } from 'sonner';
+import { Clock, Info, CheckCircle2, Sparkles } from 'lucide-react';
 
 const ECarnetDashboard = () => {
     const navigate = useNavigate();
@@ -181,13 +185,47 @@ const ECarnetDashboard = () => {
                                     )}
                                 </div>
                                 <div className="text-center md:text-left">
-                                    <h2 className="text-3xl font-black uppercase tracking-tighter text-foreground/90 leading-tight">
-                                        {currentPatient ? `${currentPatient.firstName} ${currentPatient.lastName}` : 'Patient'}
-                                    </h2>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <div className="flex items-center gap-2 cursor-pointer group/profile">
+                                                <h2 className="text-3xl font-black uppercase tracking-tighter text-foreground/90 leading-tight group-hover/profile:text-primary transition-colors">
+                                                    {currentPatient ? `${currentPatient.firstName} ${currentPatient.lastName}` : 'Patient'}
+                                                </h2>
+                                                <MoreHorizontal className="h-5 w-5 opacity-20 group-hover/profile:opacity-100 transition-all" />
+                                            </div>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="start" className="w-64 glass-card border-white/40 shadow-2xl bg-white/90 backdrop-blur-xl z-50">
+                                            <DropdownMenuLabel className="font-black uppercase tracking-widest text-[10px] opacity-40">Membres de la famille</DropdownMenuLabel>
+                                            <DropdownMenuSeparator className="bg-foreground/5" />
+                                            {patients.map(p => (
+                                                <DropdownMenuItem
+                                                    key={p.id}
+                                                    onClick={() => setCurrentPatient(p)}
+                                                    className={`flex flex-col items-start p-3 rounded-xl cursor-pointer mb-1 ${currentPatient?.id === p.id ? 'bg-primary/10 border-l-4 border-primary' : 'hover:bg-foreground/5'}`}
+                                                >
+                                                    <span className="font-black uppercase tracking-tight text-xs">{p.firstName} {p.lastName}</span>
+                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase">{p.relationship || 'Moi'}</span>
+                                                </DropdownMenuItem>
+                                            ))}
+                                            <DropdownMenuSeparator className="bg-foreground/5" />
+                                            <DropdownMenuItem
+                                                onClick={() => navigate('/ecarnet/new-patient')}
+                                                className="p-3 rounded-xl font-black uppercase text-[10px] text-primary flex items-center justify-between hover:bg-primary/5 cursor-pointer"
+                                            >
+                                                Ajouter un membre
+                                                <Plus className="h-4 w-4" />
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                     <div className="flex items-center gap-2 justify-center md:justify-start">
                                         <Badge className="bg-primary/10 text-primary border-primary/20 font-black uppercase tracking-widest text-[10px]">
                                             {currentPatient ? `Dossier #${currentPatient.id.slice(0, 6)}` : 'Chargement...'}
                                         </Badge>
+                                        {currentPatient?.relationship && currentPatient.relationship !== 'Moi' && (
+                                            <Badge className="bg-slate-500/10 text-slate-600 border-slate-500/20 font-black uppercase tracking-widest text-[10px]">
+                                                {currentPatient.relationship}
+                                            </Badge>
+                                        )}
                                         <Badge className="bg-green-500/10 text-green-600 border-green-500/20 font-black uppercase tracking-widest text-[10px]">Vérifié</Badge>
                                     </div>
                                 </div>
@@ -230,9 +268,17 @@ const ECarnetDashboard = () => {
                                 <Button className="h-14 w-14 rounded-2xl glass-morphism border-white/50 bg-white/60 hover:bg-white/80 transition-all" onClick={() => navigate('/ecarnet/profile')}>
                                     <Settings className="h-6 w-6 text-foreground/70" />
                                 </Button>
-                                <Button className="h-14 px-8 rounded-2xl bg-foreground text-background font-black uppercase tracking-widest hover:scale-[1.02] transition-all">
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Nouveau Rapport
+                                <Button
+                                    className="h-14 px-8 rounded-2xl bg-foreground text-background font-black uppercase tracking-widest hover:scale-[1.02] transition-all"
+                                    onClick={() => {
+                                        if (summary) {
+                                            PDFService.generateMedicalReport(summary);
+                                            toast.success("Bilan de santé généré");
+                                        }
+                                    }}
+                                >
+                                    <FileText className="h-4 w-4 mr-2" />
+                                    Exporter le Bilan
                                 </Button>
                             </div>
                         </div>
@@ -330,6 +376,57 @@ const ECarnetDashboard = () => {
                                         </div>
                                     </div>
                                 </div>
+                            </ScrollReveal>
+
+                            <ScrollReveal animation="fade-up" delay={0.35}>
+                                {/* Intelligence & Rappels Section */}
+                                <section className="mb-12">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h2 className="text-3xl font-black uppercase tracking-tighter text-slate-900">Rappels de Médicaments</h2>
+                                        <Badge variant="outline" className="rounded-full border-primary/30 text-primary bg-primary/5 px-4 h-8 font-bold">
+                                            <Sparkles className="h-3 w-3 mr-2" /> Analyse IA
+                                        </Badge>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {currentPatient?.treatments && currentPatient.treatments.length > 0 ? (
+                                            currentPatient.treatments.map((t) => (
+                                                <Card key={t.id} className="group relative overflow-hidden border-none bg-white/60 backdrop-blur-xl rounded-[2.5rem] shadow-xl shadow-slate-200/50 hover:shadow-primary/10 transition-all duration-500">
+                                                    <CardContent className="p-8">
+                                                        <div className="flex items-start justify-between mb-6">
+                                                            <div className="w-14 h-14 rounded-3xl bg-primary/10 flex items-center justify-center text-primary shadow-inner group-hover:scale-110 transition-all duration-500">
+                                                                <Clock className="h-7 w-7" />
+                                                            </div>
+                                                            <Badge variant="secondary" className="bg-slate-100 text-slate-500 rounded-full px-3 h-6 text-[10px] font-bold uppercase tracking-widest">Suivi</Badge>
+                                                        </div>
+                                                        <h3 className="text-xl font-black text-slate-900 mb-2 truncate uppercase tracking-tight">{t.name}</h3>
+                                                        <p className="text-sm text-slate-500 font-medium mb-8 leading-relaxed line-clamp-2">{t.dosage}</p>
+                                                        <Button
+                                                            className="w-full h-14 rounded-2xl bg-slate-900 hover:bg-primary text-white font-black uppercase tracking-widest transition-all duration-500 group-hover:shadow-lg group-hover:shadow-primary/25"
+                                                            onClick={() => {
+                                                                NotificationService.scheduleMedicationReminder(user?.id || '', t.name, "Matin");
+                                                                toast.success("Rappel activé pour " + t.name);
+                                                            }}
+                                                        >
+                                                            Activer Rappel
+                                                        </Button>
+                                                    </CardContent>
+                                                </Card>
+                                            ))
+                                        ) : (
+                                            <div className="col-span-full bg-slate-50 rounded-[2.5rem] p-12 text-center border-2 border-dashed border-slate-200">
+                                                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm text-slate-400">
+                                                    <Info className="h-8 w-8" />
+                                                </div>
+                                                <h4 className="text-lg font-black text-slate-800 mb-2">Aucun traitement détecté</h4>
+                                                <p className="text-sm text-slate-500 max-w-xs mx-auto mb-6">Scannez une ordonnance pour activer les rappels automatiques et sécuriser vos prises.</p>
+                                                <Button variant="outline" className="rounded-xl border-2 border-slate-200 font-bold px-8 h-12" onClick={() => navigate('/medicines')}>
+                                                    Scanner une ordonnance
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </section>
                             </ScrollReveal>
 
                             <ScrollReveal animation="fade-up" delay={0.4}>

@@ -27,6 +27,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import LeafletMap from '@/components/maps/LeafletMap';
+import Header from '@/components/core/Header';
 import { toast } from 'sonner';
 
 // Haversine formula for distance in KM
@@ -160,6 +161,7 @@ export default function PharmaciesGardePage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+            <Header />
             {/* Header */}
             <div className="bg-gradient-to-r from-primary to-secondary text-white py-12">
                 <div className="container mx-auto px-4">

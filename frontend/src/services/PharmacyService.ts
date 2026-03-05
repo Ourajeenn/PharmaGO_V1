@@ -37,7 +37,7 @@ const mapPharmacyData = (item: any): Pharmacy => ({
 
     // Status
     isOpen: item.isOpen !== undefined ? item.isOpen : true,
-    isOnDuty: item.isOnDuty !== undefined ? item.isOnDuty : (item.is_on_duty || false),
+    isOnDuty: item.isOnDuty !== undefined ? item.isOnDuty : (item.is_on_duty || item.isOnGuard || false),
 
     // Additional fields
     rating: item.rating || 4.5,
@@ -92,7 +92,7 @@ export const PharmacyService = {
                     latitude: item.latitude || 0,
                     longitude: item.longitude || 0,
                     isOpen: true,
-                    isOnDuty: item.is_on_duty || false,
+                    isOnDuty: item.is_on_duty || item.isOnGuard || false,
                     rating: 4.5,
                     distance: undefined,
                     inventory: item.pharmacy_inventory?.map((inv: any) => ({
@@ -137,7 +137,7 @@ export const PharmacyService = {
                 latitude: item.latitude || 0,
                 longitude: item.longitude || 0,
                 isOpen: true,
-                isOnDuty: item.is_on_duty || false,
+                isOnDuty: item.is_on_duty || item.isOnGuard || false,
                 rating: 4.5,
                 distance: undefined,
                 inventory: []
@@ -201,12 +201,13 @@ export const PharmacyService = {
     /**
      * Get personalized recommendations for a user
      * @param userId User ID
+     * @param preferredCategories Optional list of categories to prioritize
      */
-    getRecommendations: async (userId: string): Promise<Medicine[]> => {
+    getRecommendations: async (userId: string, preferredCategories?: string[]): Promise<Medicine[]> => {
         try {
             // Fetch inventory items that are in stock
             // We use 'medicine:medicines' to alias the join relation
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
             const { data, error } = await (supabase as any)
                 .from('pharmacy_inventory')
                 .select(`
@@ -231,7 +232,7 @@ export const PharmacyService = {
             // Deduplicate medicines (same medicine available in multiple pharmacies)
             const uniqueMedicines = new Map<string, Medicine>();
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
             data.forEach((item: any) => {
                 if (item.medicine && !uniqueMedicines.has(item.medicine.id)) {
                     uniqueMedicines.set(item.medicine.id, {
@@ -241,12 +242,48 @@ export const PharmacyService = {
                 }
             });
 
-            // Return top 4 unique recommendations
-            return Array.from(uniqueMedicines.values()).slice(0, 4);
+            const medicinesArray = Array.from(uniqueMedicines.values());
 
+            // Simple sorting logic: prioritized categories first
+            if (preferredCategories && preferredCategories.length > 0) {
+                medicinesArray.sort((a, b) => {
+                    const aMatch = preferredCategories.includes(a.category || '');
+                    const bMatch = preferredCategories.includes(b.category || '');
+                    if (aMatch && !bMatch) return -1;
+                    if (!aMatch && bMatch) return 1;
+                    return 0;
+                });
+            } else {
+                // Shuffle if no preference to feel dynamic
+                medicinesArray.sort(() => Math.random() - 0.5);
+            }
+
+            // Return top 6 unique recommendations
+            return medicinesArray.slice(0, 6);
         } catch (error) {
             console.error("Error fetching real recommendations:", error);
             return []; // Fail gracefully
+        }
+    },
+
+    /**
+     * Toggle the duty status of a pharmacy
+     * @param id Pharmacy ID
+     * @param isOnDuty Target status
+     */
+    togglePharmacyDuty: async (id: string, isOnDuty: boolean): Promise<boolean> => {
+        try {
+            const { error } = await supabase
+                .from('pharmacies')
+                .update({ is_on_duty: isOnDuty })
+                .eq('id', id);
+
+            if (error) throw error;
+            logger.info(`Pharmacy ${id} duty status updated to ${isOnDuty}`);
+            return true;
+        } catch (error) {
+            logger.error(`Failed to toggle pharmacy duty: ${error}`);
+            return false;
         }
     }
 };

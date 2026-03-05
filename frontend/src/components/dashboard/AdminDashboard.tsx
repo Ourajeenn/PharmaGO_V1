@@ -347,28 +347,30 @@ export const AdminDashboard = () => {
 
           <TabsContent value="orders" className="outline-none">
             <div className="glass-card overflow-hidden">
-              <Table>
-                <TableHeader className="bg-white/10">
-                  <TableRow className="border-white/20">
-                    <TableHead className="font-black uppercase text-[10px] tracking-widest">Order ID</TableHead>
-                    <TableHead className="font-black uppercase text-[10px] tracking-widest">Patient</TableHead>
-                    <TableHead className="font-black uppercase text-[10px] tracking-widest">Provider</TableHead>
-                    <TableHead className="font-black uppercase text-[10px] tracking-widest">Volume (F)</TableHead>
-                    <TableHead className="font-black uppercase text-[10px] tracking-widest text-right">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recentOrders.map((order) => (
-                    <TableRow key={order.id} className="border-white/10 hover:bg-white/20 transition-colors">
-                      <TableCell className="font-black">{order.id}</TableCell>
-                      <TableCell className="font-bold">{order.patient}</TableCell>
-                      <TableCell className="text-sm font-medium">{order.pharmacy}</TableCell>
-                      <TableCell className="text-sm font-black">{order.total.toLocaleString()}</TableCell>
-                      <TableCell className="text-right">{getStatusBadge(order.status)}</TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-white/10">
+                    <TableRow className="border-white/20">
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest whitespace-nowrap">Order ID</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest whitespace-nowrap">Patient</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest whitespace-nowrap">Provider</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest whitespace-nowrap">Volume (F)</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest text-right whitespace-nowrap">Status</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {recentOrders.map((order) => (
+                      <TableRow key={order.id} className="border-white/10 hover:bg-white/20 transition-colors">
+                        <TableCell className="font-black whitespace-nowrap">{order.id}</TableCell>
+                        <TableCell className="font-bold whitespace-nowrap">{order.patient}</TableCell>
+                        <TableCell className="text-sm font-medium whitespace-nowrap">{order.pharmacy}</TableCell>
+                        <TableCell className="text-sm font-black whitespace-nowrap">{order.total.toLocaleString()}</TableCell>
+                        <TableCell className="text-right whitespace-nowrap">{getStatusBadge(order.status)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           </TabsContent>
 

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import Header from "@/components/core/Header";
+import Footer from "@/components/core/Footer";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Video, MessageCircle, FileText, Calendar, Clock, Shield, CheckCircle, Home } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

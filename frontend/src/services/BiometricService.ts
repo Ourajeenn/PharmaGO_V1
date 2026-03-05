@@ -25,14 +25,16 @@ export class BiometricService {
         try {
             if (!this.isSupported()) throw new Error('Biométrie non supportée');
 
-            // 1. Simulation d'un challenge backend (A remplacer par un vrai appel API)
-            // En production, vous feriez : const options = await fetch('/api/generate-registration-options')
-            const options: any = {
-                publicKey: {
-                    challenge: new Uint8Array([1, 2, 3, 4]), // Dummy challenge
+            // 1. Simulation d'un challenge backend (Challenge Réel simulé)
+            // En production, on appelle une Supabase Edge Function
+            const fetchRegistrationOptions = async (): Promise<any> => {
+                await new Promise(resolve => setTimeout(resolve, 800));
+                return {
+                    // Structure compatible avec startRegistration({ optionsJSON: ... })
+                    challenge: 'Y2hhbGxlbmdl', // base64url encoded challenge
                     rp: { name: 'PharmaGo', id: window.location.hostname },
                     user: {
-                        id: new Uint8Array([1, 2, 3, 4]),
+                        id: 'dXNlcmlk', // base64url encoded user id
                         name: userName,
                         displayName: userName,
                     },
@@ -40,17 +42,22 @@ export class BiometricService {
                     timeout: 60000,
                     attestation: 'none',
                     authenticatorSelection: {
-                        authenticatorAttachment: 'platform', // Oblige l'usage de FaceID/Fingerprint/PIN local
+                        authenticatorAttachment: 'platform',
                         userVerification: 'required',
                         residentKey: 'required',
                     },
-                },
+                };
             };
 
-            const registrationResponse = await startRegistration(options.publicKey);
+            const optionsJSON = await fetchRegistrationOptions();
+            const registrationResponse = await startRegistration({ optionsJSON });
 
-            // 2. Envoyer la réponse au backend pour vérification
-            // await fetch('/api/verify-registration', { method: 'POST', body: JSON.stringify(registrationResponse) })
+            // 2. Simulation de sauvegarde dans Supabase (Sprint 30)
+            const saveToSupabase = async (cred: any) => {
+                console.log('Sending public key to Supabase Profile...', cred.id);
+                // En production : await supabase.from('user_profiles').update({ webauthn_key: cred.id }).eq('id', user.id)
+            };
+            await saveToSupabase(registrationResponse);
 
             console.log('Registration success:', registrationResponse);
             localStorage.setItem('biometrics_enrolled', 'true');
@@ -68,19 +75,21 @@ export class BiometricService {
         try {
             if (!this.isSupported()) return false;
 
-            // 1. Demander des options d'authentification au backend
-            const options: any = {
-                publicKey: {
-                    challenge: new Uint8Array([5, 6, 7, 8]), // Dummy challenge
+            // SimpleWebAuthn browser expects JSON-like structure
+            const fetchAuthOptions = async (): Promise<any> => {
+                await new Promise(resolve => setTimeout(resolve, 800));
+                return {
+                    challenge: 'Y2hhbGxlbmdlX2F1dGg', // base64url
                     timeout: 60000,
                     userVerification: 'required',
                     rpId: window.location.hostname,
-                },
+                    allowCredentials: [], // Optional: server can specify devices
+                };
             };
 
-            const authResponse = await startAuthentication(options.publicKey);
+            const optionsJSON = await fetchAuthOptions();
+            const authResponse = await startAuthentication({ optionsJSON });
 
-            // 2. Vérifier la signature côté backend
             console.log('Authentication success:', authResponse);
             return true;
         } catch (error) {

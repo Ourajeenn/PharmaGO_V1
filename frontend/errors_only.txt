@@ -1,0 +1,26 @@
+C:\Users\jenra\Downloads\PHARMA-GO_FINALE\pharma-go-express-main\frontend\src\components\core\Header.tsx
+324:74  error  React Hook "useDataSaver" is called conditionally. React Hooks must be called in the exact same order in every component render                                                                 react-hooks/rules-of-hooks
+C:\Users\jenra\Downloads\PHARMA-GO_FINALE\pharma-go-express-main\frontend\src\components\core\Header.tsx
+326:32  error  React Hook "useDataSaver" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+C:\Users\jenra\Downloads\PHARMA-GO_FINALE\pharma-go-express-main\frontend\src\components\core\Header.tsx
+329:32  error  React Hook "useDataSaver" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+C:\Users\jenra\Downloads\PHARMA-GO_FINALE\pharma-go-express-main\frontend\src\components\core\Header.tsx
+331:93  error  React Hook "useDataSaver" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+C:\Users\jenra\Downloads\PHARMA-GO_FINALE\pharma-go-express-main\frontend\src\components\logistics\LogisticsHub.tsx
+189:46  error  Parsing error: Expected corresponding JSX closing tag for 'Badge'
+C:\Users\jenra\Downloads\PHARMA-GO_FINALE\pharma-go-express-main\frontend\src\components\ui\command.tsx
+24:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+C:\Users\jenra\Downloads\PHARMA-GO_FINALE\pharma-go-express-main\frontend\src\components\ui\textarea.tsx
+5:18  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+C:\Users\jenra\Downloads\PHARMA-GO_FINALE\pharma-go-express-main\frontend\src\hooks\useAuth.ts
+42:39  error  'profileError' is never reassigned. Use 'const' instead  prefer-const
+C:\Users\jenra\Downloads\PHARMA-GO_FINALE\pharma-go-express-main\frontend\src\lib\prescriptionOCR.ts
+126:49  error  Unnecessary escape character: \/  no-useless-escape
+C:\Users\jenra\Downloads\PHARMA-GO_FINALE\pharma-go-express-main\frontend\src\lib\prescriptionOCR.ts
+126:51  error  Unnecessary escape character: \-  no-useless-escape
+C:\Users\jenra\Downloads\PHARMA-GO_FINALE\pharma-go-express-main\frontend\src\lib\prescriptionOCR.ts
+126:62  error  Unnecessary escape character: \/  no-useless-escape
+C:\Users\jenra\Downloads\PHARMA-GO_FINALE\pharma-go-express-main\frontend\src\lib\prescriptionOCR.ts
+126:64  error  Unnecessary escape character: \-  no-useless-escape
+C:\Users\jenra\Downloads\PHARMA-GO_FINALE\pharma-go-express-main\frontend\src\pages\MedicinesPage.tsx
+388:31  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions

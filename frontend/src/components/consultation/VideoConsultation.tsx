@@ -23,7 +23,11 @@ import {
     Settings,
     Camera,
     Volume2,
-    VolumeX
+    VolumeX,
+    Activity,
+    Heart,
+    Droplet,
+    Wind
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -58,6 +62,14 @@ export function VideoConsultation({ patient, appointmentId, onEnd }: VideoConsul
     const [callDuration, setCallDuration] = useState(0);
     const [notes, setNotes] = useState('');
     const [isNotesOpen, setIsNotesOpen] = useState(false);
+    const [isMetricsOverlayVisible, setIsMetricsOverlayVisible] = useState(true);
+
+    // Simulated real-time metrics for the overlay
+    const [mockMetrics] = useState({
+        glucose: "0.98 g/L",
+        bloodPressure: "125/82",
+        spO2: "98%"
+    });
 
     const isCallActive = callState === 'calling' || callState === 'connected';
 
@@ -203,7 +215,7 @@ export function VideoConsultation({ patient, appointmentId, onEnd }: VideoConsul
 
                     {/* Local Video (Doctor - Picture in Picture) */}
                     {isCallActive && (
-                        <div className="absolute bottom-4 right-4 w-48 aspect-video rounded-lg overflow-hidden border-2 border-slate-600 shadow-xl">
+                        <div className="absolute bottom-4 right-4 w-48 aspect-video rounded-lg overflow-hidden border-2 border-slate-600 shadow-xl z-30">
                             <video
                                 ref={localVideoRef}
                                 autoPlay
@@ -216,6 +228,46 @@ export function VideoConsultation({ patient, appointmentId, onEnd }: VideoConsul
                                     <VideoOff className="h-8 w-8 text-slate-500" />
                                 </div>
                             )}
+                        </div>
+                    )}
+
+                    {/* Health Metrics Overlay (Sprint 34) */}
+                    {isCallActive && isMetricsOverlayVisible && (
+                        <div className="absolute top-4 left-4 space-y-2 z-20 animate-in fade-in slide-in-from-left-4 duration-500">
+                            <div className="bg-slate-900/60 backdrop-blur-md border border-white/10 rounded-xl p-3 shadow-2xl">
+                                <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+                                    <Activity className="h-3 w-3" /> Métriques Live
+                                </p>
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-1.5 bg-blue-500/20 rounded-lg">
+                                            <Droplet className="h-3.5 w-3.5 text-blue-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] text-slate-400 font-medium">Glycémie</p>
+                                            <p className="text-sm font-bold text-white">{mockMetrics.glucose}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-1.5 bg-rose-500/20 rounded-lg">
+                                            <Heart className="h-3.5 w-3.5 text-rose-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] text-slate-400 font-medium">Tension</p>
+                                            <p className="text-sm font-bold text-white">{mockMetrics.bloodPressure}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-1.5 bg-cyan-500/20 rounded-lg">
+                                            <Wind className="h-3.5 w-3.5 text-cyan-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] text-slate-400 font-medium">SpO2</p>
+                                            <p className="text-sm font-bold text-white">{mockMetrics.spO2}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -251,6 +303,17 @@ export function VideoConsultation({ patient, appointmentId, onEnd }: VideoConsul
                             onClick={toggleScreenShare}
                         >
                             <Monitor className="h-5 w-5" />
+                        </Button>
+
+                        {/* Metrics Toggle */}
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className={`rounded-full h-12 w-12 ${!isMetricsOverlayVisible ? 'bg-slate-700/50 border-slate-700 text-slate-500' : 'bg-blue-600 border-blue-500 text-white'}`}
+                            onClick={() => setIsMetricsOverlayVisible(!isMetricsOverlayVisible)}
+                            title="Toggle Metrics Overlay"
+                        >
+                            <Activity className="h-5 w-5" />
                         </Button>
 
                         {/* Notes */}

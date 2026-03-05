@@ -1,10 +1,9 @@
 /**
  * prescriptionOCR.ts
  * Client-side OCR for prescription images using Tesseract.js.
+ * Tesseract is loaded dynamically to avoid bloating the main bundle (~6MB WASM).
  * Falls back gracefully when OpenAI Vision is unavailable.
  */
-
-import { createWorker } from 'tesseract.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export interface Medication {
@@ -63,6 +62,8 @@ export async function runOCR(
     imageSource: string | File,
     onProgress?: (p: number) => void,
 ): Promise<string> {
+    // Dynamic import — tesseract.js (~6MB WASM) loaded only when needed
+    const { createWorker } = await import('tesseract.js');
     const worker = await createWorker('fra+eng', 1, {
         logger: (m) => {
             if (m.status === 'recognizing text' && onProgress) {
@@ -122,7 +123,7 @@ export function parsePrescription(rawText: string): PrescriptionAnalysis {
     const doctorName = doctorMatch ? doctorMatch[0] : undefined;
 
     // Date: DD/MM/YYYY or YYYY-MM-DD
-    const dateMatch = rawText.match(/\b(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})\b/);
+    const dateMatch = rawText.match(/\b(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})\b/);
     const date = dateMatch ? dateMatch[1] : undefined;
 
     // Interaction detection

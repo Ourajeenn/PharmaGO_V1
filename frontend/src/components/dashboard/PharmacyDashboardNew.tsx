@@ -32,12 +32,29 @@ import {
     Pill,
     CheckCircle,
     XCircle,
-    Thermometer
+    Thermometer,
+    Menu,
+    X
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 import { WeatherWidget } from './widgets/WeatherWidget'
 import { ColdChainWidget } from './widgets/ColdChainWidget'
+import {
+    ResponsiveContainer,
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    Tooltip,
+    PieChart,
+    Pie,
+    Cell,
+    CartesianGrid,
+    AreaChart,
+    Area
+} from 'recharts'
+import { Truck } from 'lucide-react'
 
 interface SaleData {
     id: string
@@ -87,6 +104,7 @@ export const PharmacyDashboardNew = () => {
     const [sortBy, setSortBy] = useState('date')
     const [currentPage, setCurrentPage] = useState(2)
     const [profileCompletion, setProfileCompletion] = useState(70)
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
     // Data States
     const [stats, setStats] = useState<StatsData>({
@@ -119,6 +137,12 @@ export const PharmacyDashboardNew = () => {
     const [inventory, setInventory] = useState<any[]>([])
     const [pendingOrders, setPendingOrders] = useState<any[]>([])
     const [availableDrivers, setAvailableDrivers] = useState<any[]>([])
+    const [expiringSoon, setExpiringSoon] = useState<any[]>([])
+    const [predictiveSuggestions, setPredictiveSuggestions] = useState<any[]>([
+        { id: 1, name: "Paracétamol Pro", currentStock: 5, suggestedOrder: 50, reason: "Haute demande saisonnière (+20%)", priority: "high" },
+        { id: 2, name: "Sérum Physiologique", currentStock: 12, suggestedOrder: 30, reason: "Stock critique détecté", priority: "medium" },
+        { id: 3, name: "Masques FFP2", currentStock: 100, suggestedOrder: 200, reason: "Pic de pollution prévu (IA Insight)", priority: "low" }
+    ])
     const [salesData, setSalesData] = useState<SaleData[]>([
         {
             id: '1',
@@ -223,13 +247,23 @@ export const PharmacyDashboardNew = () => {
                 // Count unique categories
                 const categories = new Set(inventoryData.map((item: any) => item.medicines?.category).filter(Boolean))
 
-                // Count expired medicines
+                // Count expired medicines and expiring soon
                 const today = new Date()
+                const oneMonthFromNow = new Date()
+                oneMonthFromNow.setMonth(today.getMonth() + 1)
+
                 const expiredCount = inventoryData.filter((item: any) => {
                     if (!item.expiry_date) return false
                     return new Date(item.expiry_date) < today
                 }).length
 
+                const upcomingExpirations = inventoryData.filter((item: any) => {
+                    if (!item.expiry_date) return false
+                    const expiry = new Date(item.expiry_date)
+                    return expiry >= today && expiry <= oneMonthFromNow
+                })
+
+                setExpiringSoon(upcomingExpirations)
                 setStats(prev => ({
                     ...prev,
                     availableCategories: categories.size,
@@ -326,6 +360,17 @@ export const PharmacyDashboardNew = () => {
         }
     }
 
+    const handleB2BOrder = (wholesalerName: string, product: string, quantity: number) => {
+        toast.promise(
+            new Promise((resolve) => setTimeout(resolve, 2000)),
+            {
+                loading: `Envoi de la commande bulk vers ${wholesalerName}...`,
+                success: `Commande massive de ${quantity} unités de ${product} confirmée !`,
+                error: "Erreur lors de la liaison B2B",
+            }
+        )
+    }
+
     const handleDelete = (id: string) => {
         toast.success('Vente supprimée')
         setSalesData(prev => prev.filter(sale => sale.id !== id))
@@ -370,17 +415,28 @@ export const PharmacyDashboardNew = () => {
     }
 
     return (
-        <div className="flex h-screen bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
+        <div className="flex h-screen bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden relative">
+            {/* Mobile Menu Overlay */}
+            {isMobileMenuOpen && (
+                <div
+                    className="fixed inset-0 bg-slate-900/50 z-40 md:hidden"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                />
+            )}
+
             {/* Sidebar */}
-            <aside className="w-56 bg-white/80 backdrop-blur-md border-r border-slate-200/60 flex flex-col">
+            <aside className={`fixed inset-y-0 left-0 z-50 w-56 bg-white/95 md:bg-white/80 backdrop-blur-md border-r border-slate-200/60 flex flex-col transform transition-transform duration-200 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 {/* Logo */}
-                <div className="p-6 border-b border-slate-200/60">
+                <div className="p-6 border-b border-slate-200/60 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center">
                             <Pill className="h-5 w-5 text-white" />
                         </div>
                         <span className="font-bold text-lg text-slate-900">Pharmacy</span>
                     </div>
+                    <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMobileMenuOpen(false)}>
+                        <X className="h-5 w-5 text-slate-500" />
+                    </Button>
                 </div>
 
                 {/* Main Menu */}
@@ -468,39 +524,43 @@ export const PharmacyDashboardNew = () => {
             {/* Main Content */}
             <main className="flex-1 overflow-y-auto">
                 {/* Header */}
-                <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 px-8 py-4">
-                    <div className="flex items-center justify-between">
+                <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 px-4 lg:px-8 py-4 sticky top-0 z-30">
+                    <div className="flex items-center justify-between gap-4">
+                        <Button variant="ghost" size="icon" className="md:hidden shrink-0" onClick={() => setIsMobileMenuOpen(true)}>
+                            <Menu className="h-5 w-5 text-slate-700" />
+                        </Button>
+
                         {/* Search */}
-                        <div className="flex items-center gap-4 flex-1 max-w-md">
+                        <div className="flex items-center gap-2 flex-1 max-w-md hidden sm:flex">
                             <div className="relative flex-1">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                                 <Input
                                     placeholder="Search"
                                     value={searchQuery}
                                     onChange={(e) => handleSearch(e.target.value)}
-                                    className="pl-10 bg-slate-50 border-slate-200 rounded-lg h-9"
+                                    className="pl-10 bg-slate-50 border-slate-200 rounded-lg h-9 w-full"
                                 />
                             </div>
-                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg">
+                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg shrink-0">
                                 <Settings className="h-4 w-4 text-slate-600" />
                             </Button>
                         </div>
 
                         {/* Right Section */}
-                        <div className="flex items-center gap-4">
-                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg relative">
+                        <div className="flex items-center gap-2 md:gap-4 shrink-0">
+                            <Button variant="ghost" size="icon" className="hidden sm:inline-flex h-9 w-9 rounded-lg relative">
                                 <Bell className="h-4 w-4 text-slate-600" />
                                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                             </Button>
 
-                            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-200">
+                            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-200">
                                 <Globe className="h-4 w-4 text-slate-600" />
                                 <span className="text-sm font-medium text-slate-700">EN</span>
                                 <ChevronDown className="h-3 w-3 text-slate-400" />
                             </div>
 
-                            <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
-                                <div className="text-right">
+                            <div className="flex items-center gap-3 md:pl-4 md:border-l border-slate-200">
+                                <div className="hidden lg:block text-right">
                                     <p className="text-sm font-semibold text-slate-900">Budiono Siregar</p>
                                     <p className="text-xs text-slate-500">budionosiregar@gmail.com</p>
                                 </div>
@@ -510,10 +570,10 @@ export const PharmacyDashboardNew = () => {
                                         BS
                                     </AvatarFallback>
                                 </Avatar>
-                                <ChevronDown className="h-4 w-4 text-slate-400" />
+                                <ChevronDown className="hidden lg:block h-4 w-4 text-slate-400" />
                             </div>
 
-                            <Button className="bg-slate-900 hover:bg-slate-800 text-white text-xs px-4 py-2 rounded-lg font-semibold">
+                            <Button className="hidden xl:inline-flex bg-slate-900 hover:bg-slate-800 text-white text-xs px-4 py-2 rounded-lg font-semibold">
                                 Team Member
                             </Button>
                         </div>
@@ -530,7 +590,7 @@ export const PharmacyDashboardNew = () => {
 
                         {/* Pharmacy Sales Results */}
                         <div>
-                            <div className="flex items-center justify-between mb-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                                 <h2 className="text-lg font-bold text-slate-900">Pharmacy Sales Results</h2>
                                 <div className="flex items-center gap-3">
                                     <Select defaultValue="month">
@@ -552,7 +612,7 @@ export const PharmacyDashboardNew = () => {
                             </div>
 
                             {/* Stats Cards */}
-                            <div className="grid grid-cols-4 gap-4 mb-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                                 {/* Today's Sales */}
                                 <Card className="bg-gradient-to-br from-green-100 to-green-50 border-green-200/50 overflow-hidden">
                                     <CardContent className="p-5">
@@ -641,7 +701,7 @@ export const PharmacyDashboardNew = () => {
                             </div>
 
                             {/* Charts Row */}
-                            <div className="grid grid-cols-2 gap-6 mb-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                                 {/* Graph Report */}
                                 <Card className="bg-white border-slate-200">
                                     <CardContent className="p-6">
@@ -652,59 +712,39 @@ export const PharmacyDashboardNew = () => {
                                             </Button>
                                         </div>
 
-                                        {/* Donut Chart */}
-                                        <div className="flex items-center justify-center mb-6">
-                                            <div className="relative w-48 h-48">
-                                                <svg viewBox="0 0 200 200" className="transform -rotate-90">
-                                                    {/* Purchases - 28% */}
-                                                    <circle
-                                                        cx="100"
-                                                        cy="100"
-                                                        r="70"
-                                                        fill="none"
-                                                        stroke="#86efac"
-                                                        strokeWidth="30"
-                                                        strokeDasharray={`${28 * 4.4} 440`}
-                                                        strokeDashoffset="0"
-                                                    />
-                                                    {/* Suppliers - 18% */}
-                                                    <circle
-                                                        cx="100"
-                                                        cy="100"
-                                                        r="70"
-                                                        fill="none"
-                                                        stroke="#fda4af"
-                                                        strokeWidth="30"
-                                                        strokeDasharray={`${18 * 4.4} 440`}
-                                                        strokeDashoffset={`-${28 * 4.4}`}
-                                                    />
-                                                    {/* Sales - 12% */}
-                                                    <circle
-                                                        cx="100"
-                                                        cy="100"
-                                                        r="70"
-                                                        fill="none"
-                                                        stroke="#d1d5db"
-                                                        strokeWidth="30"
-                                                        strokeDasharray={`${12 * 4.4} 440`}
-                                                        strokeDashoffset={`-${(28 + 18) * 4.4}`}
-                                                    />
-                                                    {/* No Sales - 42% */}
-                                                    <circle
-                                                        cx="100"
-                                                        cy="100"
-                                                        r="70"
-                                                        fill="none"
-                                                        stroke="#bef264"
-                                                        strokeWidth="30"
-                                                        strokeDasharray={`${42 * 4.4} 440`}
-                                                        strokeDashoffset={`-${(28 + 18 + 12) * 4.4}`}
-                                                    />
-                                                </svg>
-                                                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                                    <p className="text-xs font-semibold text-slate-500">Total</p>
-                                                    <p className="text-3xl font-bold text-slate-900">755K</p>
-                                                </div>
+                                        {/* Donut Chart with Recharts */}
+                                        <div className="h-48 mb-6">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <PieChart>
+                                                    <Pie
+                                                        data={[
+                                                            { name: 'Purchases', value: graphData.purchases, color: '#86efac' },
+                                                            { name: 'Suppliers', value: graphData.suppliers, color: '#fda4af' },
+                                                            { name: 'Sales', value: graphData.sales, color: '#d1d5db' },
+                                                            { name: 'No Sales', value: graphData.noSales, color: '#bef264' }
+                                                        ]}
+                                                        cx="50%"
+                                                        cy="50%"
+                                                        innerRadius={60}
+                                                        outerRadius={80}
+                                                        paddingAngle={5}
+                                                        dataKey="value"
+                                                    >
+                                                        {[
+                                                            { color: '#86efac' },
+                                                            { color: '#fda4af' },
+                                                            { color: '#d1d5db' },
+                                                            { color: '#bef264' }
+                                                        ].map((entry, index) => (
+                                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                                        ))}
+                                                    </Pie>
+                                                    <Tooltip />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                            <div className="absolute top-[55%] left-[50%] -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+                                                <p className="text-[10px] font-semibold text-slate-500">Total</p>
+                                                <p className="text-xl font-bold text-slate-900">755K</p>
                                             </div>
                                         </div>
 
@@ -740,49 +780,43 @@ export const PharmacyDashboardNew = () => {
                                             </Button>
                                         </div>
 
-                                        {/* Bar Chart */}
-                                        <div className="relative h-48 flex items-end justify-between gap-3 mb-4">
-                                            {/* Y-axis labels */}
-                                            <div className="absolute left-0 top-0 bottom-0 flex flex-col justify-between text-[10px] text-slate-400 -ml-8">
-                                                <span>45K</span>
-                                                <span>30K</span>
-                                                <span>15K</span>
-                                                <span>5K</span>
-                                                <span>0K</span>
-                                            </div>
-
-                                            {/* Bars */}
-                                            {Object.entries(weeklySales).map(([day, value], index) => {
-                                                const height = (value / maxSales) * 100
-                                                const colors = [
-                                                    'from-orange-300 to-orange-200',
-                                                    'from-pink-300 to-pink-200',
-                                                    'from-lime-300 to-lime-200',
-                                                    'from-cyan-300 to-cyan-200',
-                                                    'from-red-300 to-red-200',
-                                                    'from-purple-300 to-purple-200'
-                                                ]
-
-                                                return (
-                                                    <div key={day} className="flex-1 flex flex-col items-center gap-2">
-                                                        <div className="w-full relative" style={{ height: '160px' }}>
-                                                            <div
-                                                                className={`absolute bottom-0 w-full bg-gradient-to-t ${colors[index]} rounded-t-lg transition-all hover:opacity-80 cursor-pointer`}
-                                                                style={{ height: `${height}%` }}
-                                                            >
-                                                                {/* Diagonal stripes pattern */}
-                                                                <div className="absolute inset-0 opacity-30" style={{
-                                                                    backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.5) 4px, rgba(255,255,255,0.5) 8px)`
-                                                                }}></div>
-                                                            </div>
-                                                        </div>
-                                                        <span className="text-xs font-medium text-slate-600">{day}</span>
-                                                    </div>
-                                                )
-                                            })}
+                                        {/* Bar Chart with Recharts */}
+                                        <div className="h-48 relative">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart data={Object.entries(weeklySales).map(([day, value]) => ({ day, value }))}>
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                                    <XAxis
+                                                        dataKey="day"
+                                                        axisLine={false}
+                                                        tickLine={false}
+                                                        tick={{ fontSize: 10, fill: '#94a3b8' }}
+                                                    />
+                                                    <YAxis hide />
+                                                    <Tooltip
+                                                        cursor={{ fill: '#f8fafc' }}
+                                                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                                                    />
+                                                    <Bar
+                                                        dataKey="value"
+                                                        radius={[4, 4, 0, 0]}
+                                                        fill="url(#barGradient)"
+                                                    >
+                                                        {Object.entries(weeklySales).map((entry, index) => {
+                                                            const colors = ['#fdba74', '#fda4af', '#bef264', '#67e8f9', '#fca5a5', '#d8b4fe']
+                                                            return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                                                        })}
+                                                    </Bar>
+                                                    <defs>
+                                                        <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="0%" stopColor="currentColor" stopOpacity={0.8} />
+                                                            <stop offset="100%" stopColor="currentColor" stopOpacity={0.5} />
+                                                        </linearGradient>
+                                                    </defs>
+                                                </BarChart>
+                                            </ResponsiveContainer>
 
                                             {/* Current value badge */}
-                                            <div className="absolute top-0 right-12 bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold">
+                                            <div className="absolute top-0 right-4 bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-xl">
                                                 <div className="text-[10px] text-slate-400 mb-0.5">Apr, 2025</div>
                                                 <div>${(totalSales / 1000).toFixed(2)}K</div>
                                             </div>
@@ -833,93 +867,95 @@ export const PharmacyDashboardNew = () => {
                                     </div>
 
                                     {/* Table */}
-                                    <div className="border border-slate-200 rounded-lg overflow-hidden">
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow className="bg-slate-50 hover:bg-slate-50">
-                                                    <TableHead className="w-12">
-                                                        <input type="checkbox" className="rounded border-slate-300" />
-                                                    </TableHead>
-                                                    <TableHead className="font-semibold text-slate-700 text-xs">Name</TableHead>
-                                                    <TableHead className="font-semibold text-slate-700 text-xs">Medicine</TableHead>
-                                                    <TableHead className="font-semibold text-slate-700 text-xs">User Email</TableHead>
-                                                    <TableHead className="font-semibold text-slate-700 text-xs">Quantity</TableHead>
-                                                    <TableHead className="font-semibold text-slate-700 text-xs">Total Price</TableHead>
-                                                    <TableHead className="font-semibold text-slate-700 text-xs">
-                                                        <div className="flex items-center gap-1">
-                                                            Date
-                                                            <ArrowUpDown className="h-3 w-3" />
-                                                        </div>
-                                                    </TableHead>
-                                                    <TableHead className="font-semibold text-slate-700 text-xs text-right">Actions</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {salesData.map((sale) => (
-                                                    <TableRow key={sale.id} className="hover:bg-slate-50">
-                                                        <TableCell>
+                                    <div className="border border-slate-200 rounded-lg overflow-x-auto">
+                                        <div className="min-w-[800px]">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow className="bg-slate-50 hover:bg-slate-50">
+                                                        <TableHead className="w-12">
                                                             <input type="checkbox" className="rounded border-slate-300" />
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <div className="flex items-center gap-2">
-                                                                <Avatar className="h-7 w-7">
-                                                                    <AvatarImage src={sale.avatar} />
-                                                                    <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-400 text-white text-xs">
-                                                                        {sale.name.split(' ').map(n => n[0]).join('')}
-                                                                    </AvatarFallback>
-                                                                </Avatar>
-                                                                <span className="text-sm font-medium text-slate-900">{sale.name}</span>
-                                                            </div>
-                                                        </TableCell>
-                                                        <TableCell className="text-sm text-slate-600">{sale.medicine}</TableCell>
-                                                        <TableCell className="text-sm text-slate-600">{sale.userEmail}</TableCell>
-                                                        <TableCell>
+                                                        </TableHead>
+                                                        <TableHead className="font-semibold text-slate-700 text-xs">Name</TableHead>
+                                                        <TableHead className="font-semibold text-slate-700 text-xs">Medicine</TableHead>
+                                                        <TableHead className="font-semibold text-slate-700 text-xs">User Email</TableHead>
+                                                        <TableHead className="font-semibold text-slate-700 text-xs">Quantity</TableHead>
+                                                        <TableHead className="font-semibold text-slate-700 text-xs">Total Price</TableHead>
+                                                        <TableHead className="font-semibold text-slate-700 text-xs">
                                                             <div className="flex items-center gap-1">
-                                                                <div className="w-6 h-6 bg-slate-100 rounded flex items-center justify-center">
-                                                                    <span className="text-xs font-semibold text-slate-700">{sale.quantity}</span>
-                                                                </div>
-                                                                <div className="w-5 h-5 bg-slate-900 rounded-full flex items-center justify-center">
-                                                                    <span className="text-[10px] font-bold text-white">i</span>
-                                                                </div>
+                                                                Date
+                                                                <ArrowUpDown className="h-3 w-3" />
                                                             </div>
-                                                        </TableCell>
-                                                        <TableCell className="text-sm font-semibold text-slate-900">$ {sale.totalPrice.toFixed(2)}</TableCell>
-                                                        <TableCell className="text-sm text-slate-600">{sale.date}</TableCell>
-                                                        <TableCell>
-                                                            <div className="flex items-center justify-end gap-1">
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-7 w-7 hover:bg-blue-50"
-                                                                    onClick={() => handleEdit(sale.id)}
-                                                                >
-                                                                    <Edit className="h-3.5 w-3.5 text-blue-600" />
-                                                                </Button>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-7 w-7 hover:bg-green-50"
-                                                                    onClick={() => handleView(sale.id)}
-                                                                >
-                                                                    <Eye className="h-3.5 w-3.5 text-green-600" />
-                                                                </Button>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-7 w-7 hover:bg-red-50"
-                                                                    onClick={() => handleDelete(sale.id)}
-                                                                >
-                                                                    <Trash2 className="h-3.5 w-3.5 text-red-600" />
-                                                                </Button>
-                                                                <Button variant="ghost" size="icon" className="h-7 w-7">
-                                                                    <MoreHorizontal className="h-3.5 w-3.5 text-slate-600" />
-                                                                </Button>
-                                                            </div>
-                                                        </TableCell>
+                                                        </TableHead>
+                                                        <TableHead className="font-semibold text-slate-700 text-xs text-right">Actions</TableHead>
                                                     </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {salesData.map((sale) => (
+                                                        <TableRow key={sale.id} className="hover:bg-slate-50">
+                                                            <TableCell>
+                                                                <input type="checkbox" className="rounded border-slate-300" />
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <div className="flex items-center gap-2">
+                                                                    <Avatar className="h-7 w-7">
+                                                                        <AvatarImage src={sale.avatar} />
+                                                                        <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-400 text-white text-xs">
+                                                                            {sale.name.split(' ').map(n => n[0]).join('')}
+                                                                        </AvatarFallback>
+                                                                    </Avatar>
+                                                                    <span className="text-sm font-medium text-slate-900">{sale.name}</span>
+                                                                </div>
+                                                            </TableCell>
+                                                            <TableCell className="text-sm text-slate-600">{sale.medicine}</TableCell>
+                                                            <TableCell className="text-sm text-slate-600">{sale.userEmail}</TableCell>
+                                                            <TableCell>
+                                                                <div className="flex items-center gap-1">
+                                                                    <div className="w-6 h-6 bg-slate-100 rounded flex items-center justify-center">
+                                                                        <span className="text-xs font-semibold text-slate-700">{sale.quantity}</span>
+                                                                    </div>
+                                                                    <div className="w-5 h-5 bg-slate-900 rounded-full flex items-center justify-center">
+                                                                        <span className="text-[10px] font-bold text-white">i</span>
+                                                                    </div>
+                                                                </div>
+                                                            </TableCell>
+                                                            <TableCell className="text-sm font-semibold text-slate-900">$ {sale.totalPrice.toFixed(2)}</TableCell>
+                                                            <TableCell className="text-sm text-slate-600">{sale.date}</TableCell>
+                                                            <TableCell>
+                                                                <div className="flex items-center justify-end gap-1">
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-7 w-7 hover:bg-blue-50"
+                                                                        onClick={() => handleEdit(sale.id)}
+                                                                    >
+                                                                        <Edit className="h-3.5 w-3.5 text-blue-600" />
+                                                                    </Button>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-7 w-7 hover:bg-green-50"
+                                                                        onClick={() => handleView(sale.id)}
+                                                                    >
+                                                                        <Eye className="h-3.5 w-3.5 text-green-600" />
+                                                                    </Button>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-7 w-7 hover:bg-red-50"
+                                                                        onClick={() => handleDelete(sale.id)}
+                                                                    >
+                                                                        <Trash2 className="h-3.5 w-3.5 text-red-600" />
+                                                                    </Button>
+                                                                    <Button variant="ghost" size="icon" className="h-7 w-7">
+                                                                        <MoreHorizontal className="h-3.5 w-3.5 text-slate-600" />
+                                                                    </Button>
+                                                                </div>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        </div>
                                     </div>
 
                                     {/* Pagination */}
@@ -961,6 +997,103 @@ export const PharmacyDashboardNew = () => {
                                     </div>
                                 </CardContent>
                             </Card>
+
+                            {/* Smart Inventory Section (Sprint 35) */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* Expiration Alerts */}
+                                <Card className="bg-white border-slate-200">
+                                    <CardContent className="p-6">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                                                <Bell className="h-4 w-4 text-rose-500" />
+                                                Alertes Péremption (Prochains 30j)
+                                            </h3>
+                                            <Badge variant="outline" className="bg-rose-50 text-rose-600 border-rose-200">
+                                                {expiringSoon.length} produits
+                                            </Badge>
+                                        </div>
+                                        <div className="space-y-3">
+                                            {expiringSoon.map((item, idx) => (
+                                                <div key={idx} className="flex items-center justify-between p-3 bg-rose-50/50 rounded-xl border border-rose-100">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-2 bg-white rounded-lg shadow-sm">
+                                                            <Thermometer className="h-4 w-4 text-rose-500" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-bold text-slate-900">{item.medicines?.name}</p>
+                                                            <p className="text-[10px] text-slate-500">Expire le : {new Date(item.expiry_date).toLocaleDateString()}</p>
+                                                        </div>
+                                                    </div>
+                                                    <Button size="sm" variant="ghost" className="text-rose-600 hover:bg-rose-100 text-xs">
+                                                        Soldes ?
+                                                    </Button>
+                                                </div>
+                                            ))}
+                                            {expiringSoon.length === 0 && (
+                                                <div className="text-center py-6 text-slate-400 italic text-sm">
+                                                    Aucun produit à péremption imminente
+                                                </div>
+                                            )}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                {/* Predictive Stock Reorder */}
+                                <Card className="bg-slate-900 border-slate-800 text-white overflow-hidden relative">
+                                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                                        <TrendingUp className="h-24 w-24" />
+                                    </div>
+                                    <CardContent className="p-6 relative z-10">
+                                        <div className="flex items-center justify-between mb-6">
+                                            <h3 className="text-base font-bold flex items-center gap-2 text-cyan-400">
+                                                <Globe className="h-4 w-4" />
+                                                Réapprovisionnement IA (SmartStock)
+                                            </h3>
+                                            <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
+                                                IA Insights
+                                            </Badge>
+                                        </div>
+                                        <div className="space-y-4">
+                                            {predictiveSuggestions.map((item) => (
+                                                <div key={item.id} className="p-4 bg-white/5 backdrop-blur-md rounded-xl border border-white/10 hover:bg-white/10 transition-colors">
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <div>
+                                                            <p className="font-bold text-sm">{item.name}</p>
+                                                            <p className="text-[10px] text-slate-400 flex items-center gap-1">
+                                                                <Loader2 className="h-3 w-3 animate-spin" /> {item.reason}
+                                                            </p>
+                                                        </div>
+                                                        <Badge className={`${item.priority === 'high' ? 'bg-rose-500' :
+                                                            item.priority === 'medium' ? 'bg-orange-500' : 'bg-blue-500'
+                                                            } text-[10px]`}>
+                                                            {item.priority.toUpperCase()}
+                                                        </Badge>
+                                                    </div>
+                                                    <div className="flex items-center justify-between mt-4">
+                                                        <div className="flex gap-4">
+                                                            <div>
+                                                                <p className="text-[10px] text-slate-500">Actuel</p>
+                                                                <p className="text-sm font-bold">{item.currentStock}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-[10px] text-cyan-400">Suggéré</p>
+                                                                <p className="text-sm font-bold text-cyan-400">+{item.suggestedOrder}</p>
+                                                            </div>
+                                                        </div>
+                                                        <Button
+                                                            size="sm"
+                                                            className="bg-cyan-500 hover:bg-cyan-600 text-slate-900 h-8 font-bold text-xs"
+                                                            onClick={() => handleB2BOrder("Grossiste-CI Premium", item.name, item.suggestedOrder)}
+                                                        >
+                                                            Commander
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
                         </div>
                     </div>
                 )}

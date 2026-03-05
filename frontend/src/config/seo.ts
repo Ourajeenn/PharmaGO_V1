@@ -1,4 +1,4 @@
-import SEO from "@/components/SEO";
+import SEO from "@/components/core/SEO";
 
 // Page configurations for SEO
 export const pagesSEO = {
