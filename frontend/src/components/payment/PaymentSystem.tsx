@@ -17,6 +17,7 @@ import { useCart } from "@/contexts/CartContext";
 import ClickCollectQR from "@/components/cart/ClickCollectQR";
 import { USSDSimulator } from "@/components/payment/USSDSimulator";
 import OrderInvoice from "@/components/payment/OrderInvoice";
+import { PaymentGatewayService } from "@/services/PaymentGatewayService";
 import {
   ArrowLeft,
   CreditCard,
@@ -249,30 +250,46 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
   }, [useCurrentLocation]);
 
 
-  // Main payment handler — launches USSD for mobile money, or processes directly
+  // Main payment handler — launches CinetPay for mobile money, or processes directly
   const handlePayment = async () => {
     if (!deliveryAddress || (selectedPaymentMethod !== 'cash_on_delivery' && !phoneNumber)) {
       toast.error("Veuillez remplir tous les champs obligatoires");
       return;
     }
 
-    // If mobile money → open USSD simulator first
+    // If mobile money → open real Payment Gateway (CinetPay)
     if (mobileMoneyProviders.includes(selectedPaymentMethod)) {
       setIsProcessing(true);
-      toast.info("Initialisation de la transaction mobile...");
-      setTimeout(() => {
-        setIsProcessing(false);
-        setShowUSSD(true);
-      }, 1500);
+
+      const transactionId = `CMD-${Date.now()}`;
+
+      PaymentGatewayService.processPayment(
+        finalTotal,
+        transactionId,
+        user?.user_metadata?.name || 'Client',
+        phoneNumber,
+        user?.email || 'client@pharmago.ci',
+        (successData) => {
+          console.log("Paiement CinetPay accepté:", successData);
+          setIsProcessing(false);
+          // Le paiement a réussi via l'API, on crée l'Order en base
+          processOrder(transactionId);
+        },
+        (errorData) => {
+          console.error("Échec CinetPay:", errorData);
+          setIsProcessing(false);
+          toast.error("Le paiement a été refusé ou annulé.");
+        }
+      );
       return;
     }
 
     // For non-mobile-money methods, process directly
-    await processOrder();
+    await processOrder(`CMD-${Date.now()}`);
   };
 
-  // Called after USSD success or directly for non-mobile-money
-  const processOrder = useCallback(async () => {
+  // Called after Payment Gateway success or directly for non-mobile-money
+  const processOrder = useCallback(async (forcedOrderId?: string) => {
     setShowUSSD(false);
     setIsProcessing(true);
     setPaymentStep('payment');
@@ -283,7 +300,7 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
         await new Promise(resolve => setTimeout(resolve, 2000));
       }
 
-      const newOrderId = `CMD-${Math.floor(Math.random() * 1000000)}`;
+      const newOrderId = forcedOrderId || `CMD-${Math.floor(Math.random() * 1000000)}`;
       let finalOrderId = newOrderId;
 
       // Create Order in Supabase using OrderService
@@ -925,13 +942,13 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
           </div>
         )}
 
-        {/* USSD Simulator Dialog — opens for mobile money methods */}
+        {/* USSD Simulator kept as fallback if needed but not rendered normally */}
         <USSDSimulator
-          open={showUSSD}
+          open={false}
           provider={selectedPaymentMethod}
           phoneNumber={phoneNumber}
           amount={finalTotal}
-          onSuccess={processOrder}
+          onSuccess={() => processOrder()}
           onCancel={() => setShowUSSD(false)}
         />
 

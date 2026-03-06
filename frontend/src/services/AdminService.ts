@@ -2,10 +2,12 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface AdminStats {
     totalRevenue: number;
+    mrr: number; // Monthly Recurring Revenue pour abonnements PharmaGo+
     totalOrders: number;
     activePharmacies: number;
     pendingReviews: number;
     criticalOrders: number;
+    averageSatisfaction: number; // Taux de satisfaction (sur 5)
 }
 
 export interface ChartData {
@@ -32,6 +34,16 @@ export interface Review {
     status: 'pending' | 'approved' | 'rejected';
 }
 
+export interface OrderAdmin {
+    id: string;
+    user_id: string;
+    total: number;
+    status: string;
+    created_at: string;
+    delivery_address: any;
+    user_name?: string;
+}
+
 export interface UserProfile {
     id: string;
     email: string | null;
@@ -52,9 +64,35 @@ export const AdminService = {
 
             if (ordersError) throw ordersError;
 
+            // Fetch subscriptions to calculate MRR
+            const { data: subs, error: subsError } = await (supabase as any)
+                .from('user_subscriptions')
+                .select('plan_id, status')
+                .eq('status', 'active');
+
+            let mrr = 0;
+            if (!subsError && subs) {
+                subs.forEach(sub => {
+                    if (sub.plan_id === 'essential') mrr += 5000;
+                    else if (sub.plan_id === 'comfort') mrr += 12000;
+                    else if (sub.plan_id === 'premium') mrr += 25000;
+                });
+            }
+
             const totalRevenue = orders?.reduce((acc, order) => acc + (order.total || 0), 0) || 0;
             const totalOrders = orders?.length || 0;
             const criticalOrders = orders?.filter(o => o.status === 'delayed' || o.status === 'reported').length || 0;
+
+            // Fetch average satisfaction
+            const { data: allReviews, error: allReviewsError } = await (supabase as any)
+                .from('reviews')
+                .select('rating');
+
+            let averageSatisfaction = 0;
+            if (!allReviewsError && allReviews && allReviews.length > 0) {
+                const totalRating = allReviews.reduce((acc: number, rev: any) => acc + rev.rating, 0);
+                averageSatisfaction = totalRating / allReviews.length;
+            }
 
             // Fetch active pharmacies
             const { count: pharmacyCount, error: pharmacyError } = await supabase
@@ -75,19 +113,23 @@ export const AdminService = {
 
             return {
                 totalRevenue,
+                mrr,
                 totalOrders,
                 activePharmacies: pharmacyCount || 0,
                 pendingReviews,
-                criticalOrders
+                criticalOrders,
+                averageSatisfaction
             };
         } catch (error) {
             console.error("Error fetching admin stats:", error);
             return {
                 totalRevenue: 0,
+                mrr: 0,
                 totalOrders: 0,
                 activePharmacies: 0,
                 pendingReviews: 0,
-                criticalOrders: 0
+                criticalOrders: 0,
+                averageSatisfaction: 0
             };
         }
     },
@@ -209,6 +251,34 @@ export const AdminService = {
         } catch (error) {
             console.error("Error toggling user block status:", error);
             return false;
+        }
+    },
+
+    async getRecentOrders(): Promise<OrderAdmin[]> {
+        try {
+            const { data, error } = await supabase
+                .from('orders')
+                .select(`
+                    id, user_id, total, status, created_at, delivery_address,
+                    user_profile:user_id(name)
+                `)
+                .order('created_at', { ascending: false })
+                .limit(50);
+
+            if (error) throw error;
+
+            return (data || []).map((o: any) => ({
+                id: o.id,
+                user_id: o.user_id,
+                total: o.total,
+                status: o.status,
+                created_at: o.created_at,
+                delivery_address: o.delivery_address,
+                user_name: o.user_profile?.name || 'Inconnu'
+            }));
+        } catch (error) {
+            console.error("Error fetching orders:", error);
+            return [];
         }
     }
 };

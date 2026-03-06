@@ -15,7 +15,14 @@ const AIHealthAssistant = lazy(() => import("./components/assistant/AIHealthAssi
 import Preloader from "@/components/core/Preloader";
 import { PageSkeleton } from "@/components/ui/PageSkeleton";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { useNativePushNotifications } from "@/hooks/useNativePushNotifications";
 import EmergencyDialog from "@/components/prescription/EmergencyDialog";
+
+// Setup wrapper for native push
+const NativePushSetup = () => {
+  useNativePushNotifications();
+  return null;
+};
 
 // Pages principales
 const Index = lazy(() => import("./pages/Index"));
@@ -131,6 +138,7 @@ const App = () => {
               <Toaster />
               <ReloadPrompt />
               <Sonner />
+              <NativePushSetup />
               <BrowserRouter>
                 <Suspense fallback={<Preloader />}>
                   <Routes>

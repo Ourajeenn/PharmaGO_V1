@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { AdminService, AdminStats, ChartData, Pharmacy, Review, UserProfile } from "@/services/AdminService";
+import { AdminService, AdminStats, ChartData, Pharmacy, Review, UserProfile, OrderAdmin } from "@/services/AdminService";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -45,24 +45,27 @@ const AdminDashboard = () => {
     const [pendingPharmacies, setPendingPharmacies] = useState<Pharmacy[]>([]);
     const [pendingReviews, setPendingReviews] = useState<Review[]>([]);
     const [users, setUsers] = useState<UserProfile[]>([]);
+    const [orders, setOrders] = useState<OrderAdmin[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
-            const [s, c, p, r, u] = await Promise.all([
+            const [s, c, p, r, u, o] = await Promise.all([
                 AdminService.getDashboardStats(),
                 AdminService.getRevenueChartData(),
                 AdminService.getPendingPharmacies(),
                 AdminService.getPendingReviews(),
-                AdminService.getUsers()
+                AdminService.getUsers(),
+                AdminService.getRecentOrders()
             ]);
             setStats(s);
             setChartData(c);
             setPendingPharmacies(p);
             setPendingReviews(r);
             setUsers(u);
+            setOrders(o);
             setLoading(false);
         };
         fetchData();
@@ -139,17 +142,27 @@ const AdminDashboard = () => {
                         <TabsTrigger value="users" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white">
                             Utilisateurs ({users.length})
                         </TabsTrigger>
+                        <TabsTrigger value="orders" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white">
+                            Commandes ({orders.length})
+                        </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="overview" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                         {/* Stats Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
                             <StatCard
                                 title="Chiffre d'Affaires"
-                                value={`${stats?.totalRevenue.toLocaleString()} FCFA`}
+                                value={`${stats?.totalRevenue.toLocaleString() || "0"} FCFA`}
                                 icon={<TrendingUp className="h-5 w-5 text-emerald-600" />}
                                 trend="+12.5% vs mois dernier"
                                 variant="emerald"
+                            />
+                            <StatCard
+                                title="MRR (Abonnements)"
+                                value={`${stats?.mrr.toLocaleString() || "0"} FCFA`}
+                                icon={<TrendingUp className="h-5 w-5 text-purple-600" />}
+                                trend="Revenus récurrents"
+                                variant="purple"
                             />
                             <StatCard
                                 title="Commandes Totales"
@@ -166,10 +179,10 @@ const AdminDashboard = () => {
                                 variant="purple"
                             />
                             <StatCard
-                                title="Avis à Modérer"
-                                value={stats?.pendingReviews.toString() || "0"}
-                                icon={<MessageSquare className="h-5 w-5 text-orange-600" />}
-                                trend={`${stats?.pendingReviews} actions requises`}
+                                title="Satisfaction"
+                                value={`${stats?.averageSatisfaction ? stats.averageSatisfaction.toFixed(1) : "0"}/5`}
+                                icon={<Star className="h-5 w-5 text-orange-600" />}
+                                trend="Basé sur les avis"
                                 variant="orange"
                             />
                         </div>
@@ -444,6 +457,60 @@ const AdminDashboard = () => {
                                                             </Button>
                                                         )}
                                                     </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="orders" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        <Card className="shadow-sm border-slate-200">
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <CardTitle className="flex items-center gap-2">
+                                    <ShoppingCart className="h-5 w-5 text-primary" />
+                                    Toutes les commandes
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Commande ID</TableHead>
+                                            <TableHead>Client</TableHead>
+                                            <TableHead>Montant</TableHead>
+                                            <TableHead>Statut</TableHead>
+                                            <TableHead>Date</TableHead>
+                                            <TableHead className="text-right">Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {orders.map((o) => (
+                                            <TableRow key={o.id}>
+                                                <TableCell className="font-medium text-slate-900 border-b border-slate-100">
+                                                    #{o.id.substring(0, 8).toUpperCase()}
+                                                </TableCell>
+                                                <TableCell>{o.user_name}</TableCell>
+                                                <TableCell className="font-bold">{o.total.toLocaleString()} FCFA</TableCell>
+                                                <TableCell>
+                                                    <Badge className={
+                                                        o.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' :
+                                                            o.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                                                                o.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                                                    'bg-blue-100 text-blue-700'
+                                                    }>
+                                                        {o.status}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-slate-500 text-sm">
+                                                    {new Date(o.created_at).toLocaleDateString()}
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <Button size="sm" variant="outline" className="text-xs">
+                                                        Détails
+                                                    </Button>
                                                 </TableCell>
                                             </TableRow>
                                         ))}

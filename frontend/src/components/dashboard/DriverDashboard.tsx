@@ -40,6 +40,7 @@ import { ColdChainTracker } from '@/components/delivery/ColdChainTracker'
 import { WeatherIntegration } from '@/components/weather/WeatherIntegration'
 import { DeliveryZoneManager } from '@/components/driver/DeliveryZoneManager'
 import { useSearchParams } from 'react-router-dom'
+import { SMSService } from '@/services/SMSService'
 
 export const DriverDashboard = () => {
   const { user, profile } = useAuth()
@@ -241,19 +242,14 @@ export const DriverDashboard = () => {
       // Update local state
       setDeliveries(prev => prev.map(d => d.id === orderId ? { ...d, status: newStatus } : d))
 
-      // Send SMS Notification
+      // Send SMS Notification via SMSService
       if (customerPhone) {
-        let message = ''
-        if (newStatus === 'in_transit') {
-          message = `Bonjour ${customerName}, votre livreur PharmaGo est en route ! Votre commande arrive bientôt.`
-        } else if (newStatus === 'delivered') {
-          message = `Bonjour ${customerName}, votre commande PharmaGo a été livrée avec succès. Merci de nous avoir fait confiance !`
-        }
+        let smsStatus: 'en_route' | 'livre' | 'retarde' | null = null;
+        if (newStatus === 'in_transit') smsStatus = 'en_route';
+        else if (newStatus === 'delivered') smsStatus = 'livre';
 
-        if (message) {
-          await supabase.functions.invoke('send-sms', {
-            body: { to: customerPhone, message }
-          })
+        if (smsStatus) {
+          await SMSService.sendDeliveryUpdate(customerPhone, orderId, smsStatus, profile?.name);
         }
       }
 
