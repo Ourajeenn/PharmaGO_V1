@@ -311,6 +311,13 @@ All colors MUST be HSL.
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Semi-transparent overlay to ensure watermark doesn't hide text */
+  body::before {
+    content: "";
+    @apply absolute inset-0 bg-white/60 dark:bg-black/70 pointer-events-none -z-[1];
+    position: fixed;
+  }
+
   /* Cross-browser compatibility fixes */
   /* input, textarea, select, button {
     -webkit-appearance: none;

@@ -13,9 +13,10 @@ import { useState } from 'react';
 
 interface CartDrawerProps {
   children?: React.ReactNode;
+  customTrigger?: React.ReactNode;
 }
 
-export const CartDrawer: React.FC<CartDrawerProps> = ({ children }) => {
+export const CartDrawer: React.FC<CartDrawerProps> = ({ children, customTrigger }) => {
   const { items, updateQuantity, removeFromCart, getTotalPrice, getItemCount, groupByPharmacy } = useCart();
   const navigate = useNavigate();
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
@@ -33,7 +34,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ children }) => {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        {children || (
+        {customTrigger || children || (
           <Button variant="ghost" size="sm" className="relative">
             <ShoppingCart className="h-5 w-5" />
             {itemCount > 0 && (

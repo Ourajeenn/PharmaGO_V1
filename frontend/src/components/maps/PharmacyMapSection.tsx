@@ -728,7 +728,7 @@ export const PharmacyMapSection = ({ showOnlyOnDuty = false }: PharmacyMapSectio
 
             {/* Selected Pharmacy Detail Panel (Mobile) */}
             {selectedPharmacy && (
-                <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl p-4 z-[1001] animate-in slide-in-from-bottom">
+                <div className="lg:hidden fixed bottom-[75px] left-0 right-0 bg-white rounded-t-3xl shadow-2xl p-4 z-[9980] animate-in slide-in-from-bottom border-t border-primary/20">
                     <div className="flex items-start justify-between mb-3">
                         <div>
                             <div className="flex items-center gap-2">

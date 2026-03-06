@@ -46,6 +46,18 @@ const loadStoredMessages = (): Message[] => {
     return [];
 };
 
+// ── Helper: Clean text for speech synthesis ──────────────────
+const cleanTextForSpeech = (text: string): string => {
+    return text
+        .replace(/\[ACTION:ADD_CART_.*?\]/g, '') // remove action flags
+        .replace(/\[(.*?)\]\(.*?\)/g, '$1') // replace markdown links with just the text
+        .replace(/[*_#~]/g, '') // remove markdown formatting chars
+        .replace(/[📌🆘💊🙋‍♂️🙋‍♀️✅❌⚠️]/g, '') // remove emojis
+        .replace(/;/g, ',') // replace semi-colons with comma for pacing
+        .replace(/\n\n/g, '. ') // replace double new lines with periods
+        .replace(/:/g, ','); // replace colons with commas
+};
+
 const getWelcomeMessage = (patientName?: string): Message => ({
     id: "1",
     role: "bot",
@@ -255,7 +267,7 @@ export const AIHealthAssistant = ({ isFloating = false, onClose }: AIHealthAssis
         return (
             <button
                 onClick={() => setIsMinimized(false)}
-                className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-2xl hover:shadow-primary/30 hover:scale-110 transition-all duration-300 z-[9999] group cursor-pointer p-0 border-0 bg-transparent"
+                className="fixed bottom-[80px] md:bottom-6 right-4 md:right-6 h-12 w-12 md:h-16 md:w-16 rounded-full shadow-2xl hover:shadow-primary/30 hover:scale-110 transition-all duration-300 z-[9999] group cursor-pointer p-0 border-0 bg-transparent"
                 aria-label="Ouvrir le chat Leslie"
             >
                 <div className="relative w-full h-full">
@@ -265,9 +277,9 @@ export const AIHealthAssistant = ({ isFloating = false, onClose }: AIHealthAssis
                         alt="Leslie - Assistant IA"
                         className="w-full h-full rounded-full object-cover border-[3px] border-white shadow-xl group-hover:border-primary transition-all"
                     />
-                    <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4">
+                    <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3 md:h-4 md:w-4">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-white"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 md:h-4 md:w-4 bg-emerald-500 border-2 border-white"></span>
                     </span>
                 </div>
             </button>
@@ -276,7 +288,7 @@ export const AIHealthAssistant = ({ isFloating = false, onClose }: AIHealthAssis
 
     // ── Full chat panel ──────────────────────────────────────
     return (
-        <Card className={`${isFloating ? "fixed bottom-6 right-6 w-[380px] z-[9999] shadow-2xl" : "h-[600px] flex flex-col relative"} transition-all duration-300 ${isMinimized ? "h-16 overflow-hidden" : "h-[600px]"} flex flex-col glass-card border-primary/20 overflow-hidden`}>
+        <Card className={`${isFloating ? "fixed bottom-0 md:bottom-6 right-0 md:right-6 w-full md:w-[380px] z-[9999] shadow-2xl rounded-t-2xl md:rounded-2xl border-x-0 border-b-0 md:border-x md:border-b" : "h-[600px] flex flex-col relative"} transition-all duration-300 ${isMinimized ? "h-0 overflow-hidden opacity-0 pointer-events-none" : "h-[85vh] md:h-[600px] opacity-100"} flex flex-col glass-card border-primary/20 overflow-hidden`}>
             {/* Decorative background elements */}
             <div className="absolute top-0 right-0 -m-16 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute bottom-0 left-0 -m-16 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -415,8 +427,8 @@ export const AIHealthAssistant = ({ isFloating = false, onClose }: AIHealthAssis
 
                                                 <div className="flex items-center gap-3">
                                                     {msg.role === 'bot' && (
-                                                        <button onClick={() => speak(msg.content.replace(/\*\*/g, ''))} className="hover:text-primary transition-colors text-muted-foreground">
-                                                            <Volume2 className="h-3.5 w-3.5" />
+                                                        <button onClick={() => speak(cleanTextForSpeech(msg.content))} className="hover:text-primary transition-colors text-muted-foreground p-2 -m-2">
+                                                            <Volume2 className="h-4 w-4" />
                                                         </button>
                                                     )}
 

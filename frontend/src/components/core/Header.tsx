@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, MapPin, Phone, Clock, User, ShoppingCart, Eye, Building2, Truck, Stethoscope, Shield, ArrowLeft, LogOut, ChevronDown, Mail, MessageSquare } from "lucide-react";
+import { Menu, X, MapPin, Phone, Clock, User, ShoppingCart, Eye, Building2, Truck, Stethoscope, Shield, ArrowLeft, LogOut, ChevronDown, Mail, MessageSquare, Home, FileText } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { CartDrawer } from "@/components/cart/CartDrawer"
 import { NotificationsPopover } from "@/components/ui/NotificationsPopover"
@@ -260,96 +260,97 @@ const Header = () => {
                 </div>
               )}
 
-              {/* Mobile menu toggle */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="md:hidden"
-                onClick={toggleMenu}
-                aria-label={isMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
-              >
-                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </Button>
+            </div>
+          </div>
+        </div>
+      </header >
+
+      {/* ── Mobile Bottom Navigation ── */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[9990] bg-white/95 dark:bg-black/95 backdrop-blur-xl border-t border-primary/10 shadow-[0_-4px_25px_rgba(0,0,0,0.08)] pb-safe pt-2 px-2 flex justify-between items-end rounded-t-3xl">
+        <Link to="/" onClick={() => setIsMenuOpen(false)} className="flex flex-col items-center justify-end gap-1 text-muted-foreground hover:text-blue-500 w-16 h-12 pb-2 transition-colors">
+          <Home className="h-[22px] w-[22px]" />
+          <span className="text-[9px] font-black uppercase tracking-wider">Accueil</span>
+        </Link>
+        <Link to="/ordonnances" onClick={() => setIsMenuOpen(false)} className="flex flex-col items-center justify-end gap-1 text-muted-foreground hover:text-emerald-500 w-16 h-12 pb-2 transition-colors">
+          <FileText className="h-[22px] w-[22px]" />
+          <span className="text-[9px] font-black uppercase tracking-wider">Ordos</span>
+        </Link>
+
+        {/* Central Floating Shopping Cart Action */}
+        <div className="relative -top-5 flex flex-col items-center w-20">
+          <CartDrawer customTrigger={
+            <button className="bg-gradient-to-tr from-blue-600 to-emerald-500 p-4 rounded-full text-white shadow-xl shadow-emerald-500/30 hover:scale-105 active:scale-95 transition-all outline-none border-4 border-white dark:border-slate-900">
+              <ShoppingCart className="h-6 w-6" />
+            </button>
+          } />
+          <span className="text-[9px] font-black uppercase tracking-wider text-slate-800 dark:text-slate-200 mt-1">Panier</span>
+        </div>
+
+        <Link to="/pharmacies" onClick={() => setIsMenuOpen(false)} className="flex flex-col items-center justify-end gap-1 text-muted-foreground hover:text-orange-500 w-16 h-12 pb-2 transition-colors">
+          <MapPin className="h-[22px] w-[22px]" />
+          <span className="text-[9px] font-black uppercase tracking-wider">Pharmas</span>
+        </Link>
+        <button onClick={() => setIsMenuOpen(!isMenuOpen)} className={`flex flex-col items-center justify-end gap-1 w-16 h-12 pb-2 transition-colors ${isMenuOpen ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}>
+          {isMenuOpen ? <X className="h-[22px] w-[22px]" /> : <Menu className="h-[22px] w-[22px]" />}
+          <span className="text-[9px] font-black uppercase tracking-wider">{isMenuOpen ? 'Fermer' : 'Menu'}</span>
+        </button>
+      </nav>
+
+      {/* Extended Mobile Menu Overlay */}
+      {isMenuOpen && (
+        <div className="md:hidden fixed inset-0 top-[80px] bottom-[70px] z-[9999] overflow-y-auto bg-white/95 dark:bg-black/95 backdrop-blur-3xl p-6 animate-in slide-in-from-bottom-4 flex flex-col gap-6 shadow-2xl rounded-t-3xl border-t border-primary/20">
+          <nav className="flex flex-col space-y-2">
+            <Link onClick={() => setIsMenuOpen(false)} to="/consultation" className="flex items-center gap-4 text-foreground hover:text-primary bg-primary/5 p-4 rounded-2xl font-bold text-sm uppercase tracking-widest transition-colors">
+              <Stethoscope className="h-5 w-5 text-primary" /> Téléconsultation (24h/24)
+            </Link>
+            <Link onClick={() => setIsMenuOpen(false)} to="/ecarnet" className="flex items-center gap-4 text-foreground hover:text-rose-500 bg-rose-500/5 p-4 rounded-2xl font-bold text-sm uppercase tracking-widest transition-colors">
+              <Stethoscope className="h-5 w-5 text-rose-500" /> Mon E-Carnet de Santé
+            </Link>
+            <Link onClick={() => setIsMenuOpen(false)} to="/medicaments" className="flex items-center gap-4 text-foreground hover:text-violet-500 bg-violet-500/5 p-4 rounded-2xl font-bold text-sm uppercase tracking-widest transition-colors">
+              <Eye className="h-5 w-5 text-violet-500" /> Tous les Médicaments
+            </Link>
+          </nav>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-2 p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <span className="text-xs font-black uppercase text-muted-foreground tracking-widest">Thème</span>
+              <ThemeToggle />
+            </div>
+            <div className="flex flex-col gap-2 p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <span className="text-xs font-black uppercase text-muted-foreground tracking-widest">Éco. Données</span>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold">{isDataSaverEnabled ? 'ON' : 'OFF'}</span>
+                <Button
+                  variant={isDataSaverEnabled ? "default" : "outline"}
+                  size="sm"
+                  className="h-8 w-12 px-0 rounded-full"
+                  onClick={toggleDataSaver}
+                >
+                  <div className={`h-5 w-5 rounded-full bg-white transition-transform shadow-sm ${isDataSaverEnabled ? 'translate-x-3' : '-translate-x-3'}`} />
+                </Button>
+              </div>
             </div>
           </div>
 
-          {/* Mobile Navigation */}
-          {isMenuOpen && (
-            <div className="md:hidden border-t border-white/10 py-4 bg-background/60 backdrop-blur-xl">
-              <nav className="flex flex-col space-y-4 px-4">
-                <a href="/" className="text-foreground hover:text-primary transition-colors font-bold text-sm uppercase tracking-widest">
-                  Accueil
-                </a>
-                <Link to="/ordonnances" className="text-foreground hover:text-primary transition-colors font-bold text-sm uppercase tracking-widest">
-                  Ordonnances
-                </Link>
-                <Link to="/medicaments" className="text-foreground hover:text-primary transition-colors font-bold text-sm uppercase tracking-widest">
-                  Médicaments
-                </Link>
-                <Link to="/pharmacies" className="text-foreground hover:text-primary transition-colors font-bold text-sm uppercase tracking-widest" onClick={() => setIsMenuOpen(false)}>
-                  Pharmacies
-                </Link>
-                <Link to="/consultation" className="text-foreground hover:text-primary transition-colors font-bold text-sm uppercase tracking-widest">
-                  Consultation
-                </Link>
-                <Link to="/ecarnet" className="text-foreground hover:text-primary transition-colors font-bold text-sm uppercase tracking-widest">
-                  E-Carnet
-                </Link>
-
-                <div className="flex items-center justify-between py-2 border-t border-white/10 mt-2">
-                  <span className="text-sm font-medium">Thème</span>
-                  <ThemeToggle />
-                </div>
-
-                {/* Assuming useDataSaver is called at the top of the component, e.g., const { isDataSaverEnabled, toggleDataSaver } = useDataSaver(); */}
-                <div className="flex items-center justify-between py-2 border-t border-white/10">
-                  <span className="text-sm font-medium">Éco. Données</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-muted-foreground">{isDataSaverEnabled ? 'ON' : 'OFF'}</span>
-                    <Button
-                      variant={isDataSaverEnabled ? "default" : "outline"}
-                      size="sm"
-                      className="h-6 w-10 px-0 rounded-full"
-                      onClick={toggleDataSaver}
-                    >
-                      <div className={`h-4 w-4 rounded-full bg-white transition-transform ${isDataSaverEnabled ? 'translate-x-3' : '-translate-x-3'}`} />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-white/10">
-                  <p className="text-xs font-bold text-muted-foreground uppercase mb-3 px-2">Espaces Utilisateurs</p>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-between bg-[#f1f7ff] text-primary border-none hover:bg-primary hover:text-white"
-                    onClick={() => {
-                      navigate('/profile-selection');
-                      setIsMenuOpen(false);
-                    }}
-                  >
-                    <span className="flex items-center">
-                      <User className="h-4 w-4 mr-2" />
-                      Choisir mon profil
-                    </span>
-                    <ArrowLeft className="h-4 w-4 rotate-180" />
-                  </Button>
-                </div>
-
-                <div className="pt-4 border-t border-white/10 space-y-2">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="w-full bg-gradient-to-r from-blue-600 to-green-500"
-                    onClick={() => navigate('/paiement')}
-                  >
-                    Commander
-                  </Button>
-                </div>
-              </nav>
-            </div>
-          )}
+          <div className="pt-4 border-t border-primary/10">
+            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-3 px-2">Espace Connexion</p>
+            <Button
+              variant="outline"
+              className="w-full justify-between h-14 bg-[#f1f7ff] dark:bg-slate-800 text-primary border-none hover:bg-primary hover:text-white rounded-2xl shadow-sm"
+              onClick={() => {
+                navigate('/profile-selection');
+                setIsMenuOpen(false);
+              }}
+            >
+              <span className="flex items-center font-black uppercase tracking-widest text-xs">
+                <User className="h-5 w-5 mr-3" />
+                Changer mon profil
+              </span>
+              <ArrowLeft className="h-5 w-5 rotate-180" />
+            </Button>
+          </div>
         </div>
-      </header >
+      )}
     </div >
   );
 };

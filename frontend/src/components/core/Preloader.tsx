@@ -190,7 +190,7 @@ const Preloader = () => {
           justify-content: center;
           align-items: center;
           min-height: 100vh;
-          z-index: 9999;
+          z-index: 99999;
           transition: opacity 0.8s ease;
         }
 

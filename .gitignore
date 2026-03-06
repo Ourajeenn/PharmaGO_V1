@@ -32,3 +32,6 @@ pharmacies-api/*.html
 pharmacies-api/*.png
 pharmacies-api/*.txt
 pharmacies-api/__pycache__/
+
+# Local Netlify folder
+.netlify
