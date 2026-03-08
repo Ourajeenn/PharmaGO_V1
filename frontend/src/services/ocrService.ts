@@ -2,6 +2,7 @@
 export interface ParsedMedication {
     name: string;
     dosage?: string;
+    frequency?: string; // e.g., "3x/jour", "matin et soir"
     quantity?: number;
     rawText: string;
     confidence: number;
@@ -36,6 +37,10 @@ const parseMedications = (text: string): ParsedMedication[] => {
         const dosageMatch = line.match(/(\d+(?:\.\d+)?\s*(?:mg|g|ml|µg|cp|comprimés|gélules))/i);
         const dosage = dosageMatch ? dosageMatch[1] : undefined;
 
+        // Try to extract frequency (e.g., 3x/jour, matin et soir, toutes les 8h)
+        const freqMatch = line.match(/(\d+\s*x\s*\/\s*(?:jour|j))|((?:matin|midi|soir|nuit)(?:\s+(?:et|ou)\s+(?:matin|midi|soir|nuit))*)|(toutes les \d+h)/i);
+        const frequency = freqMatch ? freqMatch[0] : undefined;
+
         // Try to extract quantity (e.g., 1 boite, 2 btes, x1, QSP 1 mois)
         let quantity = 1;
         const qteMatch = line.match(/(?:x|qte|quantité|boite(?:s)?)\s*(\d+)/i) || line.match(/(\d+)\s*(?:boite|bte)/i);
@@ -43,9 +48,10 @@ const parseMedications = (text: string): ParsedMedication[] => {
             quantity = parseInt(qteMatch[1], 10);
         }
 
-        // Remove the matched dosage and quantity from the name to clean it up
+        // Remove the matched dosage, frequency and quantity from the name to clean it up
         let name = line;
         if (dosage) name = name.replace(dosageMatch![0], '');
+        if (frequency) name = name.replace(freqMatch![0], '');
         if (qteMatch) name = name.replace(qteMatch[0], '');
 
         // Clean up symbols
@@ -55,6 +61,7 @@ const parseMedications = (text: string): ParsedMedication[] => {
             results.push({
                 name: name,
                 dosage: dosage,
+                frequency: frequency,
                 quantity: quantity,
                 rawText: line,
                 confidence: 85 // Mock confidence for parsing

@@ -37,25 +37,41 @@ export const PredictiveHealthService = {
             const predictions: RenewalAlert[] = [];
             const processedMedicines = new Set<string>();
 
-            // Mock logic: Assume 1 tablet/day for chronic meds
-            // In a real app, this would use the 'prescription' dosage data
+            // Real logic: Calculate based on dosage/frequency
             orders.forEach(order => {
                 order.order_items.forEach((item: any) => {
                     if (!processedMedicines.has(item.medicine_id)) {
                         processedMedicines.add(item.medicine_id);
 
                         const purchaseDate = new Date(order.created_at);
-                        const totalSupplied = item.quantity * 30; // Assuming 1 box = 30 units
-                        const daysSincePurchase = differenceInDays(new Date(), purchaseDate);
-                        const remainingDays = totalSupplied - daysSincePurchase;
 
-                        if (remainingDays < 7) { // Alert if less than a week remaining
+                        // Default values if frequency is unknown
+                        let dailyDose = 1;
+
+                        // Simple parser for frequency (e.g., "3x/jour" -> 3)
+                        const freqString = item.frequency || "";
+                        const freqMatch = freqString.match(/(\d+)\s*x\s*\/\s*(?:jour|j)/i);
+                        if (freqMatch) {
+                            dailyDose = parseInt(freqMatch[1], 10);
+                        } else if (freqString.toLowerCase().includes("matin et soir")) {
+                            dailyDose = 2;
+                        } else if (freqString.toLowerCase().includes("matin midi et soir")) {
+                            dailyDose = 3;
+                        }
+
+                        const totalUnits = item.quantity * 30; // Assuming 1 box = 30 units (could be improved with DB metadata)
+                        const daysSupplied = totalUnits / dailyDose;
+
+                        const daysSincePurchase = differenceInDays(new Date(), purchaseDate);
+                        const remainingDays = daysSupplied - daysSincePurchase;
+
+                        if (remainingDays < 7) {
                             predictions.push({
                                 id: item.medicine_id,
                                 medicineName: item.medicine.name,
-                                remainingDays: Math.max(0, remainingDays),
+                                remainingDays: Math.max(0, Math.floor(remainingDays)),
                                 renewalDate: addDays(new Date(), remainingDays),
-                                quantityRemaining: Math.max(0, remainingDays)
+                                quantityRemaining: Math.max(0, Math.floor(remainingDays * dailyDose))
                             });
                         }
                     }
@@ -75,7 +91,8 @@ export const PredictiveHealthService = {
     async checkAllergyRisk(patientId: string, medicineIds: string[]): Promise<string[]> {
         try {
             // 1. Get patient allergies
-            const { data: allergies } = await (supabase.from('medical_alerts') as any)
+            const { data: allergies } = await (supabase as any)
+                .from('medical_alerts')
                 .select('title, message')
                 .eq('patient_id', patientId)
                 .eq('type', 'Allergie');

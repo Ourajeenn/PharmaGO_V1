@@ -133,6 +133,41 @@ const OrderTracking = ({ onBackToHome }: OrderTrackingProps) => {
   const [loading, setLoading] = useState(true);
   const [showChat, setShowChat] = useState(false);
 
+  // Simulate driver movement for Phase 6 Demo
+  useEffect(() => {
+    if (!selectedOrder?.driver || selectedOrder.status !== 'in_transit') return;
+
+    const interval = setInterval(() => {
+      setOrders(prevOrders => prevOrders.map(order => {
+        if (order.id === selectedOrder.id && order.driver) {
+          // Incrementally move towards a destination (simplified)
+          const newLat = order.driver.location.lat + (Math.random() - 0.4) * 0.0005;
+          const newLng = order.driver.location.lng + (Math.random() - 0.4) * 0.0005;
+          return {
+            ...order,
+            driver: {
+              ...order.driver,
+              location: { lat: newLat, lng: newLng }
+            }
+          };
+        }
+        return order;
+      }));
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [selectedOrder?.id, selectedOrder?.status]);
+
+  // Sync selectedOrder with the updated orders list to reflect movement
+  useEffect(() => {
+    if (selectedOrder) {
+      const updated = orders.find(o => o.id === selectedOrder.id);
+      if (updated && JSON.stringify(updated.driver?.location) !== JSON.stringify(selectedOrder.driver?.location)) {
+        setSelectedOrder(updated);
+      }
+    }
+  }, [orders]);
+
   // Fetch initial orders
   useEffect(() => {
     if (!user) return;
