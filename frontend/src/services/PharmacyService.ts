@@ -152,7 +152,35 @@ export const PharmacyService = {
      * Search nearby pharmacies (Client-side filter for now or PostGIS later)
      */
     searchNearby: async (lat: number, lng: number, radius: number = 5000): Promise<Pharmacy[]> => {
-        // For now, fetch all and filter client side as we don't have PostGIS enabled/configured here
+        try {
+            // Tentative d'utiliser PostGIS si configuré via RPC
+            const { data, error } = await (supabase as any).rpc('get_pharmacies_nearby', {
+                target_lat: lat,
+                target_lng: lng,
+                max_distance_meters: radius
+            });
+
+            if (!error && Array.isArray(data)) {
+                return data.map((item: any) => ({
+                    id: item.id,
+                    name: item.name,
+                    address: item.address || "Abidjan",
+                    commune: item.commune || "Abidjan",
+                    phone: item.phone || "Non disponible",
+                    latitude: item.latitude || 0,
+                    longitude: item.longitude || 0,
+                    isOpen: true,
+                    isOnDuty: item.is_on_duty || item.isOnGuard || false,
+                    rating: 4.5,
+                    distance: item.distance / 1000, // conversion en km
+                    inventory: []
+                }));
+            }
+        } catch (e) {
+            console.warn("PostGIS RPC failed or missing. Falling back to client-side distance calc.", e);
+        }
+
+        // Fallback for demo if PostGIS RPC doesn't exist yet
         const all = await PharmacyService.getAllPharmacies();
         return all
             .map(p => {

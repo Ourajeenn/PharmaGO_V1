@@ -94,3 +94,56 @@ export const scanPrescription = async (
         throw error;
     }
 };
+
+export interface OCRInsuranceResult {
+    cardNumber: string | null;
+    company: string | null;
+    overallConfidence: number;
+    rawText: string;
+}
+
+export const scanInsuranceCard = async (
+    imageElementOrUrl: string | HTMLImageElement | File,
+    onProgress?: (progress: number) => void
+): Promise<OCRInsuranceResult> => {
+    try {
+        const { createWorker } = await import('tesseract.js');
+        const worker = await createWorker('fra', 1, {
+            logger: m => {
+                if (m.status === 'recognizing text' && onProgress) {
+                    onProgress(Math.round(m.progress * 100));
+                }
+            }
+        });
+
+        const { data: { text, confidence } } = await worker.recognize(imageElementOrUrl);
+        await worker.terminate();
+
+        // Regex routines for Insurance
+        let cardNumber = null;
+        let company = null;
+
+        // Commonly, card numbers are sequences of 8-15 digits
+        const numMatch = text.match(/\b\d{8,15}\b/);
+        if (numMatch) {
+            cardNumber = numMatch[0];
+        }
+
+        // Extremely simple heuristic for company names (CMU, ASCOMA, MCI)
+        const upperText = text.toUpperCase();
+        if (upperText.includes("CMU") || upperText.includes("COUVERTURE MALADIE UNIVERSELLE")) company = "CMU";
+        else if (upperText.includes("ASCOMA")) company = "ASCOMA";
+        else if (upperText.includes("MCI") || upperText.includes("MCI CARE")) company = "MCI CARE";
+        else if (upperText.includes("ALLIANZ")) company = "ALLIANZ";
+
+        return {
+            cardNumber,
+            company,
+            overallConfidence: confidence,
+            rawText: text
+        };
+    } catch (error) {
+        console.error("OCR Insurance Error:", error);
+        throw error;
+    }
+};

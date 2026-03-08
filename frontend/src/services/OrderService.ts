@@ -19,6 +19,8 @@ export interface CreateOrderParams {
     insurance_id?: string;
     insurance_card_number?: string;
     coverage_rate?: number;
+    delivery_lat?: number;
+    delivery_lng?: number;
 }
 
 export const OrderService = {
@@ -38,7 +40,9 @@ export const OrderService = {
                     pharmacy_id: params.items[0]?.pharmacy_id,
                     insurance_id: params.insurance_id,
                     insurance_card_number: params.insurance_card_number,
-                    coverage_rate: params.coverage_rate
+                    coverage_rate: params.coverage_rate,
+                    delivery_lat: params.delivery_lat,
+                    delivery_lng: params.delivery_lng
                 })
                 .select()
                 .single();
@@ -88,6 +92,27 @@ export const OrderService = {
                     status: 'pending',
                     driver_id: 'SYSTEM_PENDING' // Placeholder until assigned
                 });
+
+            // 5. Notify available drivers (internal simulation)
+            try {
+                const { data: drivers } = await supabase
+                    .from('user_profiles')
+                    .select('id')
+                    .eq('role', 'driver');
+
+                if (drivers && drivers.length > 0) {
+                    const driverNotifications = drivers.map(driver => ({
+                        user_id: driver.id,
+                        title: '🏁 Nouvelle livraison disponible',
+                        message: `Une nouvelle commande #${(order as any).id.substring(0, 8).toUpperCase()} est prête à être récupérée.`,
+                        type: 'info',
+                        metadata: { order_id: (order as any).id }
+                    }));
+                    await (supabase as any).from('notifications').insert(driverNotifications);
+                }
+            } catch (driverErr) {
+                console.warn('Driver service notification error (non-blocking):', driverErr);
+            }
 
             return order;
         } catch (err) {

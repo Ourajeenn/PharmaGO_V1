@@ -4,13 +4,12 @@ import App from './App.tsx'
 import './index.css'
 import 'leaflet/dist/leaflet.css'
 import * as Sentry from "@sentry/react"
-import { BrowserTracing } from "@sentry/tracing"
 
 // Sentry Initialization
 // Using a dummy DSN for demo purposes. This should be replaced with the real project DSN in the Sentry Dashboard.
 Sentry.init({
   dsn: import.meta.env.VITE_SENTRY_DSN || "https://dummy@o0.ingest.sentry.io/0",
-  integrations: [new BrowserTracing()],
+  integrations: [Sentry.browserTracingIntegration()],
 
   // Set tracesSampleRate to 1.0 to capture 100%
   // of transactions for performance monitoring.

@@ -10,6 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import PaymentModal from '@/components/payment/PaymentModal';
 import { useState } from 'react';
+import { CartSuggestions } from './CartSuggestions';
 
 interface CartDrawerProps {
   children?: React.ReactNode;
@@ -156,6 +157,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ children, customTrigger 
                 })}
               </div>
             </ScrollArea>
+
+            <CartSuggestions />
 
             <div className="border-t border-primary/20 pt-6 mt-4 space-y-4 backdrop-blur-xl bg-white/40 rounded-3xl p-6 shadow-inner mb-10">
               <div className="flex justify-between items-center">

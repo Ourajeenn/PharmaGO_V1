@@ -18,6 +18,8 @@ import ClickCollectQR from "@/components/cart/ClickCollectQR";
 import { USSDSimulator } from "@/components/payment/USSDSimulator";
 import OrderInvoice from "@/components/payment/OrderInvoice";
 import { PaymentGatewayService } from "@/services/PaymentGatewayService";
+import { AddressMapSelector } from "@/components/map/AddressMapSelector";
+import { ScannerMutuelle } from "@/components/payment/ScannerMutuelle";
 import {
   ArrowLeft,
   CreditCard,
@@ -55,7 +57,7 @@ const paymentMethods: PaymentMethod[] = [
     id: 'orange_money',
     name: 'Orange Money',
     icon: '🟠',
-    description: 'Paiement rapide et sécurisé avec Orange Money',
+    description: 'Paiement via Orange Money',
     processingTime: 'Instantané',
     available: true
   },
@@ -63,7 +65,7 @@ const paymentMethods: PaymentMethod[] = [
     id: 'wave',
     name: 'Wave',
     icon: '💙',
-    description: 'Envoi et réception d\'argent avec Wave',
+    description: 'Paiement via l\'application Wave',
     processingTime: 'Instantané',
     available: true
   },
@@ -71,15 +73,15 @@ const paymentMethods: PaymentMethod[] = [
     id: 'mtn_money',
     name: 'MTN Mobile Money',
     icon: '🟡',
-    description: 'Paiement mobile avec MTN Money',
+    description: 'Paiement via MTN Money',
     processingTime: 'Instantané',
     available: true
   },
   {
-    id: 'moov_money',
-    name: 'Moov Money',
-    icon: '🔵',
-    description: 'Solution de paiement Moov Money',
+    id: 'pharmago_wallet',
+    name: 'Wallet PharmaGo',
+    icon: '🪙',
+    description: 'Payez avec votre solde PharmaGo',
     processingTime: 'Instantané',
     available: true
   },
@@ -90,14 +92,6 @@ const paymentMethods: PaymentMethod[] = [
     description: 'Payez en espèces lors de la livraison',
     processingTime: 'À la livraison',
     available: true
-  },
-  {
-    id: 'card',
-    name: 'Carte bancaire',
-    icon: '💳',
-    description: 'Visa, Mastercard acceptées',
-    processingTime: '1-2 minutes',
-    available: false
   }
 ];
 
@@ -123,9 +117,14 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
   const [insurancePartners, setInsurancePartners] = useState<InsurancePartner[]>([]);
   const [insuranceCardNumber, setInsuranceCardNumber] = useState('');
   const [isVerifyingInsurance, setIsVerifyingInsurance] = useState(false);
+  const [deliveryLat, setDeliveryLat] = useState<number | undefined>(undefined);
+  const [deliveryLng, setDeliveryLng] = useState<number | undefined>(undefined);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(15000); // Mock balance
 
   // Mobile money provider IDs
   const mobileMoneyProviders = ['orange_money', 'wave', 'mtn_money', 'moov_money'];
+  const isMobileMoney = mobileMoneyProviders.includes(selectedPaymentMethod);
 
   // Click & Collect mode
   const [deliveryMode, setDeliveryMode] = useState<'delivery' | 'pickup'>('delivery');
@@ -252,35 +251,31 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
 
   // Main payment handler — launches CinetPay for mobile money, or processes directly
   const handlePayment = async () => {
-    if (!deliveryAddress || (selectedPaymentMethod !== 'cash_on_delivery' && !phoneNumber)) {
+    if (!deliveryAddress || (selectedPaymentMethod !== 'cash_on_delivery' && !phoneNumber && selectedPaymentMethod !== 'pharmago_wallet')) {
       toast.error("Veuillez remplir tous les champs obligatoires");
       return;
     }
 
-    // If mobile money → open real Payment Gateway (CinetPay)
-    if (mobileMoneyProviders.includes(selectedPaymentMethod)) {
+    if (selectedPaymentMethod === 'pharmago_wallet') {
+      if (walletBalance < finalTotal) {
+        toast.error("Solde insuffisant dans votre Wallet.");
+        return;
+      }
       setIsProcessing(true);
+      await processOrder(`WAL-${Date.now()}`);
+      return;
+    }
 
-      const transactionId = `CMD-${Date.now()}`;
+    // If mobile money → Show redirection simulation
+    if (isMobileMoney) {
+      setIsRedirecting(true);
 
-      PaymentGatewayService.processPayment(
-        finalTotal,
-        transactionId,
-        user?.user_metadata?.name || 'Client',
-        phoneNumber,
-        user?.email || 'client@pharmago.ci',
-        (successData) => {
-          console.log("Paiement CinetPay accepté:", successData);
-          setIsProcessing(false);
-          // Le paiement a réussi via l'API, on crée l'Order en base
-          processOrder(transactionId);
-        },
-        (errorData) => {
-          console.error("Échec CinetPay:", errorData);
-          setIsProcessing(false);
-          toast.error("Le paiement a été refusé ou annulé.");
-        }
-      );
+      // Simulate app redirection delay
+      setTimeout(() => {
+        setIsRedirecting(false);
+        setShowUSSD(true);
+      }, 3000);
+
       return;
     }
 
@@ -323,7 +318,9 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
           insurance_id: selectedInsurance?.id,
           insurance_card_number: insuranceCardNumber,
           coverage_rate: coverageRate,
-          amount_paid: finalTotal
+          amount_paid: finalTotal,
+          delivery_lat: deliveryLat,
+          delivery_lng: deliveryLng
         };
 
         const data = await OrderService.createOrder(orderParams);
@@ -380,6 +377,28 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
         setPointsToUse(0);
       }
 
+      // Trigger driver notification simulation
+      try {
+        const { data: drivers } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('role', 'driver');
+
+        if (drivers && drivers.length > 0) {
+          // Notify the first available driver for simulation
+          await supabase.from('notifications').insert({
+            user_id: drivers[0].id,
+            title: '🏁 Nouvelle livraison disponible',
+            message: `Une nouvelle commande #${finalOrderId} est prête à être récupérée.`,
+            type: 'info',
+            metadata: { order_id: finalOrderId, pharmacy_id: items[0].pharmacy_id }
+          });
+          toast.info("Un livreur a été notifié pour votre commande.");
+        }
+      } catch (driverErr) {
+        console.warn('Driver notification failed:', driverErr);
+      }
+
     } catch (error) {
       console.error('Payment Error:', error);
       toast.error("Erreur lors du traitement de la commande");
@@ -387,7 +406,7 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
     } finally {
       setIsProcessing(false);
     }
-  }, [user, finalTotal, selectedPaymentMethod, deliveryAddress, deliveryMode, pharmacyGroups, items, orderNotes, clearCart]);
+  }, [user, finalTotal, selectedPaymentMethod, deliveryAddress, deliveryMode, pharmacyGroups, items, orderNotes, clearCart, phoneNumber]);
 
   const getPaymentMethodById = (id: string) => {
     return paymentMethods.find(method => method.id === id);
@@ -536,6 +555,22 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
                           value={deliveryAddress}
                           onChange={(e) => setDeliveryAddress(e.target.value)}
                           disabled={useCurrentLocation}
+                        />
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-100">
+                        <Label className="text-sm font-medium flex items-center gap-2 mb-2">
+                          <MapPin className="h-4 w-4 text-primary" />
+                          Position précise sur la carte (Optionnel)
+                        </Label>
+                        <p className="text-xs text-muted-foreground mb-4">
+                          Déplacez-vous sur la carte et cliquez sur votre position exacte pour aider le livreur.
+                        </p>
+                        <AddressMapSelector
+                          onLocationSelect={(lat, lng) => {
+                            setDeliveryLat(lat);
+                            setDeliveryLng(lng);
+                          }}
                         />
                       </div>
 
@@ -746,7 +781,20 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
 
                             {selectedInsurance && (
                               <div className="flex-1">
-                                <Label htmlFor="card-number">Numéro de carte</Label>
+                                <div className="flex justify-between items-center mb-1">
+                                  <Label htmlFor="card-number">Numéro de carte</Label>
+                                  <ScannerMutuelle
+                                    onScanComplete={(cardNumber, _company) => {
+                                      setInsuranceCardNumber(cardNumber);
+                                      // Auto-verify when scanned
+                                      if (selectedInsurance?.id === 'cmu') setCoverageRate(70);
+                                      else if (selectedInsurance?.id === 'ascoma') setCoverageRate(80);
+                                      else if (selectedInsurance?.id === 'mci') setCoverageRate(100);
+                                      else setCoverageRate(50);
+                                      toast.success("Carte détectée et validée !");
+                                    }}
+                                  />
+                                </div>
                                 <div className="flex gap-2">
                                   <Input
                                     id="card-number"
@@ -942,9 +990,34 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
           </div>
         )}
 
-        {/* USSD Simulator kept as fallback if needed but not rendered normally */}
+        {isRedirecting && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-300">
+            <Card className="w-full max-w-sm mx-4 border-2 border-primary/20 shadow-2xl">
+              <CardContent className="py-12 text-center space-y-6">
+                <div className="relative mx-auto w-20 h-20">
+                  <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
+                  <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Smartphone className="h-8 w-8 text-primary" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-bold">Ouverture de {getPaymentMethodById(selectedPaymentMethod)?.name}</h3>
+                  <p className="text-muted-foreground">
+                    Nous vous redirigeons vers votre application de paiement pour valider la transaction.
+                  </p>
+                </div>
+                <Badge variant="outline" className="animate-pulse">
+                  Transaction sécurisée par PharmaGo
+                </Badge>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* USSD Simulator */}
         <USSDSimulator
-          open={false}
+          open={showUSSD}
           provider={selectedPaymentMethod}
           phoneNumber={phoneNumber}
           amount={finalTotal}
