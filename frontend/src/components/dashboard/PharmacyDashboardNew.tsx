@@ -587,22 +587,22 @@ export const PharmacyDashboardNew = () => {
                     <div className="p-8 space-y-6">
                         {/* Welcome */}
                         <div>
-                            <h1 className="text-3xl font-bold text-slate-900 mb-1">Welcome Code Astro!</h1>
+                            <h1 className="text-3xl font-bold text-slate-900 mb-1">Bienvenue sur votre Dashboard !</h1>
                         </div>
 
                         {/* Pharmacy Sales Results */}
                         <div>
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                                <h2 className="text-lg font-bold text-slate-900">Pharmacy Sales Results</h2>
+                                <h2 className="text-lg font-bold text-slate-900">Résultats des Ventes</h2>
                                 <div className="flex items-center gap-3">
                                     <Select defaultValue="month">
                                         <SelectTrigger className="w-32 h-9 bg-white border-slate-200 rounded-lg">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="month">This Month</SelectItem>
-                                            <SelectItem value="week">This Week</SelectItem>
-                                            <SelectItem value="today">Today</SelectItem>
+                                            <SelectItem value="month">Ce Mois</SelectItem>
+                                            <SelectItem value="week">Cette Semaine</SelectItem>
+                                            <SelectItem value="today">Aujourd'hui</SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg">
@@ -629,10 +629,10 @@ export const PharmacyDashboardNew = () => {
                                             </Button>
                                         </div>
                                         <div>
-                                            <p className="text-xs font-semibold text-green-700 mb-1">Todays Sales</p>
+                                            <p className="text-xs font-semibold text-green-700 mb-1">Ventes du jour</p>
                                             <div className="flex items-end gap-2">
-                                                <h3 className="text-2xl font-bold text-slate-900">$ {stats.todaySales.toFixed(2)}</h3>
-                                                <span className="text-xs font-semibold text-green-600 mb-1">+{stats.salesGrowth}% This Month</span>
+                                                <h3 className="text-2xl font-bold text-slate-900">{stats.todaySales.toLocaleString()} FCFA</h3>
+                                                <span className="text-xs font-semibold text-green-600 mb-1">+{stats.salesGrowth}% ce mois</span>
                                             </div>
                                         </div>
                                     </CardContent>
@@ -650,10 +650,10 @@ export const PharmacyDashboardNew = () => {
                                             </Button>
                                         </div>
                                         <div>
-                                            <p className="text-xs font-semibold text-cyan-700 mb-1">Available Categories</p>
+                                            <p className="text-xs font-semibold text-cyan-700 mb-1">Catégories Disponibles</p>
                                             <div className="flex items-end gap-2">
-                                                <h3 className="text-2xl font-bold text-slate-900">{stats.availableCategories}%</h3>
-                                                <span className="text-xs font-semibold text-cyan-600 mb-1">+{stats.categoriesGrowth}% This Month</span>
+                                                <h3 className="text-2xl font-bold text-slate-900">{stats.availableCategories}</h3>
+                                                <span className="text-xs font-semibold text-cyan-600 mb-1">+{stats.categoriesGrowth}% ce mois</span>
                                             </div>
                                         </div>
                                     </CardContent>
@@ -671,10 +671,10 @@ export const PharmacyDashboardNew = () => {
                                             </Button>
                                         </div>
                                         <div>
-                                            <p className="text-xs font-semibold text-pink-700 mb-1">Expired Medicines</p>
+                                            <p className="text-xs font-semibold text-pink-700 mb-1">Produits Périmés</p>
                                             <div className="flex items-end gap-2">
-                                                <h3 className="text-2xl font-bold text-slate-900">{stats.expiredMedicines.toFixed(2)}%</h3>
-                                                <span className="text-xs font-semibold text-pink-600 mb-1">+{stats.expiredGrowth}% This Month</span>
+                                                <h3 className="text-2xl font-bold text-slate-900">{stats.expiredMedicines}</h3>
+                                                <span className="text-xs font-semibold text-pink-600 mb-1">+{stats.expiredGrowth}% ce mois</span>
                                             </div>
                                         </div>
                                     </CardContent>
@@ -692,10 +692,10 @@ export const PharmacyDashboardNew = () => {
                                             </Button>
                                         </div>
                                         <div>
-                                            <p className="text-xs font-semibold text-purple-700 mb-1">System Users</p>
+                                            <p className="text-xs font-semibold text-purple-700 mb-1">Utilisateurs Système</p>
                                             <div className="flex items-end gap-2">
                                                 <h3 className="text-2xl font-bold text-slate-900">{(stats.systemUsers / 1000).toFixed(0)}K</h3>
-                                                <span className="text-xs font-semibold text-purple-600 mb-1">+{stats.usersGrowth}% This Month</span>
+                                                <span className="text-xs font-semibold text-purple-600 mb-1">+{stats.usersGrowth}% ce mois</span>
                                             </div>
                                         </div>
                                     </CardContent>
@@ -708,7 +708,7 @@ export const PharmacyDashboardNew = () => {
                                 <Card className="bg-white border-slate-200">
                                     <CardContent className="p-6">
                                         <div className="flex items-center justify-between mb-6">
-                                            <h3 className="text-base font-bold text-slate-900">Graph Report</h3>
+                                            <h3 className="text-base font-bold text-slate-900">Rapport d'Activité</h3>
                                             <Button variant="ghost" size="icon" className="h-6 w-6">
                                                 <MoreHorizontal className="h-4 w-4 text-slate-600" />
                                             </Button>
@@ -776,7 +776,7 @@ export const PharmacyDashboardNew = () => {
                                 <Card className="bg-white border-slate-200">
                                     <CardContent className="p-6">
                                         <div className="flex items-center justify-between mb-6">
-                                            <h3 className="text-base font-bold text-slate-900">Total Sales Overview</h3>
+                                            <h3 className="text-base font-bold text-slate-900">Vue d'ensemble des Ventes</h3>
                                             <Button variant="ghost" size="icon" className="h-6 w-6">
                                                 <MoreHorizontal className="h-4 w-4 text-slate-600" />
                                             </Button>
@@ -831,12 +831,12 @@ export const PharmacyDashboardNew = () => {
                             <Card className="bg-white border-slate-200">
                                 <CardContent className="p-6">
                                     <div className="flex items-center justify-between mb-4">
-                                        <h3 className="text-base font-bold text-slate-900">Recent Sales List</h3>
+                                        <h3 className="text-base font-bold text-slate-900">Liste des Ventes Récentes</h3>
                                         <div className="flex items-center gap-2">
                                             <div className="relative">
                                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
                                                 <Input
-                                                    placeholder="Search..."
+                                                    placeholder="Rechercher..."
                                                     className="pl-9 pr-3 h-8 w-48 bg-slate-50 border-slate-200 rounded-lg text-xs"
                                                 />
                                             </div>
@@ -857,9 +857,9 @@ export const PharmacyDashboardNew = () => {
                                                     <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="date">Sort By</SelectItem>
-                                                    <SelectItem value="price">Price</SelectItem>
-                                                    <SelectItem value="name">Name</SelectItem>
+                                                    <SelectItem value="date">Trier par</SelectItem>
+                                                    <SelectItem value="price">Prix</SelectItem>
+                                                    <SelectItem value="name">Nom</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                             <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -877,11 +877,11 @@ export const PharmacyDashboardNew = () => {
                                                         <TableHead className="w-12">
                                                             <input type="checkbox" className="rounded border-slate-300" />
                                                         </TableHead>
-                                                        <TableHead className="font-semibold text-slate-700 text-xs">Name</TableHead>
-                                                        <TableHead className="font-semibold text-slate-700 text-xs">Medicine</TableHead>
-                                                        <TableHead className="font-semibold text-slate-700 text-xs">User Email</TableHead>
-                                                        <TableHead className="font-semibold text-slate-700 text-xs">Quantity</TableHead>
-                                                        <TableHead className="font-semibold text-slate-700 text-xs">Total Price</TableHead>
+                                                        <TableHead className="font-semibold text-slate-700 text-xs">Nom</TableHead>
+                                                        <TableHead className="font-semibold text-slate-700 text-xs">Médicament</TableHead>
+                                                        <TableHead className="font-semibold text-slate-700 text-xs">Email Utilisateur</TableHead>
+                                                        <TableHead className="font-semibold text-slate-700 text-xs">Quantité</TableHead>
+                                                        <TableHead className="font-semibold text-slate-700 text-xs">Prix Total</TableHead>
                                                         <TableHead className="font-semibold text-slate-700 text-xs">
                                                             <div className="flex items-center gap-1">
                                                                 Date
@@ -991,9 +991,9 @@ export const PharmacyDashboardNew = () => {
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="3">Show: 3</SelectItem>
-                                                <SelectItem value="5">Show: 5</SelectItem>
-                                                <SelectItem value="10">Show: 10</SelectItem>
+                                                <SelectItem value="3">Afficher: 3</SelectItem>
+                                                <SelectItem value="5">Afficher: 5</SelectItem>
+                                                <SelectItem value="10">Afficher: 10</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -1104,9 +1104,9 @@ export const PharmacyDashboardNew = () => {
                     activeMenu === 'Products' && (
                         <div className="p-8 space-y-6">
                             <div className="flex justify-between items-center">
-                                <h2 className="text-2xl font-bold text-slate-900">Inventory Management</h2>
+                                <h2 className="text-2xl font-bold text-slate-900">Gestion de l'Inventaire</h2>
                                 <Button className="bg-slate-900 text-white">
-                                    <Package className="h-4 w-4 mr-2" /> Add Product
+                                    <Package className="h-4 w-4 mr-2" /> Ajouter un Produit
                                 </Button>
                             </div>
                             <Card className="border-slate-200">
@@ -1114,10 +1114,10 @@ export const PharmacyDashboardNew = () => {
                                     <Table>
                                         <TableHeader>
                                             <TableRow className="bg-slate-50">
-                                                <TableHead>Product Name</TableHead>
-                                                <TableHead>Category</TableHead>
+                                                <TableHead>Nom du Produit</TableHead>
+                                                <TableHead>Catégorie</TableHead>
                                                 <TableHead>Stock</TableHead>
-                                                <TableHead>Status</TableHead>
+                                                <TableHead>Statut</TableHead>
                                                 <TableHead className="text-right">Actions</TableHead>
                                             </TableRow>
                                         </TableHeader>
