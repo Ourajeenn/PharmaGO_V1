@@ -41,7 +41,8 @@ import { toast } from "sonner";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { InsuranceService, InsurancePartner } from "@/services/InsuranceService";
 import { useLoyalty } from "@/hooks/useLoyalty";
-import { Gift } from "lucide-react";
+import { Gift, Fingerprint } from "lucide-react";
+import { useBiometrics } from "@/contexts/BiometricsContext";
 
 interface PaymentMethod {
   id: string;
@@ -131,6 +132,7 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
   const [selectedPharmacy, setSelectedPharmacy] = useState<{ name: string; address: string } | null>(null);
 
   const { user, profile } = useAuth();
+  const { isEnabled: biometricsEnabled, unlock: unlockBiometrics } = useBiometrics();
 
   // Auto-load insurance from profile
   useEffect(() => {
@@ -261,6 +263,16 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
         toast.error("Solde insuffisant dans votre Wallet.");
         return;
       }
+
+      // Biometric Challenge
+      if (biometricsEnabled) {
+        const success = await unlockBiometrics();
+        if (!success) {
+          toast.error("Authentification biométrique échouée.");
+          return;
+        }
+      }
+
       setIsProcessing(true);
       await processOrder(`WAL-${Date.now()}`);
       return;
@@ -363,6 +375,17 @@ const PaymentSystem = ({ onBackToHome }: PaymentSystemProps) => {
 
 
       toast.success("Paiement effectué avec succès !");
+
+      // Success micro-interaction (Confetti simulation)
+      const { confetti } = await import('canvas-confetti').catch(() => ({ confetti: null }));
+      if (confetti) {
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#0EA5E9', '#10B981', '#F59E0B']
+        });
+      }
 
       // Earn points for this order (on the raw amount before loyalty discount)
       await earnPoints(totalAmount);

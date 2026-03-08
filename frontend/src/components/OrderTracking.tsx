@@ -19,13 +19,15 @@ import {
   Star,
   CreditCard,
   Loader2,
-  QrCode
+  QrCode,
+  MessageSquare
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { LiveMap } from "@/components/tracking/LiveMap";
 import { DeliveryQRCode } from "./orders/DeliveryQRCode";
+import { RealtimeChat } from "./chat/RealtimeChat";
 import {
   Dialog,
   DialogContent,
@@ -129,6 +131,7 @@ const OrderTracking = ({ onBackToHome }: OrderTrackingProps) => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showChat, setShowChat] = useState(false);
 
   // Fetch initial orders
   useEffect(() => {
@@ -386,10 +389,10 @@ const OrderTracking = ({ onBackToHome }: OrderTrackingProps) => {
                             {selectedOrder.estimatedDelivery}
                           </p>
                         </div>
-                        <div className="flex items-end">
+                        <div className="flex items-end gap-2">
                           <Dialog>
                             <DialogTrigger asChild>
-                              <Button className="w-full gap-2">
+                              <Button variant="outline" className="flex-1 gap-2 border-primary text-primary hover:bg-primary/5">
                                 <QrCode className="h-4 w-4" />
                                 QR Code
                               </Button>
@@ -399,6 +402,21 @@ const OrderTracking = ({ onBackToHome }: OrderTrackingProps) => {
                                 orderId={selectedOrder.id}
                                 pharmacyName={selectedOrder.pharmacy.name}
                                 status={selectedOrder.status}
+                              />
+                            </DialogContent>
+                          </Dialog>
+
+                          <Dialog open={showChat} onOpenChange={setShowChat}>
+                            <DialogTrigger asChild>
+                              <Button className="flex-1 gap-2 bg-slate-900 hover:bg-slate-800 shadow-lg">
+                                <MessageSquare className="h-4 w-4" />
+                                Chat Pharmacie
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[400px] p-0 border-none bg-transparent shadow-none overflow-hidden">
+                              <RealtimeChat
+                                orderId={selectedOrder.id}
+                                onClose={() => setShowChat(false)}
                               />
                             </DialogContent>
                           </Dialog>

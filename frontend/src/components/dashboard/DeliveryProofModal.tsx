@@ -206,10 +206,10 @@ export const DeliveryProofModal = ({
                         <div
                             key={n}
                             className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all ${getStepNumber() === n
-                                    ? 'bg-primary text-white scale-110'
-                                    : getStepNumber() > n
-                                        ? 'bg-green-500 text-white'
-                                        : 'bg-gray-200 text-gray-500'
+                                ? 'bg-primary text-white scale-110'
+                                : getStepNumber() > n
+                                    ? 'bg-green-500 text-white'
+                                    : 'bg-gray-200 text-gray-500'
                                 }`}
                         >
                             {getStepNumber() > n ? '✓' : n}
@@ -265,12 +265,12 @@ export const DeliveryProofModal = ({
                             </p>
                         </div>
 
-                        <div className="border-2 border-dashed border-primary/30 rounded-lg p-2">
+                        <div className="border-2 border-dashed border-primary/30 rounded-lg p-2 bg-slate-50">
                             <canvas
                                 ref={canvasRef}
                                 width={350}
-                                height={150}
-                                className="w-full cursor-crosshair rounded bg-white touch-none"
+                                height={200}
+                                className="w-full cursor-crosshair rounded bg-white touch-none shadow-inner"
                                 onMouseDown={startDrawing}
                                 onMouseMove={draw}
                                 onMouseUp={stopDrawing}
@@ -279,15 +279,19 @@ export const DeliveryProofModal = ({
                                 onTouchMove={draw}
                                 onTouchEnd={stopDrawing}
                             />
+                            <div className="text-[10px] text-center mt-1 text-slate-400 font-bold uppercase tracking-widest">Zone de signature sécurisée</div>
                         </div>
 
                         <div className="flex gap-2">
-                            <Button variant="outline" onClick={clearSignature} className="flex-1">
+                            <Button variant="outline" onClick={clearSignature} className="flex-1 rounded-xl">
                                 <RotateCcw className="h-4 w-4 mr-2" />
-                                Effacer
+                                Recommencer
                             </Button>
-                            <Button onClick={saveSignature} className="flex-1">
-                                Valider
+                            <Button
+                                onClick={saveSignature}
+                                className="flex-1 rounded-xl bg-primary hover:bg-primary/90"
+                            >
+                                Valider Signature
                                 <CheckCircle className="h-4 w-4 ml-2" />
                             </Button>
                         </div>

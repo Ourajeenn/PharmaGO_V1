@@ -155,6 +155,8 @@ export const PharmacyDashboardNew = () => {
             avatar: ''
         }
     ])
+    const [showSplitView, setShowSplitView] = useState(false)
+    const [selectedOrderForReview, setSelectedOrderForReview] = useState<any>(null)
 
     useEffect(() => {
         if (user?.id) {
@@ -1213,6 +1215,119 @@ export const PharmacyDashboardNew = () => {
                                     Actualiser
                                 </Button>
                             </div>
+
+                            {showSplitView && selectedOrderForReview && (
+                                <div className="fixed inset-0 z-50 bg-white flex flex-col md:flex-row overflow-hidden animate-in fade-in zoom-in duration-300">
+                                    {/* Sidebar / Prescription Image */}
+                                    <div className="md:w-1/2 h-full bg-slate-100 border-r relative overflow-hidden flex flex-col">
+                                        <div className="p-4 bg-white border-b flex justify-between items-center">
+                                            <h3 className="font-bold text-slate-900 flex items-center gap-2">
+                                                <Eye className="h-5 w-5 text-primary" />
+                                                Vue Ordonnance scannée
+                                            </h3>
+                                            <Button variant="ghost" size="icon" onClick={() => setShowSplitView(false)}>
+                                                <X className="h-5 w-5" />
+                                            </Button>
+                                        </div>
+                                        <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-slate-200/50">
+                                            {/* Placeholder for real prescription image */}
+                                            <div className="max-w-md w-full aspect-[3/4] bg-white shadow-2xl rounded-lg p-8 flex flex-col gap-4 border border-slate-300">
+                                                <div className="h-8 w-32 bg-slate-100 rounded"></div>
+                                                <div className="space-y-4 pt-8">
+                                                    <div className="h-4 w-full bg-slate-50 rounded"></div>
+                                                    <div className="h-4 w-3/4 bg-slate-50 rounded"></div>
+                                                    <div className="h-4 w-full bg-slate-50 rounded"></div>
+                                                    <div className="h-20 w-full border-2 border-dashed border-slate-200 rounded flex items-center justify-center text-slate-300 text-xs italic">
+                                                        Signature & Cachet Dr.
+                                                    </div>
+                                                </div>
+                                                <div className="mt-auto h-4 w-24 bg-slate-100 rounded ml-auto"></div>
+                                                <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/5 cursor-zoom-in">
+                                                    <Badge className="bg-white text-slate-900 border-slate-200">Cliquez pour zoomer</Badge>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Command Verification Form */}
+                                    <div className="md:w-1/2 h-full flex flex-col bg-white">
+                                        <div className="p-4 bg-slate-900 text-white flex justify-between items-center">
+                                            <h3 className="font-bold">Vérification Commande #{selectedOrderForReview.id.substring(0, 8).toUpperCase()}</h3>
+                                            <Badge className="bg-orange-500">{selectedOrderForReview.status}</Badge>
+                                        </div>
+                                        <div className="flex-1 overflow-y-auto p-8 space-y-8">
+                                            <div className="space-y-4">
+                                                <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Informations Patient</h4>
+                                                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                                    <p className="font-bold text-lg">{selectedOrderForReview.patients?.user_profiles?.name}</p>
+                                                    <p className="text-sm text-slate-500">Mode de paiement : {selectedOrderForReview.payment_method}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-4">
+                                                <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Produits Demandés</h4>
+                                                <div className="space-y-2">
+                                                    {selectedOrderForReview.items?.map((item: any, i: number) => (
+                                                        <div key={i} className="flex items-center justify-between p-3 bg-white border rounded-lg">
+                                                            <div>
+                                                                <p className="font-medium">{item.medicines?.name}</p>
+                                                                <p className="text-xs text-slate-500">Quantité : {item.quantity}</p>
+                                                            </div>
+                                                            <Checkbox defaultChecked />
+                                                        </div>
+                                                    ))}
+                                                    {/* Mock items if missing */}
+                                                    {!selectedOrderForReview.items && (
+                                                        <div className="flex items-center justify-between p-3 bg-white border rounded-lg">
+                                                            <div>
+                                                                <p className="font-medium">Antibiotique Amoxicilline 500mg</p>
+                                                                <p className="text-xs text-slate-500">Quantité : 1</p>
+                                                            </div>
+                                                            <Checkbox defaultChecked />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-4 pt-4">
+                                                <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Décision Pharmaceutique</h4>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <Button
+                                                        variant="outline"
+                                                        className="h-12 border-red-200 text-red-600 hover:bg-red-50"
+                                                        onClick={() => {
+                                                            toast.error("Ordonnance rejetée");
+                                                            setShowSplitView(false);
+                                                        }}
+                                                    >
+                                                        <XCircle className="h-4 w-4 mr-2" />
+                                                        Rejeter
+                                                    </Button>
+                                                    <Button
+                                                        className="h-12 bg-green-600 hover:bg-green-700 text-white"
+                                                        onClick={() => {
+                                                            handleUpdateOrderStatus(selectedOrderForReview.id, 'preparing');
+                                                            setShowSplitView(false);
+                                                            // Success confetti for pharmacist
+                                                            import('canvas-confetti').then(module => {
+                                                                module.default({
+                                                                    particleCount: 100,
+                                                                    spread: 70,
+                                                                    origin: { y: 0.6 }
+                                                                });
+                                                            });
+                                                        }}
+                                                    >
+                                                        <CheckCircle className="h-4 w-4 mr-2" />
+                                                        Valider & Préparer
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="space-y-4">
                                 {pendingOrders.map((order) => (
                                     <Card key={order.id} className="border-slate-200 hover:shadow-md transition-shadow">
@@ -1271,6 +1386,19 @@ export const PharmacyDashboardNew = () => {
                                                         </Select>
                                                     </div>
                                                 )}
+
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="border-primary text-primary hover:bg-primary/5"
+                                                    onClick={() => {
+                                                        setSelectedOrderForReview(order);
+                                                        setShowSplitView(true);
+                                                    }}
+                                                >
+                                                    <FileText className="h-4 w-4 mr-2" />
+                                                    Vérifier Ordonnance
+                                                </Button>
 
                                                 <Button variant="ghost" size="icon" className="text-red-600 hover:bg-red-50">
                                                     <XCircle className="h-4 w-4" />
