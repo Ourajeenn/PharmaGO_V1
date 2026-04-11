@@ -1,0 +1,81 @@
+# PharmaGo GitLab CI/CD Pipeline
+
+stages:
+  - test
+  - build
+  - deploy
+
+variables:
+  # Vercel Configuration
+  VERCEL_ORG_ID: $VERCEL_ORG_ID
+  VERCEL_PROJECT_ID: $VERCEL_PROJECT_ID
+  # Supabase Configuration
+  SUPABASE_ACCESS_TOKEN: $SUPABASE_ACCESS_TOKEN
+  SUPABASE_PROJECT_ID: $SUPABASE_PROJECT_ID
+
+# Cache node_modules
+cache:
+  paths:
+    - apps/frontend/node_modules/
+
+# 🧪 TEST STAGE
+test-frontend:
+  stage: test
+  image: node:18
+  script:
+    - cd apps/frontend
+    - npm install
+    - npm run lint
+  only:
+    - dev
+    - main
+
+test-python:
+  stage: test
+  image: python:3.9
+  script:
+    - cd services/data-processing
+    - pip install -r requirements.txt
+    # Add python tests here if applicable
+  only:
+    - dev
+    - main
+
+# 🏗️ BUILD STAGE
+build-frontend:
+  stage: build
+  image: node:18
+  script:
+    - cd apps/frontend
+    - npm install
+    - npm run build
+  artifacts:
+    paths:
+      - apps/frontend/dist/
+  only:
+    - dev
+    - main
+
+# 🚀 DEPLOY STAGE
+deploy-vercel:
+  stage: deploy
+  image: node:18
+  script:
+    - npm install -g vercel
+    - cd apps/frontend
+    - vercel deploy --prebuilt --token=$VERCEL_TOKEN $( [[ "$CI_COMMIT_BRANCH" == "main" ]] && echo "--prod" )
+  only:
+    - dev
+    - main
+
+deploy-supabase:
+  stage: deploy
+  image: node:18
+  script:
+    - npm install -g supabase
+    - supabase link --project-ref $SUPABASE_PROJECT_ID --access-token $SUPABASE_ACCESS_TOKEN
+    - supabase db push --access-token $SUPABASE_ACCESS_TOKEN
+    - supabase functions deploy --access-token $SUPABASE_ACCESS_TOKEN
+  only:
+    - dev
+    - main
