@@ -1,0 +1,352 @@
+/* stylelint-disable */
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+@import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
+
+@keyframes loading {
+
+  0%,
+  100% {
+    transform: translateX(-100%);
+  }
+
+  50% {
+    transform: translateX(400%);
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+
+@keyframes rainbow-glow {
+  0% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.4), 0 0 40px rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.5);
+  }
+
+  20% {
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.4), 0 0 40px rgba(168, 85, 247, 0.2);
+    border-color: rgba(168, 85, 247, 0.5);
+  }
+
+  40% {
+    box-shadow: 0 0 20px rgba(236, 72, 153, 0.4), 0 0 40px rgba(236, 72, 153, 0.2);
+    border-color: rgba(236, 72, 153, 0.5);
+  }
+
+  60% {
+    box-shadow: 0 0 20px rgba(249, 115, 22, 0.4), 0 0 40px rgba(249, 115, 22, 0.2);
+    border-color: rgba(249, 115, 22, 0.5);
+  }
+
+  80% {
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.4), 0 0 40px rgba(34, 197, 94, 0.2);
+    border-color: rgba(34, 197, 94, 0.5);
+  }
+
+  100% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.4), 0 0 40px rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.5);
+  }
+}
+
+@keyframes led-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5), 0 0 20px rgba(59, 130, 246, 0.3), inset 0 0 10px rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.6);
+  }
+
+  33% {
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.5), 0 0 20px rgba(34, 197, 94, 0.3), inset 0 0 10px rgba(34, 197, 94, 0.2);
+    border-color: rgba(34, 197, 94, 0.6);
+  }
+
+  66% {
+    box-shadow: 0 0 10px rgba(249, 115, 22, 0.5), 0 0 20px rgba(249, 115, 22, 0.3), inset 0 0 10px rgba(249, 115, 22, 0.2);
+    border-color: rgba(249, 115, 22, 0.6);
+  }
+}
+
+@keyframes spin-led {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@layer components {
+  .led-border-container {
+    @apply relative overflow-hidden p-[2px];
+  }
+
+  .led-border-spinner {
+    @apply absolute top-[-100%] left-[-100%] w-[300%] h-[300%] opacity-70 transition-opacity duration-300;
+    background: conic-gradient(transparent,
+        rgba(59, 130, 246, 0.8),
+        transparent,
+        rgba(34, 197, 94, 0.8),
+        transparent,
+        rgba(249, 115, 22, 0.8),
+        transparent);
+    animation: spin-led 4s linear infinite;
+  }
+}
+
+.animate-rainbow-glow {
+  animation: rainbow-glow 8s linear infinite;
+}
+
+.animate-led-glow {
+  animation: led-glow 4s ease-in-out infinite;
+}
+
+@layer components {
+  .glass-morphism {
+    @apply bg-white/40 backdrop-blur-2xl backdrop-saturate-150 border border-white/30;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  }
+
+  .dark .glass-morphism {
+    @apply bg-black/40 backdrop-blur-2xl backdrop-saturate-200 border border-white/10;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  }
+
+  .premium-rounded {
+    border-radius: 2.5rem !important;
+    overflow: hidden !important;
+    transform: translateZ(0);
+    isolation: isolate;
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply glass-morphism rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:border-white/50;
+
+    &:hover {
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    }
+  }
+}
+
+@layer components {
+  .glass-sidebar {
+    @apply bg-white/30 backdrop-blur-3xl border-r border-white/20 shadow-xl;
+  }
+}
+
+.mesh-gradient {
+  background:
+    radial-gradient(at 0% 0%, hsla(210, 100%, 93%, 0.8) 0, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(142, 76%, 90%, 0.8) 0, transparent 50%),
+    radial-gradient(at 50% 50%, hsla(280, 100%, 95%, 0.6) 0, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(25, 95%, 95%, 0.8) 0, transparent 50%);
+}
+
+@layer components {
+  .glow-border {
+    @apply relative;
+  }
+
+  .glow-border::before {
+    content: "";
+    @apply absolute -inset-[1px] bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-[inherit] opacity-0 transition-opacity duration-300 -z-10;
+  }
+
+  .glow-border:hover::before {
+    @apply opacity-100;
+  }
+}
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 210 100% 98%;
+    --foreground: 215 25% 27%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 27%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 27%;
+
+    --primary: 210 100% 45%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 210 100% 40%;
+
+    --secondary: 142 76% 36%;
+    --secondary-foreground: 0 0% 100%;
+    --secondary-hover: 142 76% 32%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 25 95% 53%;
+    --accent-foreground: 0 0% 100%;
+    --accent-hover: 25 95% 48%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 40% 90%;
+    --input: 210 40% 90%;
+    --ring: 210 100% 45%;
+
+    --medical-blue: 210 100% 45%;
+    --health-green: 142 76% 36%;
+    --pharmacy-orange: 25 95% 53%;
+    --trust-blue: 215 84% 35%;
+
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(210 40% 98%));
+    --shadow-card: 0 4px 20px hsl(var(--primary) / 0.1);
+    --shadow-hover: 0 8px 25px hsl(var(--primary) / 0.15);
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 215 28% 17%;
+    --foreground: 210 40% 98%;
+
+    --card: 215 28% 17%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 215 28% 17%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 100% 55%;
+    --primary-foreground: 215 28% 17%;
+    --primary-hover: 210 100% 50%;
+
+    --secondary: 142 76% 46%;
+    --secondary-foreground: 215 28% 17%;
+    --secondary-hover: 142 76% 42%;
+
+    --muted: 217 32% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 25 95% 63%;
+    --accent-foreground: 215 28% 17%;
+    --accent-hover: 25 95% 58%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 32% 17%;
+    --input: 217 32% 17%;
+    --ring: 212 27% 84%;
+
+    --medical-blue: 210 100% 55%;
+    --health-green: 142 76% 46%;
+    --pharmacy-orange: 25 95% 63%;
+    --trust-blue: 215 84% 45%;
+
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+    --gradient-card: linear-gradient(145deg, hsl(217 32% 17%), hsl(217 32% 20%));
+    --shadow-card: 0 4px 20px hsl(0 0% 0% / 0.3);
+    --shadow-hover: 0 8px 25px hsl(0 0% 0% / 0.4);
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground relative min-h-screen;
+    background-image:
+      radial-gradient(at 0% 0%, hsla(210, 100%, 93%, 1) 0, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(142, 76%, 90%, 1) 0, transparent 50%),
+      radial-gradient(at 50% 50%, hsla(280, 70%, 95%, 1) 0, transparent 50%),
+      radial-gradient(at 0% 100%, hsla(190, 80%, 95%, 1) 0, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(25, 95%, 95%, 1) 0, transparent 50%);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Semi-transparent overlay to ensure watermark doesn't hide text */
+  body::before {
+    content: "";
+    @apply absolute inset-0 bg-white/60 dark:bg-black/70 pointer-events-none -z-[1];
+    position: fixed;
+  }
+
+  /* Cross-browser compatibility fixes */
+  /* input, textarea, select, button {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  } */
+
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Fix for flex gap in older browsers */
+  @supports not (gap: 1rem) {
+
+    .flex>*+*,
+    .grid>*+* {
+      margin-left: 1rem;
+    }
+  }
+
+  /* Data Saver Mode */
+  .data-saver-mode img,
+  .data-saver-mode video {
+    filter: blur(2px) grayscale(50%);
+    transition: filter 0.3s ease;
+  }
+
+  .data-saver-mode img:hover,
+  .data-saver-mode video:hover {
+    filter: none;
+  }
+}

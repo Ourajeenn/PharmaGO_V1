@@ -1,0 +1,7 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <rect x="25" y="60" width="150" height="80" rx="5" fill="#FFC0CB" stroke="#FF69B4" stroke-width="2"/>
+  <rect x="25" y="100" width="150" height="40" fill="#FFFFFF" opacity="0.7"/>
+  <text x="100" y="90" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="#C71585">Ibuprofène</text>
+  <text x="100" y="125" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#C71585">400 mg</text>
+  <circle cx="150" cy="80" r="10" fill="#C71585"/>
+</svg>

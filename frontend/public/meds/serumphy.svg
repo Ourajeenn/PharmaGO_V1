@@ -1,0 +1,6 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <path d="M90 40 L110 40 L110 60 L130 80 L130 150 Q130 160 120 160 L80 160 Q70 160 70 150 L70 80 L90 60 Z" fill="#E0F7FA" stroke="#00BCD4" stroke-width="2"/>
+  <rect x="80" y="90" width="40" height="50" fill="#FFFFFF" opacity="0.6"/>
+  <text x="100" y="120" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#006064">Sérum</text>
+  <text x="100" y="135" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#006064">Phy</text>
+</svg>

@@ -1,0 +1,481 @@
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
+import {
+    Patient,
+    BirthRecord,
+    Vaccination,
+    GrowthRecord,
+    DevelopmentMilestone,
+    Allergy,
+    FamilyHistory,
+    Hospitalization,
+    MedicalVisit,
+    MedicalDocument,
+    Alert,
+    PatientSummary,
+    EmergencyContact,
+} from '@/types/ecarnet';
+import { toast } from 'sonner';
+
+interface ECarnetContextType {
+    currentPatient: Patient | null;
+    setCurrentPatient: (patient: Patient | null) => void;
+    patients: Patient[];
+    loading: boolean;
+    refreshData: () => Promise<void>;
+
+    // Operations
+    addPatient: (patient: Omit<Patient, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Patient | null>;
+    updatePatient: (id: string, updates: Partial<Patient>) => Promise<void>;
+    deletePatient: (id: string) => Promise<void>;
+
+    // Visit Methods
+    getPatientVisits: (patientId: string) => MedicalVisit[];
+    addMedicalVisit: (visit: Omit<MedicalVisit, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+
+    // Vaccination Methods
+    getPatientVaccinations: (patientId: string) => Vaccination[];
+    addVaccination: (vax: Omit<Vaccination, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+
+    // Emergency Contact Methods
+    getPatientEmergencyContacts: (patientId: string) => EmergencyContact[];
+    addEmergencyContact: (contact: Omit<EmergencyContact, 'id'> & { patientId: string }) => Promise<void>;
+    deleteEmergencyContact: (id: string) => Promise<void>;
+
+    // Specific Getters
+    getPatientAlerts: (patientId: string) => Alert[];
+    getPatientSummary: (patientId: string) => PatientSummary | null;
+    addPrescriptionData: (patientId: string, medications: Array<{ name: string, dosage: string, duration: string, frequency: string }>, doctorName?: string, date?: string) => Promise<void>;
+}
+
+const ECarnetContext = createContext<ECarnetContextType | undefined>(undefined);
+
+export const ECarnetProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const { user } = useAuth();
+    const [currentPatient, setCurrentPatient] = useState<Patient | null>(null);
+    const [patients, setPatients] = useState<Patient[]>([]);
+    const [vaccinations, setVaccinations] = useState<Vaccination[]>([]);
+    const [medicalVisits, setMedicalVisits] = useState<MedicalVisit[]>([]);
+    const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>([]);
+    const [alerts, setAlerts] = useState<Alert[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    // Sync from Supabase
+    const refreshData = useCallback(async () => {
+        if (!user) return;
+        setLoading(true);
+        try {
+            // 1. Fetch Patients (Mapped from 'patients' table)
+            const { data: pts, error: ptsError } = await supabase
+                .from('patients')
+                .select('*')
+                .eq('user_id', user.id);
+
+            if (ptsError) throw ptsError;
+
+            const mappedPatients: Patient[] = pts.map(p => ({
+                id: p.id,
+                firstName: p.name?.split(' ')[0] || 'Patient',
+                lastName: p.name?.split(' ').slice(1).join(' ') || '',
+                dateOfBirth: p.birth_date || '',
+                gender: (p.gender as any) || 'M',
+                bloodGroup: (p.blood_type as any) || 'Inconnu',
+                phone: p.phone,
+                email: p.email,
+                address: p.address,
+                relationship: p.relationship || 'Moi',
+                insuranceType: (p.insurance_type as any) || 'standard',
+                emergencyContacts: [], // Needs separate table or JSONB
+                createdAt: p.created_at,
+                updatedAt: p.updated_at
+            }));
+
+            setPatients(mappedPatients);
+            if (mappedPatients.length > 0 && !currentPatient) {
+                setCurrentPatient(mappedPatients[0]);
+            }
+
+            // 2. Fetch specific E-Carnet data for all patients of this user
+            const patientIds = mappedPatients.map(p => p.id);
+            if (patientIds.length > 0) {
+                const [vaxRes, visitsRes, alertsRes, contactsRes] = await Promise.all([
+                    supabase.from('vaccinations').select('*').in('patient_id', patientIds),
+                    supabase.from('medical_visits').select('*').in('patient_id', patientIds),
+                    supabase.from('medical_alerts').select('*').in('patient_id', patientIds),
+                    supabase.from('emergency_contacts').select('*').in('patient_id', patientIds)
+                ]);
+
+                // Update mapping in mappedPatients if needed, but we keep them in separate states for now
+                // Actually, let's update mappedPatients to include their contacts if we want them nested
+                const allContacts = (contactsRes.data || []).map(c => ({
+                    id: c.id,
+                    patientId: c.patient_id,
+                    name: c.name,
+                    relationship: c.relationship,
+                    phone: c.phone,
+                    email: c.email,
+                    isPrimary: c.is_primary
+                }));
+                setEmergencyContacts(allContacts);
+
+                setVaccinations((vaxRes.data || []).map(v => ({
+                    id: v.id,
+                    patientId: v.patient_id,
+                    vaccineName: v.vaccine_name,
+                    disease: v.disease,
+                    isRequired: v.is_required,
+                    administrationDate: v.administration_date,
+                    nextDueDate: v.next_due_date,
+                    status: v.status as any,
+                    createdAt: v.created_at,
+                    updatedAt: v.updated_at
+                })));
+
+                setMedicalVisits((visitsRes.data || []).map(v => ({
+                    id: v.id,
+                    patientId: v.patient_id,
+                    visitDate: v.visit_date,
+                    visitType: v.visit_type as any,
+                    doctorName: v.doctor_name,
+                    specialty: v.specialty,
+                    reason: v.reason,
+                    diagnosis: v.diagnosis,
+                    createdAt: v.created_at,
+                    updatedAt: v.updated_at
+                })));
+
+                setAlerts((alertsRes.data || []).map(a => ({
+                    id: a.id,
+                    patientId: a.patient_id,
+                    type: a.type as any,
+                    priority: a.priority as any,
+                    title: a.title,
+                    message: a.message,
+                    dueDate: a.due_date,
+                    isRead: a.is_read,
+                    isDismissed: a.is_dismissed,
+                    createdAt: a.created_at
+                })));
+            }
+        } catch (error: any) {
+            // Prevent showing error on initial empty load or auth issues
+            if (user && error.code !== 'PGRST116') {
+                console.error('Error refreshing E-Carnet data:', error);
+                toast.error("Problème de synchronisation Cloud. Vérifiez votre connexion.");
+            }
+        } finally {
+            setLoading(false);
+        }
+    }, [user, currentPatient]);
+
+    useEffect(() => {
+        if (user) refreshData();
+    }, [user]);
+
+    const addPatient = async (patientData: Omit<Patient, 'id' | 'createdAt' | 'updatedAt'>) => {
+        if (!user) return null;
+        try {
+            const { data, error } = await supabase
+                .from('patients')
+                .insert({
+                    user_id: user.id,
+                    name: `${patientData.firstName} ${patientData.lastName}`,
+                    birth_date: patientData.dateOfBirth,
+                    gender: patientData.gender,
+                    blood_type: patientData.bloodGroup,
+                    address: patientData.address,
+                    relationship: patientData.relationship,
+                    insurance_type: patientData.insuranceType
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            const newPatient: Patient = {
+                ...patientData,
+                id: data.id,
+                createdAt: data.created_at,
+                updatedAt: data.updated_at
+            };
+
+            setPatients(prev => [...prev, newPatient]);
+            toast.success("Profil patient créé");
+            return newPatient;
+        } catch (error: any) {
+            toast.error(error.message);
+            return null;
+        }
+    };
+
+    const updatePatient = async (id: string, updates: Partial<Patient>) => {
+        try {
+            const { error } = await supabase
+                .from('patients')
+                .update({
+                    name: updates.firstName && updates.lastName ? `${updates.firstName} ${updates.lastName}` : undefined,
+                    birth_date: updates.dateOfBirth,
+                    blood_type: updates.bloodGroup,
+                    address: updates.address,
+                    relationship: updates.relationship
+                })
+                .eq('id', id);
+
+            if (error) throw error;
+
+            setPatients(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+            toast.success("Profil mis à jour");
+        } catch (error: any) {
+            toast.error(error.message);
+        }
+    };
+
+    const deletePatient = async (id: string) => {
+        try {
+            const { error } = await supabase.from('patients').delete().eq('id', id);
+            if (error) throw error;
+            setPatients(prev => prev.filter(p => p.id !== id));
+            toast.success("Profil supprimé");
+        } catch (error: any) {
+            toast.error(error.message);
+        }
+    };
+
+    // ── Visit helpers ────────────────────────────────────────────────────────
+    const getPatientVisits = (patientId: string): MedicalVisit[] =>
+        medicalVisits.filter(v => v.patientId === patientId);
+
+    const addMedicalVisit = async (visitData: Omit<MedicalVisit, 'id' | 'createdAt' | 'updatedAt'>) => {
+        try {
+            const { data, error } = await supabase
+                .from('medical_visits')
+                .insert({
+                    patient_id: visitData.patientId,
+                    visit_date: visitData.visitDate,
+                    visit_type: visitData.visitType,
+                    doctor_name: visitData.doctorName,
+                    specialty: visitData.specialty,
+                    reason: visitData.reason,
+                    diagnosis: visitData.diagnosis,
+                    recommendations: visitData.recommendations,
+                    next_visit_date: visitData.nextVisitDate,
+                    vital_signs: visitData.vitalSigns ? JSON.stringify(visitData.vitalSigns) : null,
+                    prescriptions: visitData.prescriptions ? JSON.stringify(visitData.prescriptions) : null,
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            const newVisit: MedicalVisit = {
+                ...visitData,
+                id: data.id,
+                createdAt: data.created_at,
+                updatedAt: data.updated_at,
+            };
+            setMedicalVisits(prev => [newVisit, ...prev]);
+        } catch (err: any) {
+            // Optimistic local save on network error
+            const localVisit: MedicalVisit = {
+                ...visitData,
+                id: `local-${Date.now()}`,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            };
+            setMedicalVisits(prev => [localVisit, ...prev]);
+            console.warn('[ECarnet] Supabase unavailable — visit saved locally:', err.message);
+        }
+    };
+
+    // ── Vaccination helpers ──────────────────────────────────────────────────
+    const getPatientVaccinations = (patientId: string): Vaccination[] =>
+        vaccinations.filter(v => v.patientId === patientId);
+
+    const addVaccination = async (vaxData: Omit<Vaccination, 'id' | 'createdAt' | 'updatedAt'>) => {
+        try {
+            const { data, error } = await supabase
+                .from('vaccinations')
+                .insert({
+                    patient_id: vaxData.patientId,
+                    vaccine_name: vaxData.vaccineName,
+                    disease: vaxData.disease,
+                    is_required: vaxData.isRequired,
+                    administration_date: vaxData.administrationDate,
+                    next_due_date: vaxData.nextDueDate,
+                    status: vaxData.status,
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            const newVax: Vaccination = {
+                ...vaxData,
+                id: data.id,
+                createdAt: data.created_at,
+                updatedAt: data.updated_at,
+            };
+            setVaccinations(prev => [newVax, ...prev]);
+        } catch (err: any) {
+            const localVax: Vaccination = {
+                ...vaxData,
+                id: `local-${Date.now()}`,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            };
+            setVaccinations(prev => [localVax, ...prev]);
+            console.warn('[ECarnet] Supabase unavailable — vaccination saved locally:', err.message);
+        }
+    };
+
+    const getPatientAlerts = (patientId: string) => alerts.filter(a => a.patientId === patientId);
+
+    const getPatientEmergencyContacts = (patientId: string) =>
+        emergencyContacts.filter(c => (c as any).patientId === patientId);
+
+    const addEmergencyContact = async (contactData: Omit<EmergencyContact, 'id'> & { patientId: string }) => {
+        try {
+            const { data, error } = await supabase
+                .from('emergency_contacts')
+                .insert({
+                    patient_id: contactData.patientId,
+                    name: contactData.name,
+                    relationship: contactData.relationship,
+                    phone: contactData.phone,
+                    email: contactData.email,
+                    is_primary: contactData.isPrimary
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            const newContact: EmergencyContact = {
+                ...contactData,
+                id: data.id,
+            };
+            setEmergencyContacts(prev => [...prev, newContact]);
+            toast.success("Contact d'urgence ajouté");
+        } catch (err: any) {
+            toast.error("Erreur lors de l'ajout du contact");
+        }
+    };
+
+    const deleteEmergencyContact = async (id: string) => {
+        try {
+            const { error } = await supabase.from('emergency_contacts').delete().eq('id', id);
+            if (error) throw error;
+            setEmergencyContacts(prev => prev.filter(c => c.id !== id));
+            toast.success("Contact supprimé");
+        } catch (err: any) {
+            toast.error("Erreur lors de la suppression");
+        }
+    };
+
+    const getPatientSummary = (patientId: string): PatientSummary | null => {
+        const patient = patients.find(p => p.id === patientId);
+        if (!patient) return null;
+
+        const pVisits = medicalVisits.filter(v => v.patientId === patientId);
+        const pVax = vaccinations.filter(v => v.patientId === patientId);
+        const pAlerts = alerts.filter(a => a.patientId === patientId);
+
+        return {
+            patient,
+            totalVisits: pVisits.length,
+            totalVaccinations: pVax.length,
+            totalDocuments: 0,
+            totalAllergies: 0,
+            lastVisit: pVisits[0],
+            activeAlerts: pAlerts,
+            overdueVaccinations: pVax.filter(v => v.status === 'En retard'),
+            vaccinationStatus: pVax.some(v => v.status === 'En retard') ? 'En retard' : 'À jour',
+            lastUpdated: new Date().toISOString()
+        };
+    };
+
+    const addPrescriptionData = async (
+        patientId: string,
+        medications: Array<{ name: string, dosage: string, duration: string, frequency: string }>,
+        doctorName?: string,
+        date?: string
+    ) => {
+        try {
+            const visitDate = date ? new Date(date).toISOString() : new Date().toISOString();
+            const { data, error } = await supabase
+                .from('medical_visits')
+                .insert({
+                    patient_id: patientId,
+                    visit_date: visitDate,
+                    visit_type: 'Consultation',
+                    doctor_name: doctorName || 'Médecin Inconnu',
+                    reason: 'Analyse d\'ordonnance (Scan IA)',
+                    prescriptions: JSON.stringify(medications.map(m => ({
+                        medication: m.name,
+                        dosage: m.dosage,
+                        duration: m.duration,
+                        instructions: m.frequency
+                    })))
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            const newVisit: MedicalVisit = {
+                id: data.id,
+                patientId: patientId,
+                visitDate: visitDate,
+                visitType: 'Consultation',
+                doctorName: doctorName || 'Médecin Inconnu',
+                reason: 'Analyse d\'ordonnance (Scan IA)',
+                prescriptions: medications.map(m => ({
+                    medication: m.name,
+                    dosage: m.dosage,
+                    duration: m.duration,
+                    instructions: m.frequency
+                })),
+                createdAt: data.created_at,
+                updatedAt: data.updated_at,
+            };
+
+            setMedicalVisits(prev => [newVisit, ...prev]);
+            toast.success("Données de l'ordonnance ajoutées au carnet");
+        } catch (error: any) {
+            console.error('Error adding prescription data:', error);
+            toast.error("Impossible d'ajouter les données au carnet");
+        }
+    };
+
+    return (
+        <ECarnetContext.Provider value={{
+            currentPatient,
+            setCurrentPatient,
+            patients,
+            loading,
+            refreshData,
+            addPatient,
+            updatePatient,
+            deletePatient,
+            getPatientVisits,
+            addMedicalVisit,
+            getPatientVaccinations,
+            addVaccination,
+            getPatientEmergencyContacts,
+            addEmergencyContact,
+            deleteEmergencyContact,
+            getPatientAlerts,
+            getPatientSummary,
+            addPrescriptionData
+        }}>
+            {children}
+        </ECarnetContext.Provider>
+    );
+};
+
+export const useECarnet = () => {
+    const context = useContext(ECarnetContext);
+    if (!context) throw new Error('useECarnet must be used within ECarnetProvider');
+    return context;
+};

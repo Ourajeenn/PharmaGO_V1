@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+  <!-- Performance : Preconnect to critical domains -->
+  <link rel="preconnect" href="https://ijcyeozyapwuneyjylij.supabase.co" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;700&family=Archivo:wght@300;400;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="dns-prefetch" href="https://ijcyeozyapwuneyjylij.supabase.co">
+  <title>PharmaGo - Livraison de Médicaments Express à Abidjan</title>
+  <meta name="description"
+    content="PharmaGo : livraison express de médicaments à domicile en 30 minutes. Service 24h/24 dans toute la région d'Abidjan. Pharmacies de garde, ordonnances en ligne.">
+  <meta name="keywords"
+    content="livraison médicaments Abidjan, pharmacie garde Côte d'Ivoire, ordonnance en ligne, médicaments domicile, pharmacie 24h">
+  <meta name="ourajeenn" content="PharmaGo Express" />
+  <link rel="canonical" href="https://pharmago.ci" />
+
+
+
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://pharmago.ci" />
+  <meta property="og:image"
+    content="https://storage.googleapis.com/gpt-engineer-file-uploads/xeE1JkXC6wSiOPKkIRHdn9qcDAQ2/social-images/social-1759274101307-livraison.png">
+  <meta property="og:locale" content="fr_CI" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+
+
+  <meta name="twitter:image"
+    content="https://storage.googleapis.com/gpt-engineer-file-uploads/xeE1JkXC6wSiOPKkIRHdn9qcDAQ2/social-images/social-1759274101307-livraison.png">
+
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#2563eb" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="PharmaGo" />
+
+  <!-- PWA Manifest injected by vite-plugin-pwa -->
+
+  <!-- Apple Touch Icons -->
+  <link rel="apple-touch-icon" sizes="72x72" href="/icon-72x72.png" />
+  <link rel="apple-touch-icon" sizes="96x96" href="/icon-96x96.png" />
+  <link rel="apple-touch-icon" sizes="128x128" href="/icon-128x128.png" />
+  <link rel="apple-touch-icon" sizes="144x144" href="/icon-144x144.png" />
+  <link rel="apple-touch-icon" sizes="152x152" href="/icon-152x152.png" />
+  <link rel="apple-touch-icon" sizes="192x192" href="/icon-192x192.png" />
+  <link rel="apple-touch-icon" sizes="384x384" href="/icon-384x384.png" />
+  <link rel="apple-touch-icon" sizes="512x512" href="/icon-512x512.png" />
+
+
+
+
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <meta property="og:title" content="PharmaGo - Livraison de Médicaments Express à Abidjan">
+  <meta name="twitter:title" content="PharmaGo - Livraison de Médicaments Express à Abidjan">
+  <meta property="og:description"
+    content="PharmaGo : livraison express de médicaments à domicile en 30 minutes. Service 24h/24 dans toute la région d&#39;Abidjan. Pharmacies de garde, ordonnances en ligne.">
+  <meta name="twitter:description"
+    content="PharmaGo : livraison express de médicaments à domicile en 30 minutes. Service 24h/24 dans toute la région d&#39;Abidjan. Pharmacies de garde, ordonnances en ligne.">
+</head>
+
+<body>
+  <div id="root"></div>
+  <div id="debug-log"
+    style="position:fixed;bottom:0;left:0;right:0;max-height:200px;overflow:auto;background:rgba(0,0,0,0.8);color:red;font-family:monospace;z-index:9999;padding:10px;display:none;">
+  </div>
+  <script>
+    window.onerror = function (msg, url, line, col, error) {
+      const debugLog = document.getElementById('debug-log');
+      debugLog.style.display = 'block';
+      debugLog.innerHTML += '<div>' + msg + ' at ' + url + ':' + line + '</div>';
+      return false;
+    };
+    window.onunhandledrejection = function (event) {
+      const debugLog = document.getElementById('debug-log');
+      debugLog.style.display = 'block';
+      debugLog.innerHTML += '<div>Unhandled rejection: ' + event.reason + '</div>';
+    };
+  </script>
+  <script>
+    window.addEventListener('error', function (e) {
+      if (e.error) {
+        document.body.innerHTML = '<div style="color:red;font-size:24px;position:fixed;top:0;left:0;z-index:99999999;background:white;padding:20px;width:100vw;height:100vh;overflow:auto;"><h2>ERROR: ' + e.error.message + '</h2><pre>' + e.error.stack + '</pre></div>' + document.body.innerHTML;
+      }
+    });
+    window.addEventListener('unhandledrejection', function (e) {
+      if (e.reason && e.reason.stack) {
+        document.body.innerHTML = '<div style="color:red;font-size:24px;position:fixed;top:50px;left:0;z-index:99999999;background:white;padding:20px;width:100vw;height:100vh;overflow:auto;"><h2>UNHANDLED PROMISE: ' + e.reason.message + '</h2><pre>' + e.reason.stack + '</pre></div>' + document.body.innerHTML;
+      }
+    });
+  </script>
+  <script type="module" src="/src/main.tsx"></script>
+
+</body>
+
+</html>

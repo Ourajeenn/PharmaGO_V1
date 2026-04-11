@@ -1,0 +1,802 @@
+[
+  {
+    "N°": 1,
+    "Entreprise": "SODECI",
+    "Assurance Maladie / Mutuelle": "Mutuelle Sociale Santé SODECI",
+    "Type": "Mutuelle d'entreprise",
+    "Statut": "Confirmé",
+    "Observations": "Aussi connue sous MA2E + CMU"
+  },
+  {
+    "N°": 2,
+    "Entreprise": "SODECI",
+    "Assurance Maladie / Mutuelle": "MA2E",
+    "Type": "Mutuelle épargne/crédit",
+    "Statut": "Confirmé",
+    "Observations": "Mutuelle des Agents de l'Eau et de l'Électricité"
+  },
+  {
+    "N°": 3,
+    "Entreprise": "SODECI",
+    "Assurance Maladie / Mutuelle": "ASMAR",
+    "Type": "Assurance retraités",
+    "Statut": "Confirmé",
+    "Observations": "Assurance Maladie des Retraités"
+  },
+  {
+    "N°": 4,
+    "Entreprise": "CIE",
+    "Assurance Maladie / Mutuelle": "Mutuelle Sociale Santé CIE",
+    "Type": "Mutuelle d'entreprise",
+    "Statut": "Confirmé",
+    "Observations": "Compagnie Ivoirienne d'Électricité"
+  },
+  {
+    "N°": 5,
+    "Entreprise": "CIE",
+    "Assurance Maladie / Mutuelle": "MA2E",
+    "Type": "Mutuelle épargne/crédit",
+    "Statut": "Confirmé",
+    "Observations": "Mutuelle des Agents de l'Eau et de l'Électricité"
+  },
+  {
+    "N°": 6,
+    "Entreprise": "CIE",
+    "Assurance Maladie / Mutuelle": "Assurance Maladie à la Retraite",
+    "Type": "Assurance retraités",
+    "Statut": "Confirmé",
+    "Observations": "Produit social unique en Côte d'Ivoire"
+  },
+  {
+    "N°": 7,
+    "Entreprise": "CNPS",
+    "Assurance Maladie / Mutuelle": "Mutuelle des Agents de CNPS",
+    "Type": "Mutuelle d'entreprise",
+    "Statut": "Confirmé",
+    "Observations": "Caisse Nationale de Prévoyance Sociale"
+  },
+  {
+    "N°": 8,
+    "Entreprise": "CNPS",
+    "Assurance Maladie / Mutuelle": "CMU (CNAM)",
+    "Type": "Système national",
+    "Statut": "Confirmé",
+    "Observations": "Gère le recouvrement des cotisations CMU"
+  },
+  {
+    "N°": 9,
+    "Entreprise": "CNRA",
+    "Assurance Maladie / Mutuelle": "MUSACNRA",
+    "Type": "Mutuelle d'entreprise",
+    "Statut": "Confirmé",
+    "Observations": "Centre National de Recherche Agronomique"
+  },
+  {
+    "N°": 10,
+    "Entreprise": "PALMAFRIQUE",
+    "Assurance Maladie / Mutuelle": "MUSAPALM",
+    "Type": "Mutuelle d'entreprise",
+    "Statut": "Confirmé",
+    "Observations": "Mutuelle Santé des Agents de PALMAFRIQUE"
+  },
+  {
+    "N°": 11,
+    "Entreprise": "Direction Générale des Impôts",
+    "Assurance Maladie / Mutuelle": "MADGI",
+    "Type": "Mutuelle d'entreprise",
+    "Statut": "Confirmé",
+    "Observations": "Mutuelle des Agents de la Direction Générale des Impôts"
+  },
+  {
+    "N°": 12,
+    "Entreprise": "Fonction Publique",
+    "Assurance Maladie / Mutuelle": "MUGEF-CI",
+    "Type": "Mutuelle fonctionnaires",
+    "Statut": "Confirmé",
+    "Observations": "Mutuelle Générale des Fonctionnaires et agents de l'État"
+  },
+  {
+    "N°": 13,
+    "Entreprise": "Douanes",
+    "Assurance Maladie / Mutuelle": "Mutuelle des Douanes de CI",
+    "Type": "Mutuelle d'entreprise",
+    "Statut": "Confirmé",
+    "Observations": "Personnel des Douanes"
+  },
+  {
+    "N°": 14,
+    "Entreprise": "Ministère Éducation Nationale",
+    "Assurance Maladie / Mutuelle": "MENET SANTÉ",
+    "Type": "Mutuelle d'entreprise",
+    "Statut": "Confirmé",
+    "Observations": "Mutuelle des Personnels du Ministère de l'Education"
+  },
+  {
+    "N°": 15,
+    "Entreprise": "Agents de Santé",
+    "Assurance Maladie / Mutuelle": "MUGASCI",
+    "Type": "Mutuelle sectorielle",
+    "Statut": "Confirmé",
+    "Observations": "Mutuelle Générale des Agents de Santé de Côte d'Ivoire"
+  },
+  {
+    "N°": 16,
+    "Entreprise": "Médias",
+    "Assurance Maladie / Mutuelle": "MS-MEDIAS",
+    "Type": "Mutuelle sectorielle",
+    "Statut": "Confirmé",
+    "Observations": "Mutuelle Santé des professionnels des médias"
+  },
+  {
+    "N°": 17,
+    "Entreprise": "Affaires Maritimes et Portuaires",
+    "Assurance Maladie / Mutuelle": "FPAMP",
+    "Type": "Fonds de prévoyance",
+    "Statut": "Confirmé",
+    "Observations": "Fonds de Prévoyance des Affaires Maritimes et Portuaires"
+  },
+  {
+    "N°": 18,
+    "Entreprise": "PAA",
+    "Assurance Maladie / Mutuelle": "FPAMT",
+    "Type": "Fonds de prévoyance",
+    "Statut": "Probable",
+    "Observations": "Port Autonome d'Abidjan"
+  },
+  {
+    "N°": 19,
+    "Entreprise": "PASP",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Port Autonome de San-Pedro"
+  },
+  {
+    "N°": 20,
+    "Entreprise": "BNI",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Banque Nationale d'Investissement"
+  },
+  {
+    "N°": 21,
+    "Entreprise": "BHCI",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Banque de l'Habitat de Côte d'ivoire"
+  },
+  {
+    "N°": 22,
+    "Entreprise": "Versus Bank",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": null
+  },
+  {
+    "N°": 23,
+    "Entreprise": "SIB",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société Ivoirienne de Banque"
+  },
+  {
+    "N°": 24,
+    "Entreprise": "LONACI",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Loterie Nationale de Côte d'Ivoire"
+  },
+  {
+    "N°": 25,
+    "Entreprise": "RTI",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Radiodiffusion Télévision Ivoirienne"
+  },
+  {
+    "N°": 26,
+    "Entreprise": "La Poste CI",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": null
+  },
+  {
+    "N°": 27,
+    "Entreprise": "PETROCI HOLDING",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": null
+  },
+  {
+    "N°": 28,
+    "Entreprise": "SIR",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société Ivoirienne de Raffinage"
+  },
+  {
+    "N°": 29,
+    "Entreprise": "CI-ENERGIES",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": null
+  },
+  {
+    "N°": 30,
+    "Entreprise": "CIPREL",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Compagnie Ivoirienne de Production d'Electricité"
+  },
+  {
+    "N°": 31,
+    "Entreprise": "GESTOCI",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société de Gestion des Stocks Pétroliers"
+  },
+  {
+    "N°": 32,
+    "Entreprise": "AIGF",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Agence Ivoirienne de Gestion des Fréquences"
+  },
+  {
+    "N°": 33,
+    "Entreprise": "AGEROUTE",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Agence de Gestion des Routes"
+  },
+  {
+    "N°": 34,
+    "Entreprise": "ANSUT",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Agence Nationale du Service Universel des Télécommunications"
+  },
+  {
+    "N°": 35,
+    "Entreprise": "BNETD",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Bureau National d'Études Techniques et Développement"
+  },
+  {
+    "N°": 36,
+    "Entreprise": "ACI",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Air Côte d'Ivoire"
+  },
+  {
+    "N°": 37,
+    "Entreprise": "VITIB SA",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Village des Technologies de l'Information"
+  },
+  {
+    "N°": 38,
+    "Entreprise": "ANADER",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Agence Nationale d'Appui au Développement Rural"
+  },
+  {
+    "N°": 39,
+    "Entreprise": "AGEF",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Agence de Gestion Foncière"
+  },
+  {
+    "N°": 40,
+    "Entreprise": "AERIA",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Aéroport International Félix Houphouët-Boigny"
+  },
+  {
+    "N°": 41,
+    "Entreprise": "ADCI",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Agence pour le Développement de la Compétitivité"
+  },
+  {
+    "N°": 42,
+    "Entreprise": "FER",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Fonds d'Entretien Routier"
+  },
+  {
+    "N°": 43,
+    "Entreprise": "I2T",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société Ivoirienne de Technologie Tropicale"
+  },
+  {
+    "N°": 44,
+    "Entreprise": "SOGEDI",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société de gestion et de développement des infrastructures"
+  },
+  {
+    "N°": 45,
+    "Entreprise": "SONAPIE",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société nationale de Gestion du patrimoine immobilier"
+  },
+  {
+    "N°": 46,
+    "Entreprise": "ONAD",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Office National de l'Assainissement et du Drainage"
+  },
+  {
+    "N°": 47,
+    "Entreprise": "ONEP",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Office National de l'Eau Potable"
+  },
+  {
+    "N°": 48,
+    "Entreprise": "SIPF",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société Ivoirienne de gestion du Patrimoine Ferroviaire"
+  },
+  {
+    "N°": 49,
+    "Entreprise": "SIDT",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société Ivoirienne de Télédiffusion"
+  },
+  {
+    "N°": 50,
+    "Entreprise": "SNDI",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société Nationale de Développement Informatique"
+  },
+  {
+    "N°": 51,
+    "Entreprise": "SNPECI",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société Nouvelle de Presse et d'Edition"
+  },
+  {
+    "N°": 52,
+    "Entreprise": "SODEFOR",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société de Développement des Forêts"
+  },
+  {
+    "N°": 53,
+    "Entreprise": "SODEMI",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société pour le Développement Minier"
+  },
+  {
+    "N°": 54,
+    "Entreprise": "SODEXAM",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société d'Exploitation et de Développement Aéroportuaire"
+  },
+  {
+    "N°": 55,
+    "Entreprise": "LBTP",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Laboratoire du Bâtiment et des Travaux Publics"
+  },
+  {
+    "N°": 56,
+    "Entreprise": "SGMT",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société de Gestion du Grand Marché de Treichville"
+  },
+  {
+    "N°": 57,
+    "Entreprise": "ANAH (ex SICOGI)",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Agence Nationale de l'Habitat"
+  },
+  {
+    "N°": 58,
+    "Entreprise": "CI-ENGINEERING",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": null
+  },
+  {
+    "N°": 59,
+    "Entreprise": "GUCE-CI",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Guichet Unique du Commerce Extérieur"
+  },
+  {
+    "N°": 60,
+    "Entreprise": "EDIPRESSE SARL",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": null
+  },
+  {
+    "N°": 61,
+    "Entreprise": "INIE",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Institut Ivoirien de l'Entreprise"
+  },
+  {
+    "N°": 62,
+    "Entreprise": "CML",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Compagnie Minière du Littoral"
+  },
+  {
+    "N°": 63,
+    "Entreprise": "SOTRA",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société des Transports Abidjanais"
+  },
+  {
+    "N°": 64,
+    "Entreprise": "SONITRA",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société Nationale Ivoirienne de Travaux"
+  },
+  {
+    "N°": 65,
+    "Entreprise": "SIVAC",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société Ivoirienne d'Abattage et de charcuterie"
+  },
+  {
+    "N°": 66,
+    "Entreprise": "SOCOPRIM",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société Concessionnaire du Pont Riviéra - Marcory"
+  },
+  {
+    "N°": 67,
+    "Entreprise": "SIFAL",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société Ivoirienne de Fabrication de Lubrifiant"
+  },
+  {
+    "N°": 68,
+    "Entreprise": "OIC",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Office Ivoirien des Chargeurs"
+  },
+  {
+    "N°": 69,
+    "Entreprise": "TRCI",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Tropical Rubber Côte d'Ivoire"
+  },
+  {
+    "N°": 70,
+    "Entreprise": "OCI",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Orange Côte d'Ivoire"
+  },
+  {
+    "N°": 71,
+    "Entreprise": "AGO",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Agbaou Gold Operations SA"
+  },
+  {
+    "N°": 72,
+    "Entreprise": "CMB",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Compagnie Minière du Bafing"
+  },
+  {
+    "N°": 73,
+    "Entreprise": "IPS",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Industrial Promotion Services"
+  },
+  {
+    "N°": 74,
+    "Entreprise": "SITARAIL",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société International de Transport Africain par RAIL"
+  },
+  {
+    "N°": 75,
+    "Entreprise": "SMI",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société des Mines d'Ity"
+  },
+  {
+    "N°": 76,
+    "Entreprise": "BM",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Bondoukou Manganèse"
+  },
+  {
+    "N°": 77,
+    "Entreprise": "CIDT",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Compagnie Ivoirienne pour le Développement des Textiles"
+  },
+  {
+    "N°": 78,
+    "Entreprise": "IMMSA",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Ivoire Manganèse"
+  },
+  {
+    "N°": 79,
+    "Entreprise": "LEB",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Lagune Exploitation Bongouanou"
+  },
+  {
+    "N°": 80,
+    "Entreprise": "BGM",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Bonikro Gold Mine"
+  },
+  {
+    "N°": 81,
+    "Entreprise": "SEMGB",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société d'Exploitation du Marché de Gros de Bouaké"
+  },
+  {
+    "N°": 82,
+    "Entreprise": "SMD",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société des Mines de Daapleu"
+  },
+  {
+    "N°": 83,
+    "Entreprise": "PMCI",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Perseus Mining Côte d'Ivoire"
+  },
+  {
+    "N°": 84,
+    "Entreprise": "SM",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Shiloh Manganèse S.A"
+  },
+  {
+    "N°": 85,
+    "Entreprise": "TONGON SA",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société des Mines de Tongon SA"
+  },
+  {
+    "N°": 86,
+    "Entreprise": "PMY",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Perseus Mining Yaouré"
+  },
+  {
+    "N°": 87,
+    "Entreprise": "VIVO ENERGY-CI",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": null
+  },
+  {
+    "N°": 88,
+    "Entreprise": "BRVM",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Bourse Régionale des Valeurs Mobilières"
+  },
+  {
+    "N°": 89,
+    "Entreprise": "DCBR",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Dépositaire Centrale Banque de règlement"
+  },
+  {
+    "N°": 90,
+    "Entreprise": "FOREMI",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société de Forage Minier"
+  },
+  {
+    "N°": 91,
+    "Entreprise": "Hiré Gold Mine",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": null
+  },
+  {
+    "N°": 92,
+    "Entreprise": "Roxgold Sango",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": null
+  },
+  {
+    "N°": 93,
+    "Entreprise": "SM Lobo",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société Minière de Lobo"
+  },
+  {
+    "N°": 94,
+    "Entreprise": "SM Lafigué",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société Minière de Lafigué"
+  },
+  {
+    "N°": 95,
+    "Entreprise": "PMF",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Perseus Mining Fimbiasso"
+  },
+  {
+    "N°": 96,
+    "Entreprise": "SMF",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société des Mines de Floleu"
+  },
+  {
+    "N°": 97,
+    "Entreprise": "SOCITA",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société de transformation Agricole"
+  },
+  {
+    "N°": 98,
+    "Entreprise": "QUIPUX AFRIQUE",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": null
+  },
+  {
+    "N°": 99,
+    "Entreprise": "CI-PME",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": null
+  },
+  {
+    "N°": 100,
+    "Entreprise": "SGPME",
+    "Assurance Maladie / Mutuelle": "CMU + Assurance privée",
+    "Type": "Système mixte",
+    "Statut": "Probable",
+    "Observations": "Société de Garantie des Crédits aux PME"
+  }
+]
