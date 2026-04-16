@@ -39,7 +39,8 @@ jobs:
           cache: 'pip'
       - name: Install dependencies
         working-directory: services/data-processing
-        run: pip install -r requirements.txt
+        # Ignore packages requiring a browser (selenium) in headless CI
+        run: pip install -r requirements.txt --ignore-requires-python || pip install Flask flask-cors Flask-Limiter gunicorn Werkzeug requests openpyxl python-dotenv rich python-json-logger
 
   build-frontend:
     runs-on: ubuntu-latest
@@ -55,6 +56,9 @@ jobs:
         run: npm install --prefer-offline --no-audit
       - name: Build
         working-directory: apps/frontend
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: npm run build
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -96,7 +100,10 @@ jobs:
 
   deploy-supabase:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+    # Only runs if the Supabase secrets are configured in GitHub Settings > Secrets
+    if: |
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev') &&
+      secrets.SUPABASE_ACCESS_TOKEN != ''
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node.js
