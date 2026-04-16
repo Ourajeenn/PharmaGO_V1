@@ -40,7 +40,7 @@ test-python:
     - dev
     - main
 
-# 🏗️ BUILD STAGE
+# BUILD STAGE
 build-frontend:
   stage: build
   image: node:18
@@ -55,7 +55,7 @@ build-frontend:
     - dev
     - main
 
-# 🚀 DEPLOY STAGE
+#  DEPLOY STAGE
 deploy-vercel:
   stage: deploy
   image: node:18

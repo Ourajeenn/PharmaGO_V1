@@ -1,0 +1,12 @@
+{
+  "name": "pharmago-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "description": "PharmaGO Project Management",
+  "scripts": {
+    "dev:frontend": "npm run dev --prefix apps/frontend",
+    "dev:backend": "cd apps/backend_legacy/backend/pharmacies-api && python pharmacie_api.py",
+    "dev": "npm run dev:frontend",
+    "dev:full": "echo 'Starting both servers... Use separate terminals or a tool like concurrently.'"
+  }
+}

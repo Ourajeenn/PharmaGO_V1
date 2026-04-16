@@ -249,7 +249,7 @@ const Header = () => {
                   <p className="text-[10px] text-muted-foreground font-semibold">Votre santé, livrée chez vous</p>
                 </div>
                 <div className="bg-white p-1 rounded-lg shadow-lg">
-                  <img src="/pwa-192x192.png" alt="PharmaGo PWA Logo" className="h-6 w-6 object-contain" />
+                  <img src="/pharmago-mobile-transparent.png" alt="PharmaGo PWA Logo" className="h-6 w-6 object-contain" />
                 </div>
               </Link>
 

@@ -161,3 +161,6 @@ export const useBiometricsContext = () => {
     }
     return context;
 };
+
+// Alias for easier usage in components
+export const useBiometrics = useBiometricsContext;
